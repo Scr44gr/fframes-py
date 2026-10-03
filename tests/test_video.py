@@ -4,7 +4,8 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
-from fframes import RenderOptions, Video, VideoConfig, _native, lowlevel
+import fframes
+from fframes import RenderOptions, Video, VideoConfig, _native
 from tests.container import box
 
 SVG = (
@@ -68,10 +69,10 @@ def test_render_encodes_real_video(video: Video, tmp_path: Path) -> None:
     assert count / duration == video.config.fps
 
 
-def test_lowlevel_video_uses_validated_inputs(tmp_path: Path) -> None:
-    native = lowlevel.compile_video(VideoConfig(width=16, height=12), (SVG,))
+def test_compiled_video_rasterizes_and_encodes(tmp_path: Path) -> None:
+    native: fframes.SvgVideo = fframes.compile_video(VideoConfig(width=16, height=12), (SVG,))
     assert native.rgba(0)[:4] == bytes((255, 0, 0, 255))
-    assert lowlevel.render(native, tmp_path / "lowlevel.mp4").is_file()
+    assert fframes.render(native, tmp_path / "compiled.mp4").is_file()
 
 
 @pytest.mark.parametrize("index", [24, 25, 2**40])
@@ -158,7 +159,7 @@ def test_native_boundary_rejects_invalid_inputs(tmp_path: Path) -> None:
         _native.compile_video(0, 1, 30, [SVG], False)
     with pytest.raises(ValueError, match="dimensions"):
         _native.compile_video(1, 1, 30, [], False)
-    native = lowlevel.compile_video(VideoConfig(width=16, height=12), (SVG,))
+    native = fframes.compile_video(VideoConfig(width=16, height=12), (SVG,))
     with pytest.raises(ValueError, match="concurrency"):
         native.render(tmp_path / "movie.mp4", tmp_path, "mpeg4", 0)
 

@@ -1,6 +1,6 @@
 ---
 name: fframes-py
-description: Create, edit, render and debug Python videos with fframes-py, using reusable compose components or lowlevel SVG and scalar animation. Use for fframes-py scenes, layer timing, audio mixing, native setup and output verification.
+description: Create, edit, render and debug Python videos with fframes-py, using reusable compose components or direct SVG and scalar animation. Use for fframes-py scenes, layer timing, audio mixing, native setup and output verification.
 ---
 
 # fframes-py
@@ -21,7 +21,7 @@ covers the Python wrapper; upstream Rust examples may expose unavailable feature
 
 ## Working rules
 
-1. Use `fframes.compose` for object-based scenes. Choose `fframes.lowlevel` when
+1. Use `fframes.compose` for object-based scenes. Choose `fframes` when
    inputs are already SVG frames or scalar keyframes. Do not confuse the two
    `Video` or `RenderOptions` classes.
 2. Establish duration, resolution, fps and available assets from the task. Choose

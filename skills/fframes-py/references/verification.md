@@ -32,7 +32,7 @@ coverage does not measure native code.
 ## Diagnose cost before changing the design
 
 Measure scene construction/compilation separately from rendering. Reuse a compiled
-scene for repeated outputs; use lowlevel batch sampling for many scalar values.
+scene for repeated outputs; use native batch sampling for many scalar values.
 Prefer groups and tweens over repeated Python calls per frame. Keep heavy loops
 in Rust and preserve GIL release for native work. Use direct typed attributes;
 do not introduce `Any`, dynamic `getattr`/`setattr`, or duplicated validation.

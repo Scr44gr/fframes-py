@@ -1,7 +1,9 @@
 import pytest
-from fframes import Keyframe, Timeline, _native, lowlevel
-from fframes.models import Easing
 from pydantic import ValidationError
+
+import fframes
+from fframes import Keyframe, Timeline, _native
+from fframes.models import Easing
 
 
 @pytest.fixture
@@ -32,8 +34,8 @@ def test_easing_matches_css_reference(easing: Easing) -> None:
     assert curve.sample(30) == pytest.approx(1)
 
 
-def test_lowlevel_compilation_uses_the_same_engine(timeline: Timeline) -> None:
-    native = lowlevel.compile_animation(timeline.keyframes)
+def test_compiled_animation_uses_the_same_engine(timeline: Timeline) -> None:
+    native: fframes.Animation = fframes.compile_animation(timeline.keyframes)
     assert native.sample_many([0, 45, 90], 30) == [10, 15, 20]
 
 
@@ -52,7 +54,7 @@ def test_invalid_sample_arguments_are_rejected(timeline: Timeline) -> None:
 
 def test_native_boundary_checks_float32_precision() -> None:
     with pytest.raises(ValueError, match="positive duration"):
-        lowlevel.compile_animation((Keyframe(start=1e10, end=1e10 + 1, from_value=0, to_value=1),))
+        fframes.compile_animation((Keyframe(start=1e10, end=1e10 + 1, from_value=0, to_value=1),))
 
 
 def test_native_boundary_rejects_invalid_keyframes() -> None:

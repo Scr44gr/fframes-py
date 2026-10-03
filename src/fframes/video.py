@@ -1,13 +1,34 @@
-"""Pythonic in-memory SVG videos."""
+"""In-memory SVG video compilation and rendering."""
 
 from functools import cached_property
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
 from pydantic import ConfigDict, validate_call
 
-from fframes import lowlevel
+from fframes import _native
 from fframes._native import SvgVideo
 from fframes.models import Frames, Index, Model, OutputPath, RenderOptions, VideoConfig
+
+
+@validate_call(config=ConfigDict(strict=True))
+def compile_video(config: VideoConfig, frames: Frames) -> SvgVideo:
+    """Transfer a validated SVG sequence to an immutable native video."""
+    return _native.compile_video(
+        config.width, config.height, config.fps, frames, config.load_system_fonts
+    )
+
+
+@validate_call(config=ConfigDict(strict=True, arbitrary_types_allowed=True))
+def render(video: SvgVideo, path: OutputPath, options: RenderOptions | None = None) -> Path:
+    """Encode a native video and always clean up its temporary segments."""
+    if options is None:
+        options = RenderOptions()
+    destination = Path(path)
+    # Share the destination filesystem so the final native rename is atomic.
+    with TemporaryDirectory(prefix="fframes-py-", dir=destination.absolute().parent) as directory:
+        video.render(destination, Path(directory), options.encoder, options.concurrency)
+    return destination
 
 
 class Video(Model):
@@ -28,7 +49,7 @@ class Video(Model):
     @cached_property
     def native(self) -> SvgVideo:
         """Return the cached low-level video."""
-        return lowlevel.compile_video(self.config, self.frames)
+        return compile_video(self.config, self.frames)
 
     @validate_call(config=ConfigDict(strict=True))
     def rgba(self, index: Index = 0) -> bytes:
@@ -47,4 +68,4 @@ class Video(Model):
 
     def render(self, path: OutputPath, *, options: RenderOptions | None = None) -> Path:
         """Encode all frames; MPEG-4 is available in the default LGPL build."""
-        return lowlevel.render(self.native, path, options)
+        return render(self.native, path, options)

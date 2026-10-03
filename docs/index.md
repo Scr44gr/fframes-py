@@ -8,8 +8,7 @@ Python 3.11–3.14. Start with [installation](installation.md), then [compose](c
 | Import | Use it for |
 | --- | --- |
 | `fframes.compose` | Reusable graphics, local animation and audio without writing SVG. |
-| `fframes.lowlevel` | Compiling existing SVG frames or scalar keyframes into native objects. |
-| `fframes.Video`, `fframes.Timeline` | Convenient, cached wrappers around those SVG/scalar operations. |
+| `fframes` | Compile SVG frames or scalar keyframes; cache them with `Video` or `Timeline`. |
 
 `fframes.Video` and `fframes.compose.Video` accept different inputs. Import from
 the namespace you intend to use. `fframes._native` and `compose.compiler` are internal.

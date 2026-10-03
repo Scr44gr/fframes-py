@@ -60,14 +60,14 @@ layout. For repeated previews or exports, reuse `video.compile()`.
 Render a one-second sequence of SVG frames:
 
 ```python
-from fframes import VideoConfig, lowlevel
+import fframes
 
 svg = (
     '<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360">'
     '<rect width="640" height="360" fill="#3776AB"/></svg>'
 )
-native = lowlevel.compile_video(VideoConfig(width=640, height=360, fps=30), (svg,) * 30)
-lowlevel.render(native, "frames.mp4")
+native = fframes.compile_video(fframes.VideoConfig(width=640, height=360, fps=30), (svg,) * 30)
+fframes.render(native, "frames.mp4")
 ```
 
 See [low-level operations](docs/lowlevel.md) for scalar animation and frame sampling.
