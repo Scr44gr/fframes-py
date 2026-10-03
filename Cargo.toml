@@ -34,6 +34,10 @@ fframes_skia_renderer = { version = "=1.2.0", features = ["vulkan"] }
 lto = "thin"
 codegen-units = 1
 
+# Keep source locations without exceeding MSVC's PDB limit with Skia/FFmpeg.
+[profile.dev]
+debug = "line-tables-only"
+
 [lints.rust]
 unsafe_code = "deny"
 missing_docs = "deny"
