@@ -2,24 +2,15 @@ import struct
 from pathlib import Path
 
 import pytest
-from fframes import RenderOptions, Video, VideoConfig, _native, lowlevel
 from pydantic import ValidationError
+
+from fframes import RenderOptions, Video, VideoConfig, _native, lowlevel
+from tests.container import box
 
 SVG = (
     '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="12">'
     '<rect width="8" height="12" fill="red"/></svg>'
 )
-
-
-def box(data: bytes, kind: bytes) -> bytes:
-    offset = 0
-    while offset + 8 <= len(data):
-        size = int.from_bytes(data[offset : offset + 4], "big")
-        assert size >= 8
-        if data[offset + 4 : offset + 8] == kind:
-            return data[offset + 8 : offset + size]
-        offset += size
-    raise AssertionError(f"Missing MP4 box: {kind!r}")
 
 
 @pytest.fixture
