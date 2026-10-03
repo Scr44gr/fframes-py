@@ -6,7 +6,7 @@ rust-version = "1.99"
 publish = false
 description = "Typed Python bindings for fframes animation and CPU rendering"
 include = [
-    "/rust/**", "/src/**", "/tests/**", "/examples/**", "/scripts/**",
+    "/rust/**", "/src/**", "/tests/**", "/examples/**", "/scripts/**", "/docs/**",
     "/Cargo.lock", "/pyproject.toml", "/uv.lock", "/rust-toolchain.toml", "/.python-version", "/README.md",
 ]
 
