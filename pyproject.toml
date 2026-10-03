@@ -1,0 +1,80 @@
+[build-system]
+requires = ["maturin>=1.15.0,<2"]
+build-backend = "maturin"
+
+[project]
+name = "fframes-py"
+dynamic = ["version"]
+description = "Typed Python bindings for fframes video rendering"
+readme = "README.md"
+requires-python = ">=3.11,<3.15"
+dependencies = ["pydantic>=2.13.5,<3"]
+classifiers = [
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Programming Language :: Rust",
+  "Typing :: Typed",
+]
+
+[dependency-groups]
+dev = [
+  "maturin>=1.15.0,<2",
+  "mypy>=2.4.0,<3",
+  "pytest>=9.1.1,<10",
+  "pytest-cov>=7.1.0,<8",
+  "ruff>=0.16.10,<0.17",
+]
+
+[tool.maturin]
+python-source = "src"
+module-name = "fframes._native"
+exclude = ["**/*.pdb"]
+
+[tool.uv]
+required-version = ">=0.12.22"
+config-settings = { "maturin.build-args" = "--locked" }
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM", "C4", "PIE", "PERF", "RUF", "ANN", "ARG", "PT", "TC", "PTH", "S", "TID", "D"]
+ignore = ["D203", "D213"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["D", "S101"]
+"*.pyi" = ["D"]
+
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+"builtins.getattr" = { msg = "Use direct attribute access." }
+"builtins.setattr" = { msg = "Use direct attribute access." }
+"typing.Any" = { msg = "Use a concrete type or a protocol." }
+
+[tool.mypy]
+files = ["src", "tests", "examples"]
+python_version = "3.11"
+strict = true
+disallow_any_explicit = true
+disallow_any_unimported = true
+warn_unreachable = true
+plugins = ["pydantic.mypy"]
+
+[tool.pydantic-mypy]
+init_forbid_extra = true
+init_typed = true
+warn_required_dynamic_aliases = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = ["--strict-config", "--strict-markers", "--cov", "--cov-report=term-missing", "--cov-report=xml", "--cov-fail-under=95"]
+filterwarnings = ["error"]
+
+[tool.coverage.run]
+source = ["fframes"]
+branch = true
+
+[tool.coverage.report]
+exclude_also = ["if TYPE_CHECKING:"]
