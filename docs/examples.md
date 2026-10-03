@@ -20,6 +20,19 @@ Replace `hello_world` with `scenes` in the last two commands to render the
 two-scene variant. Both variants run for 30 seconds at 1920×1080, 30 fps.
 Output goes to `output/native/` or `output/compose/`.
 
+The shader ports use Vulkan on Windows/Linux and Metal on macOS:
+
+```sh
+uv run --no-sync python -m examples.assets shaders
+uv run --no-sync python -m examples.native.shaders
+uv run --no-sync python -m examples.compose.shaders
+```
+
+Replace `shaders` with `neon_triangle` for the six-second, 60 fps neon scene.
+`shaders` runs for eight seconds at 30 fps; both use 1920×1080. Append
+`--backend skia` to render with Skia CPU when a GPU is unavailable. Shader source
+files are cached like other assets; their original algorithms remain unchanged.
+
 Assets come from the commit and SHA-256 hashes in
 [`examples/upstream.toml`](../examples/upstream.toml). Downloads are explicit,
 verified before replacement, and reused across checkouts. Rendering only reads
@@ -40,8 +53,8 @@ not an exhaustive engine API inventory.
 | Upstream example | Status / remaining requirements |
 | --- | --- |
 | `hello-world` | Ported: [native](../examples/native/hello_world.py), [compose](../examples/compose/hello_world.py); [native scenes](../examples/native/scenes.py), [compose scenes](../examples/compose/scenes.py). |
-| `shaders` | Pending: Skia backends, SkSL/Shadertoy, typed uniforms, masks, springs. |
-| `neon-triangle` | Pending: shaders, filters, keyframe sequences, formatted readouts. |
+| `shaders` | Ported: [native](../examples/native/shaders.py), [compose](../examples/compose/shaders.py). |
+| `neon-triangle` | Ported: [native](../examples/native/neon_triangle.py), [compose](../examples/compose/neon_triangle.py). |
 | `audio-announce` | Pending: synchronized video clips, spectrum analysis, subtitles, filters. |
 | `tiktok` | Pending: audio spectrum, VTT subtitles, text wrapping, filters. |
 | `podcast` | Pending: audio visualization, subtitles, text layout, image masks. |
@@ -59,6 +72,13 @@ Completed ports were rendered locally on Windows with the pinned fonts. Offline
 tests exercise timing and geometry using the repository's test font. Small edge
 differences remain between SVG parsing and typed-tree rasterization; byte-identical
 output and Linux/macOS visual parity have not been established.
+
+Shader ports were rendered through Vulkan on Windows and previewed with Skia CPU.
+Their CI tests use small substitute shaders to check composition without network
+or GPU access; they do not replace validation of the pinned upstream programs.
+The neon readout is precomputed once, and adjacent clips reproduce its title
+flicker while reusing one component. Floating-point rounding and SVG whitespace
+normalization can differ from the original Rust formatting.
 
 Upstream example code is © 2025–2026 Dmitriy Kovalenko, used under its
 [MIT license](assets/LICENSE.txt). Repeated SVG IDs and redundant wrappers from

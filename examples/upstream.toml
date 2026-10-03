@@ -3,6 +3,8 @@ revision = "055bb6b9dcbbcca6532206847d43ea8e81fa2a0b"
 
 [examples]
 hello_world = ["dm_sans", "jetbrains_mono", "license"]
+shaders = ["dm_sans", "aurora", "torus", "license"]
+neon_triangle = ["dm_sans", "jetbrains_mono", "triangle", "license"]
 
 [files.dm_sans]
 path = "examples/hello-world/media/DMSans-Medium.ttf"
@@ -15,3 +17,15 @@ sha256 = "4391a6a20152f6c1cd05524e81c594b1a556117e027332a1c7042e799b7777e8"
 [files.license]
 path = "LICENSE.txt"
 sha256 = "648577feb8515d23cb9c762aafcb295397bc2f3a88f0dc3358c9eafc64c48d33"
+
+[files.aurora]
+path = "examples/shaders/src/shaders/aurora.sksl"
+sha256 = "c083aea79f538dc84ce35da7d34c5261b89a76c7ff5a064650bbdc4c071dac38"
+
+[files.torus]
+path = "examples/shaders/src/shaders/torus.glsl"
+sha256 = "0225400c3914b0f659b235936f316894682ff82f60ad0c2ffea12318cdfe4c80"
+
+[files.triangle]
+path = "examples/neon-triangle/src/shaders/triangle.sksl"
+sha256 = "44c862c3f0295a9a475bc7f9ba629a35c84b5af29966e13fcb1f5d851ce64db5"
