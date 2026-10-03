@@ -3,8 +3,9 @@
 ## Resolve assets
 
 Use real local paths; resolve them relative to the script or a known project root
-when the working directory may vary. `Image` requires an explicit size and
-stretches to fit. Choose proportional dimensions yourself to preserve aspect ratio.
+when the working directory may vary. HTTP(S) source URLs are not supported.
+`Image` requires an explicit size and stretches to fit. Choose proportional
+dimensions to preserve aspect ratio.
 
 For reproducible labels, pass `Video(fonts=(font_path,), load_system_fonts=False, ...)`
 and set `Text.font_family` to the font's internal family name. System fonts default

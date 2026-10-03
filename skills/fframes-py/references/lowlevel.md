@@ -14,6 +14,8 @@ Keep it separate from compose; neither API's native video is an item in the othe
    explicit font-file parameter.
 3. Call `native = lowlevel.compile_video(config, frames)` once. It owns the
    sequence; malformed SVG can still fail later when rasterized.
+   This API skips `<image>` references, including URLs; use compose `Image` for
+   local raster assets.
 4. Preview with `native.rgba(index)` or `native.save_png(index, Path(...))`.
    Unlike compose, native `save_png` takes the index first and returns `None`.
 5. Encode with `lowlevel.render(native, path, RenderOptions(concurrency=...))`.

@@ -31,6 +31,8 @@ height 1080, fps 30, and `load_system_fonts=False`; enable it for system-font te
 The sequence is owned in memory; rendering is not a streaming callback interface.
 SVG syntax is parsed when frames render, so compilation alone does not validate
 every SVG document. SVG support follows the native renderer, not a web browser.
+This API skips `<image>` references, including remote URLs. Use compose `Image`
+items for local raster assets.
 
 | Operation | Result |
 | --- | --- |

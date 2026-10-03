@@ -14,6 +14,8 @@ Import `Video` and `RenderOptions` from `fframes.compose` for these settings.
 | `fonts` | `()` | Tuple of explicit font file paths. |
 | `load_system_fonts` | `True` | Include fonts installed on the host. |
 
+Fonts, images and audio take filesystem paths; HTTP(S) source URLs are not supported.
+
 Resolution changes the root canvas, not the dimensions of authored shapes.
 See [layers](layers.md) for local sizing and scaling.
 
