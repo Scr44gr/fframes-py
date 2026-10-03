@@ -5,6 +5,7 @@ revision = "055bb6b9dcbbcca6532206847d43ea8e81fa2a0b"
 hello_world = ["dm_sans", "jetbrains_mono", "license"]
 shaders = ["dm_sans", "aurora", "torus", "license"]
 neon_triangle = ["dm_sans", "jetbrains_mono", "triangle", "license"]
+motion_graphics = ["bebas_neue", "jetbrains_mono", "license"]
 
 [files.dm_sans]
 path = "examples/hello-world/media/DMSans-Medium.ttf"
@@ -29,3 +30,7 @@ sha256 = "0225400c3914b0f659b235936f316894682ff82f60ad0c2ffea12318cdfe4c80"
 [files.triangle]
 path = "examples/neon-triangle/src/shaders/triangle.sksl"
 sha256 = "44c862c3f0295a9a475bc7f9ba629a35c84b5af29966e13fcb1f5d851ce64db5"
+
+[files.bebas_neue]
+path = "examples/motion-graphics/media/BebasNeue-Regular.ttf"
+sha256 = "08e4623805102d819f58601e46e345648846075e363b2ceb23313c2d1c83ec73"

@@ -33,6 +33,21 @@ Replace `shaders` with `neon_triangle` for the six-second, 60 fps neon scene.
 `--backend skia` to render with Skia CPU when a GPU is unavailable. Shader source
 files are cached like other assets; their original algorithms remain unchanged.
 
+The motion studies have three variants, all 1920×1080 at 60 fps:
+
+```sh
+uv run --no-sync python -m examples.assets motion_graphics
+uv run --no-sync python -m examples.compose.motion_graphics --scene quote --text "SPEED\n!=\nFAST"
+uv run --no-sync python -m examples.native.motion_graphics --scene install
+uv run --no-sync python -m examples.compose.motion_graphics --family Arial
+```
+
+`motion`, `quote` and `install` last 4, 3 and 10 seconds respectively. Both APIs
+accept the same flags. The main study defaults to upstream's Helvetica Neue,
+which upstream does not distribute. Supply it with `--font path/to/font.ttf`,
+or explicitly select an installed replacement with `--family`. The local Windows
+render used Arial. Quote and install use the pinned Bebas Neue and JetBrains Mono.
+
 Assets come from the commit and SHA-256 hashes in
 [`examples/upstream.toml`](../examples/upstream.toml). Downloads are explicit,
 verified before replacement, and reused across checkouts. Rendering only reads
@@ -59,7 +74,7 @@ not an exhaustive engine API inventory.
 | `tiktok` | Pending: audio spectrum, VTT subtitles, text wrapping, filters. |
 | `podcast` | Pending: audio visualization, subtitles, text layout, image masks. |
 | `teej-podcast` | Pending: synchronized clips and chapter layout; user media required. |
-| `motion-graphics` | Pending: springs, masks, text alignment/spacing, character reveal; includes quote and install variants. |
+| `motion-graphics` | Ported: [native](../examples/native/motion_graphics.py), [compose](../examples/compose/motion_graphics.py), including quote and install variants. |
 | `signal-lab` | Pending: springs/Bézier easing, text fitting, animated geometry, audio. |
 | `conference-splash-screen` | Pending: speaker/sponsor layouts, text wrapping and masks. |
 | `marketing` | Pending: media, filters and animated graphics. |
