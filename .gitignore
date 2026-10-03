@@ -6,6 +6,7 @@ skills-lock.json
 .native/
 target/
 dist/
+output/
 __pycache__/
 *.py[cod]
 *.pyd
