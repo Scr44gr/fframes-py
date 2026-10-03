@@ -6,6 +6,7 @@ build-backend = "maturin"
 name = "fframes-py"
 dynamic = ["version"]
 description = "Typed Python bindings for fframes video rendering"
+authors = [{ name = "Abrahan Gil", email = "scr44gr@gmail.com" }]
 readme = "README.md"
 requires-python = ">=3.11,<3.15"
 dependencies = ["pydantic>=2.13.5,<3"]
