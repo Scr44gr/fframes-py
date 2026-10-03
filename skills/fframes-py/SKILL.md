@@ -8,6 +8,9 @@ description: Create, edit, render and debug Python videos with fframes-py, using
 Turn the user's scene into typed Python descriptions and render with the installed
 fframes-py package. Keep authored content and output settings separate. This skill
 covers the Python wrapper; upstream Rust examples may expose unavailable features.
+When porting an upstream example in this checkout, consult `docs/examples.md`
+for paired ports and gaps. Fetch pinned assets explicitly with
+`python -m examples.assets <name>`; rendering must work from the verified cache.
 
 ## Select only the references needed
 

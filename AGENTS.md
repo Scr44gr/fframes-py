@@ -4,6 +4,12 @@
   Python 3.14 patch while preserving Python 3.11–3.14 compatibility.
 - Check official documentation and published releases before choosing or changing
   dependencies or GitHub Actions. Do not infer current APIs from training data.
+- Target full feature parity with upstream fframes, including GPU shaders and
+  synchronized video clips. Add missing bindings rather than simplify or omit
+  upstream examples to fit the wrapper's current limitations.
+- Expose engine capabilities through `fframes` and composable equivalents through
+  `fframes.compose`, sharing native implementations. Verify parity against a
+  recorded upstream version or commit on each supported backend and platform.
 - Use Pydantic v2 for public input validation. Keep models immutable and reuse
   validation schemas between the low-level and Pythonic APIs.
 - Keep expensive operations and batch loops in Rust; release the GIL for native

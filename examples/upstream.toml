@@ -1,0 +1,17 @@
+repository = "dmtrKovalenko/fframes"
+revision = "055bb6b9dcbbcca6532206847d43ea8e81fa2a0b"
+
+[examples]
+hello_world = ["dm_sans", "jetbrains_mono", "license"]
+
+[files.dm_sans]
+path = "examples/hello-world/media/DMSans-Medium.ttf"
+sha256 = "4f6a909db85e054e53cd180fe781cfe048416cdd87f7365ac2871c8d646a9033"
+
+[files.jetbrains_mono]
+path = "examples/hello-world/media/JetBrainsMono-Regular.ttf"
+sha256 = "4391a6a20152f6c1cd05524e81c594b1a556117e027332a1c7042e799b7777e8"
+
+[files.license]
+path = "LICENSE.txt"
+sha256 = "648577feb8515d23cb9c762aafcb295397bc2f3a88f0dc3358c9eafc64c48d33"
