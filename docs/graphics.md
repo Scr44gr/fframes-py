@@ -11,11 +11,12 @@ Sizes are positive pixel lengths, at most 10,000,000 per dimension.
 | `Rectangle` | `size=(width, height)` | `radius=0` for square corners. |
 | `Circle` | `radius` | Layout bounds are `(2 * radius, 2 * radius)`. |
 | `Text` | `content` | `font_family="sans-serif"`, `font_size=32`, `font_weight=400`. |
+| `ShaderLayer` | `shader`, `size` | [Native shader program](shaders.md). |
 | `Image` | `source`, `size` | Raster file stretched to the given dimensions. |
 | `VectorPath` | `size`, `segments` | Absolute coordinates within its local canvas. |
 
 `Text` accepts one nonempty line, with no newline or NUL. Weight is an integer
-from 100 through 900; available faces determine the result. Use separate positioned
+from 100 through 900; `letter_spacing=0` sets additional spacing in pixels; available faces determine the result. Use separate positioned
 text items for multiple lines. Characters such as `<` and `&` need no XML escaping.
 See [font configuration](rendering.md#fonts).
 
@@ -25,6 +26,13 @@ interpret x/y as SVG baseline coordinates. For a live counter, pass
 positions and `anchor="baseline"`. Rust formats the item's local frame index and
 elapsed seconds during rendering. Supported fields are `{frame}` and
 `{seconds:.0f}` through `{seconds:.9f}`; double braces produce literal braces.
+
+For finite custom readouts, use `TextFrames(frames=("First", "Second", ...))`.
+It selects one line per local frame and holds the last line. Like templates, it
+requires numeric position and baseline anchoring. Precompute lines once; Rust
+borrows them during rendering.
+
+All visuals support [masks and filter graphs](filters.md).
 
 ## Paint
 

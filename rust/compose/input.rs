@@ -1,12 +1,14 @@
 use std::path::PathBuf;
 
-use fframes::animation::{AnimationRuntime as NativeTween, Easing as NativeEasing};
+use crate::values::{Paint, Scalar};
 use pyo3::{PyResult, exceptions::PyValueError};
 use serde::Deserialize;
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 pub(super) struct Plan {
+    #[serde(default)]
+    pub backend: crate::backend::Backend,
     pub resolution: [u32; 2],
     pub fps: usize,
     pub frames: usize,
@@ -31,8 +33,17 @@ pub(super) struct Graphic {
     pub rotation: Scalar,
     pub scale: Scalar,
     pub origin: Option<[f64; 2]>,
+    pub mask: Option<Mask>,
+    pub filter: Option<super::filters::Filter>,
     #[serde(flatten)]
     pub shape: Shape,
+}
+
+#[derive(Deserialize)]
+pub(super) struct Mask {
+    pub size: [f64; 2],
+    pub radius: f64,
+    pub position: [f64; 2],
 }
 
 #[derive(Deserialize)]
@@ -69,122 +80,10 @@ impl Coordinate {
 
 #[derive(Deserialize)]
 #[serde(untagged)]
-pub(super) enum Scalar {
-    Constant(f64),
-    Tween {
-        from_value: f64,
-        to_value: f64,
-        duration: f64,
-        easing: Easing,
-    },
-}
-
-impl Scalar {
-    pub fn check(&self, low: f64, high: f64) -> PyResult<()> {
-        let (a, b) = match self {
-            Self::Constant(value) => (*value, *value),
-            Self::Tween {
-                from_value,
-                to_value,
-                duration,
-                ..
-            } => {
-                if !duration.is_finite() || *duration <= 0. || *duration > 86400. {
-                    return Err(PyValueError::new_err("invalid tween duration"));
-                }
-                (*from_value, *to_value)
-            }
-        };
-        if !a.is_finite() || !b.is_finite() || a < low || a > high || b < low || b > high {
-            return Err(PyValueError::new_err("scalar outside its supported range"));
-        }
-        Ok(())
-    }
-
-    pub fn compile(self) -> Value {
-        match self {
-            Self::Constant(value) => Value::Constant(value),
-            Self::Tween {
-                from_value,
-                to_value,
-                duration,
-                easing,
-            } => {
-                let easing = easing.native();
-                Value::Tween {
-                    from: from_value,
-                    delta: to_value - from_value,
-                    duration,
-                    animation: NativeTween::new(1., &easing),
-                }
-            }
-        }
-    }
-}
-
-pub(super) enum Value {
-    Constant(f64),
-    Tween {
-        from: f64,
-        delta: f64,
-        duration: f64,
-        animation: NativeTween,
-    },
-}
-
-impl Value {
-    pub fn value(&self, time: f64) -> f64 {
-        match self {
-            Self::Constant(value) => *value,
-            Self::Tween {
-                from,
-                delta,
-                duration,
-                animation,
-            } => {
-                from + delta * f64::from(animation.solve(&((time / duration).clamp(0., 1.) as f32)))
-            }
-        }
-    }
-}
-
-#[derive(Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub(super) enum Easing {
-    Linear,
-    EaseIn,
-    EaseOut,
-    EaseInOut,
-}
-
-impl Easing {
-    pub fn native(&self) -> NativeEasing {
-        match self {
-            Self::Linear => NativeEasing::Linear,
-            Self::EaseIn => NativeEasing::EaseIn,
-            Self::EaseOut => NativeEasing::EaseOut,
-            Self::EaseInOut => NativeEasing::EaseInOut,
-        }
-    }
-}
-
-#[derive(Deserialize)]
-#[serde(untagged)]
-pub(super) enum Paint {
-    Constant(String),
-    Tween {
-        from_value: String,
-        to_value: String,
-        duration: f64,
-        easing: Easing,
-    },
-}
-
-#[derive(Deserialize)]
-#[serde(untagged)]
 pub(super) enum TextContent {
     Constant(String),
     Template { template: String },
+    Frames { frames: Vec<String> },
 }
 
 #[derive(Default, Deserialize)]
@@ -198,6 +97,10 @@ pub(super) enum TextAnchor {
 #[derive(Deserialize)]
 #[serde(tag = "kind", rename_all = "lowercase")]
 pub(super) enum Shape {
+    Shader {
+        shader: crate::shader::Input,
+        size: [f64; 2],
+    },
     Group {
         size: [f64; 2],
     },
@@ -220,6 +123,8 @@ pub(super) enum Shape {
         font_weight: u16,
         #[serde(default)]
         anchor: TextAnchor,
+        #[serde(default)]
+        letter_spacing: f64,
     },
     Path {
         size: [f64; 2],

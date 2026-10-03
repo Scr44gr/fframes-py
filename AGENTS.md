@@ -14,6 +14,8 @@
   validation schemas between the low-level and Pythonic APIs.
 - Keep expensive operations and batch loops in Rust; release the GIL for native
   work. Do not add Python callbacks to rendering without measuring the cost.
+- NumPy is appropriate when useful. Prefer views and shared buffers; keep ownership,
+  lifetimes and mutability explicit at the Rust boundary and document required copies.
 - Use concrete types throughout Python, stubs and tests. No `Any`, unknown types,
   dynamic `getattr`/`setattr`, or blanket type-checker suppressions.
 - Keep filenames descriptive and short. Share implementations instead of copying

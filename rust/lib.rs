@@ -1,11 +1,15 @@
 //! Python bindings for native fframes interpolation and CPU SVG rendering.
 
 mod animation;
+mod backend;
 mod color;
 mod compose;
+mod easing;
 mod encoder;
 mod fonts;
 mod render;
+mod shader;
+mod values;
 mod video;
 
 use pyo3::prelude::*;

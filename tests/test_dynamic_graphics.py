@@ -135,3 +135,66 @@ def test_group_origin_matches_svg_rotation_about_local_zero() -> None:
     assert sum(video.rgba(0)[3::4]) == 12 * 255
     with pytest.raises(ValidationError, match="origin coordinates"):
         compose.Rectangle(size=(6, 2), origin=(1e8, 0))
+
+
+def test_text_frames_rebase_hold_and_reuse_borrowed_lines() -> None:
+    lines = ("A", "B & C", "Last")
+    video = compose.Video(
+        resolution=(128, 64),
+        fps=10,
+        fonts=(FONT,),
+        load_system_fonts=False,
+        composition=compose.Composition(
+            duration=2,
+            children=(
+                compose.Text(
+                    content=compose.TextFrames(frames=lines),
+                    anchor="baseline",
+                    font_family="Tuffy",
+                    font_size=24,
+                    letter_spacing=2,
+                    position=compose.Position(x=4, y=40),
+                ).at(0.5, duration=1),
+            ),
+        ),
+    ).compile()
+    for index, line in ((14, "Last"), (6, "B &amp; C"), (5, "A")):
+        reference = fframes.compile_video(
+            fframes.VideoConfig(width=128, height=64, fonts=(FONT,)),
+            (
+                '<svg xmlns="http://www.w3.org/2000/svg" width="128" height="64">'
+                '<text x="4" y="40" font-family="Tuffy" font-size="24" '
+                f'letter-spacing="2">{line}</text></svg>',
+            ),
+        )
+        assert video.rgba(index) == reference.rgba(0)
+    assert not any(video.rgba(4))
+    assert not any(video.rgba(15))
+    with pytest.raises(ValidationError, match="baseline"):
+        compose.Text(content=compose.TextFrames(frames=("a",)))
+
+
+def test_mask_origin_tracks_text_ink_bounds() -> None:
+    text = compose.Text(content="Big", font_family="Tuffy", font_size=24, fill="#ff0000")
+    # Use the real shaped text as a reference; the mask starts at the ink's top left.
+    original = compose.Video(
+        resolution=(64, 64),
+        load_system_fonts=False,
+        fonts=(FONT,),
+        composition=compose.Composition(duration=1, children=(text,)),
+    ).rgba()
+    masked = compose.Video(
+        resolution=(64, 64),
+        load_system_fonts=False,
+        fonts=(FONT,),
+        composition=compose.Composition(
+            duration=1, children=(text.model_copy(update={"mask": compose.Mask(size=(12, 10))}),)
+        ),
+    ).rgba()
+    expected = bytearray(original)
+    for y in range(64):
+        for x in range(64):
+            if x >= 12 or y >= 10:
+                offset = (y * 64 + x) * 4
+                expected[offset : offset + 4] = bytes(4)
+    assert masked == expected

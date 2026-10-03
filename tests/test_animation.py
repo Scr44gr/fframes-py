@@ -3,7 +3,7 @@ from pydantic import ValidationError
 
 import fframes
 from fframes import Keyframe, Timeline, _native
-from fframes.models import Easing
+from fframes.models import BasicEasing
 
 
 @pytest.fixture
@@ -26,7 +26,7 @@ def test_upstream_interpolation_holds_and_boundaries(timeline: Timeline) -> None
 
 
 @pytest.mark.parametrize("easing", ["linear", "ease_in", "ease_out", "ease_in_out"])
-def test_easing_matches_css_reference(easing: Easing) -> None:
+def test_easing_matches_css_reference(easing: BasicEasing) -> None:
     curve = Timeline(keyframes=(Keyframe(start=0, end=1, from_value=0, to_value=1, easing=easing),))
     expected = {"linear": 0.5, "ease_in": 0.31536, "ease_out": 0.68464, "ease_in_out": 0.5}
     assert curve.sample(15) == pytest.approx(expected[easing], abs=1e-3)
@@ -90,3 +90,58 @@ def test_color_keyframes_validate_intervals_and_native_colors() -> None:
         )
     with pytest.raises(ValueError, match="color"):
         _native.compile_color_animation([(0, 1, "invalid", "#FFFFFF", "linear")])
+
+
+def test_custom_bezier_matches_named_upstream_curve() -> None:
+    bezier = fframes.CubicBezier(x1=0.42, y1=0, x2=0.58, y2=1)
+    curve = fframes.compile_animation(
+        (Keyframe(start=0, end=2, from_value=0, to_value=1, easing=bezier),)
+    )
+    reference = fframes.compile_animation(
+        (Keyframe(start=0, end=2, from_value=0, to_value=1, easing="ease_in_out"),)
+    )
+    assert curve.sample_many(range(61), 30) == reference.sample_many(range(61), 30)
+
+
+def test_spring_uses_elapsed_seconds_and_retains_physical_overshoot() -> None:
+    from fframes import compose
+
+    spring = fframes.Spring()
+    tween = fframes.Tween(from_value=0, to_value=16, start_at=0.2, duration=1.8, easing=spring)
+    curve = fframes.compile_animation(
+        (Keyframe(start=0.2, end=2, from_value=0, to_value=16, easing=spring),)
+    )
+    samples = curve.sample_many(range(60), 30)
+    assert max(samples) > 16
+    assert samples[-1] == pytest.approx(16)
+    scene = compose.Video(
+        resolution=(32, 8),
+        fps=30,
+        load_system_fonts=False,
+        composition=compose.Composition(
+            duration=2,
+            children=(
+                compose.Rectangle(size=(4, 8), fill="#ff0000", position=compose.Position(x=tween)),
+            ),
+        ),
+    ).compile()
+    reference = fframes.compile_video(
+        fframes.VideoConfig(width=32, height=8),
+        tuple(
+            '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="8">'
+            f'<rect x="{x}" width="4" height="8" fill="red"/></svg>'
+            for x in samples
+        ),
+    )
+    for index in (0, 6, 9, 12, 18, 59):
+        assert scene.rgba(index) == reference.rgba(index)
+    with pytest.raises(ValidationError, match="opacity"):
+        compose.Rectangle(
+            size=(1, 1), opacity=fframes.Tween(from_value=0, to_value=1, duration=1, easing=spring)
+        )
+    with pytest.raises(ValidationError, match=r"settling|stiffness/mass"):
+        fframes.Spring(mass=1e-20)
+    critical = fframes.Tween(
+        from_value=0, to_value=1, duration=1, easing=fframes.Spring(damping=100)
+    )
+    assert compose.Rectangle(size=(1, 1), opacity=critical).opacity == critical

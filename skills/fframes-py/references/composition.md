@@ -45,7 +45,8 @@ Unspecified duration inherits the enclosing interval. Root duration caps everyth
 
 Use `Tween(from_value=..., to_value=..., duration=..., easing="linear")` for
 numeric x/y, opacity, rotation or scale. Other easing values are `ease_in`,
-`ease_out`, `ease_in_out`; endpoints hold. Opacity stays within 0–1, scale stays
+`ease_out`, `ease_in_out`, `Spring(...)` and `CubicBezier(...)`. `start_at` delays
+the tween locally; endpoints hold. Springs can overshoot; duration caps settling. Opacity stays within 0–1, scale stays
 positive. Fill and stroke accept `ColorTween` with hex endpoints and the same
 duration/easing fields. Geometry does not accept tweens. For discrete changes,
 schedule separate items in adjacent clips. Avoid Python loops rebuilding SVG per
@@ -56,6 +57,10 @@ coordinates instead of ink bounds. A live readout can use
 `content=TextTemplate(template="Frame {frame}, {seconds:.2f}s")` with that anchor
 and numeric positions. Only `{frame}` and `{seconds:.0f}` through `{seconds:.9f}`
 are supported; fields use the item's local clock and are formatted in Rust.
+For finite custom readouts, `TextFrames(frames=(...))` selects precomputed lines by
+local frame and holds the last line; it has the same anchoring requirements.
+`letter_spacing` adjusts text spacing in pixels. See [effects](shaders.md) for
+shader layers, clipping masks and filter graphs.
 
 ## Reuse components
 

@@ -6,7 +6,9 @@ from typing import Annotated, Literal, Self, TypeAlias
 from pydantic import Field, model_validator
 
 from fframes.compose.animation import Duration, Paint, Scalar, endpoints
+from fframes.compose.filters import Filter
 from fframes.models import FiniteFloat, Model, Seconds
+from fframes.shaders import Shader
 
 Length: TypeAlias = Annotated[float, Field(gt=0, le=1e7, allow_inf_nan=False)]
 Size: TypeAlias = tuple[Length, Length]
@@ -17,6 +19,14 @@ class Position(Model):
 
     x: Scalar | Literal["left", "center", "right"] = 0.0
     y: Scalar | Literal["top", "center", "bottom"] = 0.0
+
+
+class Mask(Model):
+    """Clip a visual or group to a local rectangle with optional rounded corners."""
+
+    size: Size
+    radius: Annotated[float, Field(ge=0, le=1e7, allow_inf_nan=False)] = 0.0
+    position: tuple[FiniteFloat, FiniteFloat] = (0.0, 0.0)
 
 
 class Item(Model):
@@ -51,6 +61,8 @@ class Visual(Item):
     rotation: Scalar = 0.0
     scale: Scalar = 1.0
     origin: tuple[FiniteFloat, FiniteFloat] | None = None
+    mask: Mask | None = None
+    filter: Filter | None = None
 
     @model_validator(mode="after")
     def check_transform(self) -> Self:
@@ -109,6 +121,14 @@ class Circle(Shape):
     radius: Length
 
 
+class ShaderLayer(Visual):
+    """Draw a shared shader program in a rectangle using the local frame clock."""
+
+    kind: Literal["shader"] = "shader"
+    shader: Shader
+    size: Size
+
+
 class TextTemplate(Model):
     """Format {frame} and {seconds:.2f} in Rust using the component's local clock."""
 
@@ -118,21 +138,31 @@ class TextTemplate(Model):
     ]
 
 
+Line: TypeAlias = Annotated[str, Field(min_length=1, pattern=r"^[^\r\n\x00]+$")]
+
+
+class TextFrames(Model):
+    """Precomputed lines, one per local frame; hold the last line after the sequence."""
+
+    frames: Annotated[tuple[Line, ...], Field(min_length=1)]
+
+
 class Text(Visual):
     """Single-line text positioned using its shaped visual bounds."""
 
     kind: Literal["text"] = "text"
-    content: Annotated[str, Field(min_length=1, pattern=r"^[^\r\n\x00]+$")] | TextTemplate
+    content: Line | TextTemplate | TextFrames
     fill: Paint = "#000000"
     font_family: Annotated[str, Field(min_length=1)] = "sans-serif"
     font_size: Length = 32.0
     font_weight: Annotated[int, Field(ge=100, le=900)] = 400
     anchor: Literal["bounds", "baseline"] = "bounds"
+    letter_spacing: FiniteFloat = 0.0
 
     @model_validator(mode="after")
     def check_template_anchor(self) -> Self:
         """Use explicit baseline coordinates for text whose visual bounds change."""
-        if isinstance(self.content, TextTemplate) and (
+        if not isinstance(self.content, str) and (
             self.anchor != "baseline"
             or isinstance(self.position.x, str)
             or isinstance(self.position.y, str)

@@ -11,7 +11,7 @@ interleaved with a sibling's children. There is no separate `z_index`.
 `Composition.size=(width, height)` defines a local canvas. Omit it to inherit the
 parent's size; the root inherits `Video.resolution`. It neither resizes child
 geometry nor clips overflow. Use `scale` to resize a whole group. The final video
-canvas clips content outside the output bounds.
+canvas clips content outside the output bounds. Use [Mask](filters.md) for a local clip.
 
 `Position` places the top-left of the item's untransformed layout bounds:
 
@@ -60,7 +60,12 @@ looping. Content wholly outside the parent interval is skipped during compilatio
 
 `Tween(from_value=..., to_value=..., duration=..., easing="linear")` can replace
 numeric `Position.x/y`, `opacity`, `rotation` or `scale`. It holds the final value
-after its duration. Supported easing: `linear`, `ease_in`, `ease_out`, `ease_in_out`.
+after its duration. `start_at=0` delays the tween on the item's local clock,
+holding its initial value before then. Easing accepts `linear`, `ease_in`,
+`ease_out`, `ease_in_out`, `CubicBezier(x1=..., y1=..., x2=..., y2=...)` or
+`Spring(mass=1, stiffness=180, damping=20)`. Spring duration caps its native settling
+time; underdamped springs can overshoot, including beyond their endpoints.
+Opacity and scale validation includes this overshoot.
 Geometry, dimensions and audio controls do not accept tweens. For animated paint
 and frame counters, see [ColorTween and TextTemplate](graphics.md).
 

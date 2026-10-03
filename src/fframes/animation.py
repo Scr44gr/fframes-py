@@ -14,7 +14,16 @@ from fframes.models import ColorKeyframes, Index, Keyframes, Model, PositiveInt
 def compile_animation(keyframes: Keyframes) -> Animation:
     """Prepare the upstream keyframe animation once for scalar or batch sampling."""
     return _native.compile_animation(
-        [(k.start, k.end, k.from_value, k.to_value, k.easing) for k in keyframes]
+        [
+            (
+                k.start,
+                k.end,
+                k.from_value,
+                k.to_value,
+                k.easing if isinstance(k.easing, str) else k.easing.model_dump_json(),
+            )
+            for k in keyframes
+        ]
     )
 
 
@@ -22,7 +31,16 @@ def compile_animation(keyframes: Keyframes) -> Animation:
 def compile_color_animation(keyframes: ColorKeyframes) -> ColorAnimation:
     """Compile RGBA keyframes for native sampling as eight-digit hex colors."""
     return _native.compile_color_animation(
-        [(k.start, k.end, k.from_value, k.to_value, k.easing) for k in keyframes]
+        [
+            (
+                k.start,
+                k.end,
+                k.from_value,
+                k.to_value,
+                k.easing if isinstance(k.easing, str) else k.easing.model_dump_json(),
+            )
+            for k in keyframes
+        ]
     )
 
 

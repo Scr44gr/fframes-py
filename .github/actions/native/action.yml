@@ -7,7 +7,7 @@ runs:
       shell: bash
       run: |
         sudo apt-get update
-        sudo apt-get install -y clang libclang-dev nasm pkg-config
+        sudo apt-get install -y clang libclang-dev libfontconfig1-dev nasm pkg-config
     - if: runner.os == 'macOS'
       shell: bash
       run: |

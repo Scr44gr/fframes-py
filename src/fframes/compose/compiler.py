@@ -11,13 +11,14 @@ from fframes.compose.components import (
     Composition,
     Item,
     Rectangle,
+    ShaderLayer,
     Size,
     Text,
     VectorPath,
     Visual,
 )
 from fframes.compose.media import Audio, Image
-from fframes.models import Model, Source
+from fframes.models import Backend, Model, Source
 
 
 class Group(Visual):
@@ -28,7 +29,8 @@ class Group(Visual):
 
 
 Graphic: TypeAlias = Annotated[
-    Group | Rectangle | Circle | Text | VectorPath | Image, Field(discriminator="kind")
+    Group | Rectangle | Circle | Text | VectorPath | Image | ShaderLayer,
+    Field(discriminator="kind"),
 ]
 
 
@@ -59,6 +61,7 @@ class Plan(Model):
     sounds: tuple[Sound, ...]
     fonts: tuple[Source, ...]
     load_system_fonts: bool
+    backend: Backend = "cpu"
 
 
 class Compiler:
@@ -115,6 +118,8 @@ class Compiler:
                             rotation=item.rotation,
                             scale=item.scale,
                             origin=item.origin,
+                            mask=item.mask,
+                            filter=item.filter,
                         ),
                     )
                 )
@@ -122,7 +127,7 @@ class Compiler:
                     self.visit(child, index, start, end, size, depth + 1)
             elif isinstance(item, Audio):
                 self.sounds.append(Sound(start=start, end=end, audio=item))
-            elif isinstance(item, (Rectangle, Circle, Text, VectorPath, Image)):
+            elif isinstance(item, (Rectangle, Circle, Text, VectorPath, Image, ShaderLayer)):
                 self.layers.append(Layer(parent=parent, start=start, end=end, graphic=item))
             else:
                 msg = f"unsupported item: {type(item).__name__}; subclass Component"

@@ -10,6 +10,7 @@ Import `Video` and `RenderOptions` from `fframes.compose` for these settings.
 | --- | --- | --- |
 | `composition` | Required | Root composition with an explicit duration. |
 | `resolution` | `(1920, 1080)` | Positive integer width and height in pixels. |
+| `backend` | `"cpu"` | Rasterizer; see backend choices below. |
 | `fps` | `30` | Positive integer frames per second; fractional rates are not accepted. |
 | `fonts` | `()` | Tuple of explicit font file paths. |
 | `load_system_fonts` | `True` | Include fonts installed on the host. |
@@ -18,6 +19,20 @@ Fonts, images and audio take filesystem paths; HTTP(S) source URLs are not suppo
 
 Resolution changes the root canvas, not the dimensions of authored shapes.
 See [layers](layers.md) for local sizing and scaling.
+
+## Backends
+
+| Backend | Platforms | Use |
+| --- | --- | --- |
+| `cpu` | All | Default CPU SVG renderer. |
+| `skia` | All | Skia CPU, including shaders; suitable for tests without a GPU. |
+| `vulkan` | Windows/Linux | Skia GPU; requires a working Vulkan driver. |
+| `metal` | macOS | Skia GPU through Metal. |
+
+Selection is explicit; unsupported backends raise an error. GPU rasterization
+does not imply hardware encoding or zero-copy export. Rendering reuses one native
+renderer per worker; independent `rgba`/PNG previews create temporary contexts.
+Both APIs use these choices. See [shaders](shaders.md) for program bindings.
 
 ## Fonts
 
@@ -74,6 +89,10 @@ Compile again to observe changes. System fonts still depend on host files.
 a `.png` suffix. For repeated previews use `compiled`; the convenience methods on
 `video` compile afresh each time. [Audio samples](audio.md) are also available.
 
+The returned `bytes` own a copy of native output. If using NumPy, prefer a
+read-only buffer view over another copy; keep its owner alive. Request a writable
+copy only when mutation is needed.
+
 ## Encoding
 
 | `RenderOptions` field | Default | Meaning |
@@ -84,8 +103,7 @@ a `.png` suffix. For repeated previews use `compiled`; the convenience methods o
 
 Pass options as `compiled.render(path, options=RenderOptions(concurrency=4))`.
 More workers use more resources; measure before increasing the count. Encoding
-runs in Rust with the GIL released. The raw API's separate `RenderOptions` has
-`encoder` and `concurrency` only.
+runs in Rust with the GIL released. Both APIs share the same `RenderOptions`.
 
 Create the output's parent directory before rendering. Supported suffixes are
 lowercase `.mp4`, `.mov`, `.mkv`, `.avi` and `.webm`; codec/container compatibility

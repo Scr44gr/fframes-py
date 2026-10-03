@@ -12,7 +12,7 @@ The checked-in manifests and lockfiles define the dependency versions.
 
 ### Windows
 
-Install Visual Studio Build Tools with **Desktop development with C++**, its
+Install current Visual Studio Build Tools (2022 or newer) with **Desktop development with C++**, its
 Windows SDK, and LLVM. Use 64-bit Python and matching native libraries.
 In the PowerShell session that will build or run the package:
 
@@ -33,7 +33,7 @@ The Windows wheels built here currently depend on these external FFmpeg DLLs.
 
 ```sh
 sudo apt-get update
-sudo apt-get install -y build-essential clang libclang-dev nasm pkg-config
+sudo apt-get install -y build-essential clang libclang-dev libfontconfig1-dev nasm pkg-config
 ```
 
 ### macOS
@@ -85,6 +85,7 @@ Windows still needs the runtime DLL configuration above.
 | --- | --- |
 | `DLL load failed` importing `_native` | Set `FFMPEG_DIR` before starting Python; check its `bin` and architecture. |
 | libclang cannot be found | Point `LIBCLANG_PATH` at the directory containing the libclang library. |
+| Unresolved `__std_*` symbols linking Skia | Update the C++ toolset and use its developer shell; old 2019 STL libraries cannot link current Skia binaries. |
 | Missing linker or C headers | Install the platform's compiler/SDK listed above. |
 | Rust edits have no effect | Re-run the Maturin command; editable Python imports do not rebuild Rust. |
 

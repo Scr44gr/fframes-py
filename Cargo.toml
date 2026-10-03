@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 rust-version = "1.99"
 publish = false
-description = "Typed Python bindings for fframes animation and CPU rendering"
+description = "Typed Python bindings for fframes animation and video rendering"
 include = [
     "/rust/**", "/src/**", "/tests/**", "/examples/**", "/scripts/**", "/docs/**",
     "/Cargo.lock", "/pyproject.toml", "/uv.lock", "/rust-toolchain.toml", "/.python-version", "/README.md",
@@ -23,6 +23,12 @@ serde_json = "1.0.151"
 
 [target.'cfg(not(windows))'.dependencies]
 fframes = { version = "=1.2.0", features = ["build-portable"] }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+fframes_skia_renderer = { version = "=1.2.0", features = ["metal"] }
+
+[target.'cfg(not(target_os = "macos"))'.dependencies]
+fframes_skia_renderer = { version = "=1.2.0", features = ["vulkan"] }
 
 [profile.release]
 lto = "thin"

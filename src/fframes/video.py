@@ -4,18 +4,23 @@ from functools import cached_property
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from pydantic import ConfigDict, validate_call
+from pydantic import ConfigDict, TypeAdapter, validate_call
 
 from fframes import _native
 from fframes._native import SvgVideo
 from fframes.models import Frames, Index, Model, OutputPath, RenderOptions, VideoConfig
+from fframes.shaders import ShaderBinding
+
+_bindings = TypeAdapter(tuple[ShaderBinding, ...])
 
 
 @validate_call(config=ConfigDict(strict=True))
-def compile_video(config: VideoConfig, frames: Frames) -> SvgVideo:
+def compile_video(
+    config: VideoConfig, frames: Frames, *, shaders: tuple[ShaderBinding, ...] = ()
+) -> SvgVideo:
     """Transfer a validated SVG sequence to an immutable native video."""
     return _native.compile_video(
-        config.width, config.height, config.fps, frames, config.load_system_fonts, config.fonts
+        config.model_dump_json(), frames, _bindings.dump_json(shaders).decode()
     )
 
 
@@ -27,7 +32,9 @@ def render(video: SvgVideo, path: OutputPath, options: RenderOptions | None = No
     destination = Path(path)
     # Share the destination filesystem so the final native rename is atomic.
     with TemporaryDirectory(prefix="fframes-py-", dir=destination.absolute().parent) as directory:
-        video.render(destination, Path(directory), options.encoder, options.concurrency)
+        video.render(
+            destination, Path(directory), options.encoder, options.concurrency, options.bitrate
+        )
     return destination
 
 
@@ -36,6 +43,7 @@ class Video(Model):
 
     config: VideoConfig = VideoConfig()
     frames: Frames
+    shaders: tuple[ShaderBinding, ...] = ()
 
     def __len__(self) -> int:
         """Return the number of frames."""
@@ -49,7 +57,7 @@ class Video(Model):
     @cached_property
     def native(self) -> SvgVideo:
         """Return the cached low-level video."""
-        return compile_video(self.config, self.frames)
+        return compile_video(self.config, self.frames, shaders=self.shaders)
 
     @validate_call(config=ConfigDict(strict=True))
     def rgba(self, index: Index = 0) -> bytes:

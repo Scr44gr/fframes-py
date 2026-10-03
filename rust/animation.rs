@@ -2,7 +2,7 @@ use std::fmt::Debug;
 
 use fframes::{
     Color,
-    animation::{Animatable, Easing, KeyFrame, KeyFramesAnimation},
+    animation::{Animatable, KeyFrame, KeyFramesAnimation},
 };
 use pyo3::{exceptions::PyValueError, prelude::*};
 
@@ -129,8 +129,12 @@ fn compile<T: Animatable + Default>(
         return Err(PyValueError::new_err("at least one keyframe is required"));
     }
     let mut previous_end = 0.0;
+    let easings = keyframes
+        .iter()
+        .map(|k| crate::easing::Easing::parse(&k.4).map(|e| e.native()))
+        .collect::<PyResult<Vec<_>>>()?;
     let mut frames = Vec::with_capacity(keyframes.len());
-    for (start, end, from, to, kind) in keyframes {
+    for ((start, end, from, to, _), easing) in keyframes.into_iter().zip(&easings) {
         if !start.is_finite()
             || !end.is_finite()
             || !valid(from, to)
@@ -142,13 +146,6 @@ fn compile<T: Animatable + Default>(
             ));
         }
         previous_end = end;
-        let easing = match kind.as_str() {
-            "linear" => &Easing::Linear,
-            "ease_in" => &Easing::EaseIn,
-            "ease_out" => &Easing::EaseOut,
-            "ease_in_out" => &Easing::EaseInOut,
-            _ => return Err(PyValueError::new_err("unsupported easing")),
-        };
         frames.push(KeyFrame {
             start,
             end: Some(end),

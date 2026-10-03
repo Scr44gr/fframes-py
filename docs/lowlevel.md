@@ -33,8 +33,9 @@ the compiled video; see [font configuration](rendering.md#fonts).
 The sequence is owned in memory; rendering is not a streaming callback interface.
 SVG syntax is parsed when frames render, so compilation alone does not validate
 every SVG document. SVG support follows the native renderer, not a web browser.
-This API skips `<image>` references, including remote URLs. Use compose `Image`
-items for local raster assets.
+Ordinary `<image>` references, including URLs, are skipped. Registered
+`shader:` bindings render through Skia; see [shaders](shaders.md). Use compose
+`Image` items for local raster assets.
 
 | Operation | Result |
 | --- | --- |
@@ -44,8 +45,8 @@ items for local raster assets.
 | `fframes.render(native, path, options=None)` | Encode silent video; return the destination `Path`. |
 
 Prefer `fframes.render` over calling `native.render` directly: it manages the
-temporary directory. [Encoding constraints](rendering.md#encoding) apply, but
-raw render options expose no bitrate or audio settings.
+temporary directory. [Encoding constraints](rendering.md#encoding) apply. Both APIs share
+`RenderOptions`; the raw SVG video remains silent.
 
 ## Scalar animation
 
@@ -62,7 +63,7 @@ values = animation.sample_many((0, 45, 75, 105, 150), 30)
 
 Keyframes use nonnegative seconds with `end > start`, finite values, ordered
 non-overlapping intervals. Easing accepts `linear`, `ease_in`, `ease_out` and
-`ease_in_out`. Sampling uses a nonnegative frame index and a positive integer fps.
+`ease_in_out`, `Spring(...)` or `CubicBezier(x1=..., y1=..., x2=..., y2=...)`. Sampling uses a nonnegative frame index and a positive integer fps.
 Values hold before the first interval, in gaps and after the last interval.
 Upstream keyframe timestamps use float32, so very large, closely spaced times may
 be rejected when they collapse to the same native timestamp.

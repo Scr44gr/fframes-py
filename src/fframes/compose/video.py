@@ -11,14 +11,8 @@ from pydantic import ConfigDict, model_validator, validate_call
 from fframes import _native
 from fframes.compose.compiler import Compiler, Plan
 from fframes.compose.components import Composition
-from fframes.models import Index, Model, OutputPath, PositiveInt, Source
-from fframes.models import RenderOptions as BaseRenderOptions
-
-
-class RenderOptions(BaseRenderOptions):
-    """Native encoder settings; audio is mixed and encoded at 48 kHz."""
-
-    bitrate: PositiveInt = 8_000_000
+from fframes.models import Backend, Index, Model, OutputPath, PositiveInt, Source
+from fframes.models import RenderOptions as RenderOptions
 
 
 @dataclass(frozen=True)
@@ -77,6 +71,7 @@ class Video(Model):
     fps: PositiveInt = 30
     fonts: tuple[Source, ...] = ()
     load_system_fonts: bool = True
+    backend: Backend = "cpu"
 
     @model_validator(mode="after")
     def check_duration(self) -> Self:
@@ -112,6 +107,7 @@ class Video(Model):
             sounds=tuple(compiler.sounds),
             fonts=self.fonts,
             load_system_fonts=self.load_system_fonts,
+            backend=self.backend,
         )
         return CompiledVideo(_native.compile_scene(plan.model_dump_json()))
 

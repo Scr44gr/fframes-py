@@ -1,6 +1,7 @@
 //! The Python authoring layer's private native plan, separate from SVG bindings.
 
 mod audio;
+mod filters;
 mod graphics;
 mod input;
 mod text;
@@ -8,8 +9,7 @@ mod text;
 use std::path::PathBuf;
 
 use fframes::{
-    AudioMixer, AudioTimelineSamples, Color, CpuFrameRenderer, FrameRenderer,
-    ResolvedRenderingTimeline,
+    AudioMixer, AudioTimelineSamples, Color, ResolvedRenderingTimeline,
     usvgr::{
         self,
         svgtree::{AId, EId, NestedNodeData, svgrtypes::Transform},
@@ -22,9 +22,10 @@ use pyo3::{
 };
 
 use crate::render::{Resources, render_error};
+use crate::values::Value;
 use audio::{SAMPLE_RATE, Soundtrack};
 use graphics::{Asset, attribute, document, element};
-use input::{Plan, Value};
+use input::Plan;
 
 struct Layer {
     first: usize,
@@ -36,6 +37,8 @@ struct Layer {
     rotation: Value,
     scale: Value,
     origin: [f64; 2],
+    mask: Option<NestedNodeData<'static>>,
+    filter: Option<NestedNodeData<'static>>,
     asset: Asset,
     children: Vec<usize>,
     depth: usize,
@@ -44,6 +47,7 @@ struct Layer {
 /// Compiled graphics and audio owned entirely by Rust.
 #[pyclass(frozen, module = "fframes._native")]
 pub(crate) struct SceneVideo {
+    backend: crate::backend::Backend,
     width: u32,
     height: u32,
     fps: usize,
@@ -103,10 +107,23 @@ impl SceneVideo {
                 ([f64::from(width), f64::from(height)], 0)
             };
             let graphic = layer.graphic;
+            if matches!(graphic.shape, input::Shape::Shader { .. })
+                && plan.backend == crate::backend::Backend::Cpu
+            {
+                return Err(PyValueError::new_err("shaders require a Skia backend"));
+            }
             graphic.opacity.check(0., 1.)?;
             graphic.rotation.check(-1e7, 1e7)?;
             graphic.scale.check(f64::MIN_POSITIVE, 1e4)?;
             let asset = graphics::prepare(graphic.shape, &fonts, &mut images)?;
+            let mask = graphic
+                .mask
+                .map(|mask| graphics::mask(mask, index, asset.offset))
+                .transpose()?;
+            let filter = graphic
+                .filter
+                .map(|filter| filters::compile(filter, index))
+                .transpose()?;
             let origin = graphic.origin.unwrap_or_else(|| asset.size.map(|v| v / 2.));
             if origin.iter().any(|v| !v.is_finite() || v.abs() > 1e7) {
                 return Err(PyValueError::new_err("invalid transform origin"));
@@ -130,6 +147,8 @@ impl SceneVideo {
                 rotation: graphic.rotation.compile(),
                 scale: graphic.scale.compile(),
                 origin,
+                mask,
+                filter,
                 asset,
                 children: Vec::new(),
                 depth,
@@ -137,6 +156,7 @@ impl SceneVideo {
         }
         let Soundtrack { media, map } = audio::prepare(plan.sounds, duration)?;
         Ok(Self {
+            backend: plan.backend,
             width,
             height,
             fps: plan.fps,
@@ -176,8 +196,8 @@ impl SceneVideo {
             e: layer.x.value(time) + cx + a * (ox - cx) + c * (oy - cy),
             f: layer.y.value(time) + cy + b * (ox - cx) + d * (oy - cy),
         };
-        let children = if layer.asset.node.is_some() {
-            vec![layer.asset.node_at(time, frame - layer.first)]
+        let mut children = if layer.asset.node.is_some() {
+            vec![layer.asset.node_at(time, frame - layer.first, self.fps)]
         } else {
             layer
                 .children
@@ -185,14 +205,19 @@ impl SceneVideo {
                 .map(|index| self.node(*index, frame))
                 .collect()
         };
-        Some(element(
-            EId::G,
-            vec![
-                attribute(AId::Transform, transform),
-                attribute(AId::Opacity, opacity),
-            ],
-            children,
-        ))
+        let mut attributes = vec![
+            attribute(AId::Transform, transform),
+            attribute(AId::Opacity, opacity),
+        ];
+        if let Some(mask) = &layer.mask {
+            children.push(Some(graphics::borrow_node(mask)));
+            attributes.push(attribute(AId::ClipPath, format!("url(#clip-{index})")));
+        }
+        if let Some(filter) = &layer.filter {
+            children.push(Some(graphics::borrow_node(filter)));
+            attributes.push(attribute(AId::Filter, format!("url(#filter-{index})")));
+        }
+        Some(element(EId::G, attributes, children))
     }
 
     fn tree(&self, index: usize, cache: &mut usvgr::Cache) -> PyResult<usvgr::Tree> {
@@ -218,13 +243,15 @@ impl SceneVideo {
 
     fn rasterize(&self, index: usize) -> PyResult<fframes::RgbaFrame> {
         let tree = self.tree(index, &mut usvgr::Cache::default())?;
-        CpuFrameRenderer::default()
+        crate::backend::Device::new(self.backend, self.width, self.height)?
+            .frame()
             .render_tree(&tree, Color::TRANSPARENT, self.width, self.height)
             .map_err(render_error)
     }
 
     fn resources(&self) -> Resources<'_> {
         Resources {
+            backend: self.backend,
             width: self.width,
             height: self.height,
             fps: self.fps,
@@ -281,9 +308,6 @@ impl SceneVideo {
         concurrency: usize,
         bitrate: i64,
     ) -> PyResult<()> {
-        if bitrate <= 0 || bitrate > i64::from(i32::MAX) {
-            return Err(PyValueError::new_err("invalid bitrate"));
-        }
         py.detach(|| {
             self.resources().render(
                 |index, cache| self.tree(index, cache),
@@ -310,6 +334,7 @@ pub(crate) fn compile_scene(py: Python<'_>, plan: String) -> PyResult<SceneVideo
 #[cfg(test)]
 mod tests {
     use super::*;
+    use fframes::{CpuFrameRenderer, FrameRenderer};
 
     fn plan() -> Result<Plan, serde_json::Error> {
         serde_json::from_str(include_str!("../../tests/assets/scene.json"))

@@ -1,6 +1,5 @@
 use std::{borrow::Cow, collections::HashMap, path::PathBuf, sync::Arc};
 
-use fframes::animation::Animatable;
 use fframes::usvgr::{
     self,
     svgtree::{
@@ -10,10 +9,11 @@ use fframes::usvgr::{
 };
 use pyo3::{PyResult, exceptions::PyValueError};
 
-use super::input::{Paint, Scalar, Segment, Shape, Stroke, TextAnchor, TextContent, Value};
+use super::input::{Segment, Shape, Stroke, TextAnchor, TextContent};
 use super::text::Template;
 use crate::color::parse as parse_color;
 use crate::render::{media_error, render_error};
+use crate::values::{ColorValue, Paint};
 
 pub(super) struct Asset {
     pub node: Option<NestedNodeData<'static>>,
@@ -21,29 +21,35 @@ pub(super) struct Asset {
     pub offset: [f64; 2],
     colors: Vec<AnimatedPaint>,
     template: Option<Template>,
+    text_frames: Vec<String>,
+    shader: Option<crate::shader::Program>,
 }
 
 struct AnimatedPaint {
     index: usize,
-    from: fframes::Color,
-    to: fframes::Color,
-    progress: Value,
+    value: ColorValue,
 }
 
 impl Asset {
-    pub fn node_at(&self, time: f64, frame: usize) -> Option<NestedNodeData<'_>> {
+    pub fn node_at(&self, time: f64, frame: usize, fps: usize) -> Option<NestedNodeData<'_>> {
         let mut node = borrow_node(self.node.as_ref()?);
+        if let Some(shader) = &self.shader {
+            node.attrs[0].value = shader.draw(frame, fps).into();
+        }
         for color in &self.colors {
-            node.attrs[color.index].value = color
-                .from
-                .apply_progress(&color.to, color.progress.value(time) as f32)
-                .into();
+            node.attrs[color.index].value = color.value.value(time).into();
         }
         if let Some(template) = &self.template
             && let Some(Some(text)) = node.children.first_mut()
         {
             text.kind =
                 NestedNodeKind::Text(StringStorage::new_owned(template.render(frame, time)));
+        }
+        if !self.text_frames.is_empty()
+            && let Some(Some(text)) = node.children.first_mut()
+        {
+            let content = &self.text_frames[frame.min(self.text_frames.len() - 1)];
+            text.kind = NestedNodeKind::Text(StringStorage::Borrowed(content));
         }
         Some(node)
     }
@@ -106,26 +112,12 @@ fn color(
 ) -> PyResult<()> {
     let value = match value {
         Some(Paint::Constant(value)) => parse_color(&value)?.into(),
-        Some(Paint::Tween {
-            from_value,
-            to_value,
-            duration,
-            easing,
-        }) => {
-            let from = parse_color(&from_value)?;
-            let to = parse_color(&to_value)?;
-            let progress = Scalar::Tween {
-                from_value: 0.,
-                to_value: 1.,
-                duration,
-                easing,
-            };
-            progress.check(0., 1.)?;
+        Some(paint @ Paint::Tween { .. }) => {
+            let value = ColorValue::compile(paint)?;
+            let from = value.value(0.);
             animations.push(AnimatedPaint {
                 index: attrs.len(),
-                from,
-                to,
-                progress: progress.compile(),
+                value,
             });
             from.into()
         }
@@ -142,6 +134,45 @@ fn length(value: f64) -> PyResult<()> {
     Ok(())
 }
 
+pub(super) fn mask(
+    mask: super::input::Mask,
+    index: usize,
+    offset: [f64; 2],
+) -> PyResult<NestedNodeData<'static>> {
+    for length_value in mask.size {
+        length(length_value)?;
+    }
+    if !mask.radius.is_finite()
+        || mask.radius < 0.
+        || mask.radius > 1e7
+        || mask
+            .position
+            .iter()
+            .any(|v| !v.is_finite() || v.abs() > 1e7)
+    {
+        return Err(PyValueError::new_err("invalid clipping mask"));
+    }
+    Ok(element(
+        EId::Defs,
+        vec![],
+        vec![Some(element(
+            EId::ClipPath,
+            vec![attribute(AId::Id, format!("clip-{index}"))],
+            vec![Some(element(
+                EId::Rect,
+                vec![
+                    attribute(AId::Width, mask.size[0]),
+                    attribute(AId::Height, mask.size[1]),
+                    attribute(AId::Rx, mask.radius),
+                    attribute(AId::X, mask.position[0] - offset[0]),
+                    attribute(AId::Y, mask.position[1] - offset[1]),
+                ],
+                vec![],
+            ))],
+        ))],
+    ))
+}
+
 pub(super) fn prepare(
     shape: Shape,
     fonts: &usvgr::fontdb::Database,
@@ -150,7 +181,28 @@ pub(super) fn prepare(
     let mut offset = [0., 0.];
     let mut colors = Vec::new();
     let mut template = None;
+    let mut text_frames = Vec::new();
+    let mut shader = None;
     let (mut node, size) = match shape {
+        Shape::Shader {
+            shader: input,
+            size,
+        } => {
+            shader = Some(crate::shader::Program::compile(input)?);
+            (
+                Some(element(
+                    EId::Image,
+                    vec![
+                        attribute(AId::Href, ""),
+                        attribute(AId::Width, size[0]),
+                        attribute(AId::Height, size[1]),
+                        attribute(AId::PreserveAspectRatio, "none"),
+                    ],
+                    vec![],
+                )),
+                size,
+            )
+        }
         Shape::Group { size } => (None, size),
         Shape::Rectangle {
             size,
@@ -227,25 +279,45 @@ pub(super) fn prepare(
             font_size,
             font_weight,
             anchor,
+            letter_spacing,
         } => {
             length(font_size)?;
+            if !letter_spacing.is_finite() {
+                return Err(PyValueError::new_err("letter spacing must be finite"));
+            }
             if fonts.is_empty() {
                 return Err(PyValueError::new_err(
                     "text requires a font; supply fonts or enable system fonts",
                 ));
             }
+            if !matches!(&content, TextContent::Constant(_))
+                && !matches!(anchor, TextAnchor::Baseline)
+            {
+                return Err(PyValueError::new_err(
+                    "dynamic text requires baseline anchoring",
+                ));
+            }
             let content = match content {
                 TextContent::Constant(content) => content,
                 TextContent::Template { template: source } => {
-                    if !matches!(anchor, TextAnchor::Baseline) {
-                        return Err(PyValueError::new_err(
-                            "text templates require baseline anchoring",
-                        ));
-                    }
                     let compiled = Template::compile(&source)?;
                     let content = compiled.render(0, 0.);
                     template = Some(compiled);
                     content
+                }
+                TextContent::Frames { frames } => {
+                    if frames.is_empty()
+                        || frames
+                            .iter()
+                            .any(|line| line.is_empty() || line.contains(['\0', '\r', '\n']))
+                    {
+                        return Err(PyValueError::new_err(
+                            "text frames require nonempty single lines",
+                        ));
+                    }
+                    let first = frames[0].clone();
+                    text_frames = frames;
+                    first
                 }
             };
             let text = NestedNodeData {
@@ -258,6 +330,7 @@ pub(super) fn prepare(
                 attribute(AId::FontFamily, font_family),
                 attribute(AId::FontSize, font_size),
                 attribute(AId::FontWeight, font_weight.to_string()),
+                attribute(AId::LetterSpacing, letter_spacing),
             ];
             color(&mut attrs, AId::Fill, Some(fill), &mut colors)?;
             let node = element(EId::Text, attrs, vec![Some(text)]);
@@ -304,10 +377,9 @@ pub(super) fn prepare(
     };
     length(size[0])?;
     length(size[1])?;
-    if let Some(node) = node
-        .as_mut()
-        .filter(|_| colors.is_empty() && template.is_none())
-    {
+    if let Some(node) = node.as_mut().filter(|_| {
+        colors.is_empty() && template.is_none() && text_frames.is_empty() && shader.is_none()
+    }) {
         // Include the element tag, which compute_runtime_hash expects in its seed.
         node.static_hash = Some(node.compute_runtime_hash(match node.kind {
             NestedNodeKind::Element { tag_name } => tag_name as u64,
@@ -320,6 +392,8 @@ pub(super) fn prepare(
         offset,
         colors,
         template,
+        text_frames,
+        shader,
     })
 }
 

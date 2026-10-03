@@ -11,8 +11,8 @@ Prepare the host before running uv:
 
 | Host | Native requirements |
 | --- | --- |
-| Windows | Visual Studio C++ Build Tools/SDK and LLVM; source `. ./scripts/setup-native.ps1` in the PowerShell session used to build/run. |
-| Debian/Ubuntu | `build-essential clang libclang-dev nasm pkg-config`. |
+| Windows | Current Visual Studio C++ Build Tools (2022+) and SDK and LLVM; source `. ./scripts/setup-native.ps1` in the PowerShell session used to build/run. |
+| Debian/Ubuntu | `build-essential clang libclang-dev libfontconfig1-dev nasm pkg-config`. |
 | macOS | Xcode command-line tools, Homebrew `llvm nasm pkg-config`; set `LIBCLANG_PATH` to `$(brew --prefix llvm)/lib`. |
 
 On Windows the setup script downloads FFmpeg 9 shared LGPL libraries and sets

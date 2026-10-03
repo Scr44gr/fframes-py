@@ -9,10 +9,9 @@ use std::{
 };
 
 use fframes::{
-    AudioTimelineSamples, Color, EncoderFrameRenderer, EncoderInput, EncoderOptions,
-    FFramesContext, FFramesMode, FrameScheduler, MediaProvider, RenderOptions,
-    ResolvedRenderingTimeline, SegmentWriter, TimeBase, VideoSize,
-    cpu::CpuEncoderFrameRenderer,
+    AudioTimelineSamples, Color, EncoderInput, EncoderOptions, FFramesContext, FFramesMode,
+    FrameScheduler, MediaProvider, RenderOptions, ResolvedRenderingTimeline, SegmentWriter,
+    TimeBase, VideoSize,
     fframes_logger::{FFramesLogger, SilentLogger},
     usvgr,
 };
@@ -22,6 +21,7 @@ use pyo3::{
 };
 
 pub(crate) struct Resources<'a> {
+    pub backend: crate::backend::Backend,
     pub width: u32,
     pub height: u32,
     pub fps: usize,
@@ -59,6 +59,9 @@ impl<'a> Resources<'a> {
         concurrency: usize,
         bitrate: i64,
     ) -> PyResult<()> {
+        if bitrate <= 0 || bitrate > i64::from(i32::MAX) {
+            return Err(PyValueError::new_err("invalid bitrate"));
+        }
         if concurrency == 0 || encoder.is_empty() || encoder.contains('\0') {
             return Err(PyValueError::new_err("invalid encoder or concurrency"));
         }
@@ -118,22 +121,19 @@ impl<'a> Resources<'a> {
         )
         .with_encoder_input(input);
         let failed = AtomicBool::new(false);
+        let device = crate::backend::Device::new(self.backend, self.width, self.height)?;
         // Adapt the upstream scheduler to typed trees. Its Video trait only accepts
         // SVG strings unless a global feature changes the semantics of the raw API.
         std::thread::scope(|scope| -> PyResult<()> {
             let workers: Vec<_> = (0..scheduler.workers())
                 .map(|worker| {
-                    let (tree, writer, scheduler, failed) = (&tree, &writer, &scheduler, &failed);
+                    let (tree, writer, scheduler, failed, device) =
+                        (&tree, &writer, &scheduler, &failed, &device);
                     scope.spawn(move || -> PyResult<()> {
                         let result = (|| {
                             let mut cache = usvgr::Cache::default();
-                            let mut renderer = CpuEncoderFrameRenderer::new(
-                                20,
-                                writer.encoder_input(),
-                                self.width,
-                                self.height,
-                            )
-                            .map_err(render_error)?;
+                            let mut renderer =
+                                device.encoder(writer.encoder_input(), self.width, self.height)?;
                             while let Some(claim) = scheduler.claim(worker) {
                                 if failed.load(Ordering::Relaxed) {
                                     break;

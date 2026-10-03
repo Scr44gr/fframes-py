@@ -14,8 +14,9 @@ Keep it separate from compose; neither API's native video is an item in the othe
    after compilation. Enable system fonts only when host-dependent faces are intended.
 3. Call `native = fframes.compile_video(config, frames)` once. It owns the
    sequence; malformed SVG can still fail later when rasterized.
-   This API skips `<image>` references, including URLs; use compose `Image` for
-   local raster assets.
+   Ordinary `<image>` references, including URLs, are skipped; registered
+   `shader:` references use the [shader bindings](shaders.md). Use compose
+   `Image` for local raster assets.
 4. Preview with `native.rgba(index)` or `native.save_png(index, Path(...))`.
    Unlike compose, native `save_png` takes the index first and returns `None`.
 5. Encode with `fframes.render(native, path, fframes.RenderOptions(concurrency=...))`.
@@ -25,7 +26,7 @@ The result is silent; no Python callback runs during rendering. All SVG strings
 are held in memory. `len(native) / config.fps` gives duration. Do not call
 `native.render` directly unless deliberately managing its extra temporary-directory
 argument. Even dimensions and codec/container rules from the media reference apply.
-The raw `RenderOptions` has `encoder` and `concurrency`, with no bitrate field.
+`RenderOptions` is shared with compose, including its bitrate setting.
 
 ## Scalar keyframes
 
@@ -33,7 +34,8 @@ Pass an ordered, nonempty tuple of
 `fframes.Keyframe(start=..., end=..., from_value=..., to_value=..., easing="linear")`
 to `fframes.compile_animation(...)`. Times are seconds, nonnegative,
 non-overlapping and `end > start`; values are finite. Available easing curves are
-`linear`, `ease_in`, `ease_out`, `ease_in_out`.
+`linear`, `ease_in`, `ease_out`, `ease_in_out`, `Spring(...)` and
+`CubicBezier(x1=..., y1=..., x2=..., y2=...)`.
 
 Prefer `animation.sample_many(indices, fps)` for batches; use
 `animation.sample(index, fps)` for one frame. Both native methods take fps

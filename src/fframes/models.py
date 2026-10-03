@@ -14,7 +14,8 @@ FiniteFloat: TypeAlias = Annotated[float, Field(allow_inf_nan=False)]
 Seconds: TypeAlias = Annotated[float, Field(ge=0, le=3.4028234e38, allow_inf_nan=False)]
 Svg: TypeAlias = Annotated[str, Field(min_length=1)]
 Frames: TypeAlias = Annotated[tuple[Svg, ...], Field(min_length=1)]
-Easing: TypeAlias = Literal["linear", "ease_in", "ease_out", "ease_in_out"]
+BasicEasing: TypeAlias = Literal["linear", "ease_in", "ease_out", "ease_in_out"]
+Backend: TypeAlias = Literal["cpu", "skia", "vulkan", "metal"]
 Color: TypeAlias = Annotated[str, Field(pattern=r"^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$")]
 
 
@@ -22,6 +23,38 @@ class Model(BaseModel):
     """Validate once and prevent mutation during native work."""
 
     model_config = ConfigDict(frozen=True, extra="forbid", strict=True, validate_default=True)
+
+
+class Spring(Model):
+    """Upstream spring physics; duration caps its natural settling time."""
+
+    kind: Literal["spring"] = "spring"
+    mass: Annotated[float, Field(gt=0, le=1e4, allow_inf_nan=False)] = 1.0
+    stiffness: Annotated[float, Field(gt=0, le=1e4, allow_inf_nan=False)] = 180.0
+    damping: Annotated[float, Field(gt=0, le=1e4, allow_inf_nan=False)] = 20.0
+
+    @model_validator(mode="after")
+    def check_settling(self) -> Self:
+        """Avoid pathological upstream settling-time loops and float32 overflow."""
+        if not 1e-3 <= self.damping / self.mass <= 1e6 or not (
+            1e-3 <= self.stiffness / self.mass <= 1e6
+        ):
+            msg = "spring damping/mass and stiffness/mass must be between 0.001 and 1000000"
+            raise ValueError(msg)
+        return self
+
+
+class CubicBezier(Model):
+    """A custom upstream easing curve with control points in the unit square."""
+
+    kind: Literal["cubic_bezier"] = "cubic_bezier"
+    x1: Annotated[float, Field(ge=0, le=1, allow_inf_nan=False)]
+    y1: Annotated[float, Field(ge=0, le=1, allow_inf_nan=False)]
+    x2: Annotated[float, Field(ge=0, le=1, allow_inf_nan=False)]
+    y2: Annotated[float, Field(ge=0, le=1, allow_inf_nan=False)]
+
+
+Easing: TypeAlias = BasicEasing | Spring | CubicBezier
 
 
 def _source(value: str | Path) -> str | Path:
@@ -42,6 +75,7 @@ class VideoConfig(Model):
     fps: PositiveInt = 30
     load_system_fonts: bool = False
     fonts: tuple[Source, ...] = ()
+    backend: Backend = "cpu"
 
 
 class RenderOptions(Model):
@@ -49,6 +83,7 @@ class RenderOptions(Model):
 
     encoder: Annotated[str, Field(pattern=r"^[a-zA-Z0-9_]+$")] = "mpeg4"
     concurrency: PositiveInt = Field(default_factory=lambda: cpu_count() or 1)
+    bitrate: PositiveInt = 8_000_000
 
 
 class Interval(Model):

@@ -156,9 +156,12 @@ def test_odd_dimensions_can_rasterize_but_not_encode(tmp_path: Path) -> None:
 
 def test_native_boundary_rejects_invalid_inputs(tmp_path: Path) -> None:
     with pytest.raises(ValueError, match="dimensions"):
-        _native.compile_video(0, 1, 30, [SVG], False)
+        _native.compile_video(
+            VideoConfig(width=1, height=1).model_dump_json().replace('"width":1', '"width":0'),
+            [SVG],
+        )
     with pytest.raises(ValueError, match="dimensions"):
-        _native.compile_video(1, 1, 30, [], False)
+        _native.compile_video(VideoConfig(width=1, height=1).model_dump_json(), [])
     native = fframes.compile_video(VideoConfig(width=16, height=12), (SVG,))
     with pytest.raises(ValueError, match="concurrency"):
         native.render(tmp_path / "movie.mp4", tmp_path, "mpeg4", 0)

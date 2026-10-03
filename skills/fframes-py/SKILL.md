@@ -18,6 +18,7 @@ for paired ports and gaps. Fetch pinned assets explicitly with
 | --- | --- |
 | Install, rebuild, or resolve native import failures | [Setup](references/setup.md) |
 | Author components, arrange layers, or animate a scene | [Composition](references/composition.md) |
+| Add shader layers, masks or filters | [Shaders and effects](references/shaders.md) |
 | Configure images, fonts, sound and exported video | [Media and rendering](references/media.md) |
 | Render existing SVG or sample numeric keyframes | [Low level](references/lowlevel.md) |
 | Check correctness, performance, or reported failures | [Verification](references/verification.md) |
@@ -26,7 +27,7 @@ for paired ports and gaps. Fetch pinned assets explicitly with
 
 1. Use `fframes.compose` for object-based scenes. Choose `fframes` when
    inputs are already SVG frames or scalar keyframes. Do not confuse the two
-   `Video` or `RenderOptions` classes.
+   `Video` classes; `RenderOptions` is shared.
 2. Establish duration, resolution, fps and available assets from the task. Choose
    reasonable defaults for unspecified preferences and report material assumptions.
 3. Use frozen, typed Pydantic inputs and tuple collections. Keep Python work in
