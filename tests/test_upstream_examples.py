@@ -8,10 +8,14 @@ from examples.compose import hello_world as compose_hello
 from examples.compose import neon_triangle as compose_neon
 from examples.compose import scenes as compose_scenes
 from examples.compose import shaders as compose_shaders
+from examples.compose import signal_lab as compose_signal
 from examples.native import hello_world as native_hello
 from examples.native import neon_triangle as native_neon
 from examples.native import scenes as native_scenes
 from examples.native import shaders as native_shaders
+from examples.native import signal_lab as native_signal
+from fframes import Font, TextLayout
+from tests.test_composition_audio import write_audio
 
 
 @pytest.fixture
@@ -32,6 +36,10 @@ def example_fonts(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         "half4 main(float2 p) { return half4(uYaw / 10, uRoll / 10, uColor.b, 1); }",
     }
     files = {"dm_sans": font, "jetbrains_mono": font}
+    pulse = write_audio(folder / "pulse.wav", (2000,) * 48000)
+    files["pulse"] = assets.File(
+        path="pulse.wav", sha256=hashlib.sha256(pulse.read_bytes()).hexdigest()
+    )
     for name, shader_source in sources.items():
         payload = shader_source.encode()
         (folder / name).write_bytes(payload)
@@ -44,6 +52,7 @@ def example_fonts(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
             "hello_world": ("dm_sans", "jetbrains_mono"),
             "shaders": ("dm_sans", "aurora", "torus"),
             "neon_triangle": ("dm_sans", "jetbrains_mono", "triangle"),
+            "signal_lab": ("dm_sans", "pulse"),
         },
     )
     monkeypatch.setenv("FFRAMES_EXAMPLE_CACHE", str(tmp_path))
@@ -110,3 +119,43 @@ def test_neon_ports_keep_sixty_fps_and_angular_velocity() -> None:
         assert a[:4] == b[:4] == b"\x00\x00\x00\xff"
         colors.append(a[center])
     assert colors[0] < colors[1] < colors[2]
+
+
+@pytest.mark.usefixtures("example_fonts")
+def test_signal_studies_keep_scene_clocks_progress_and_continuous_audio(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Measure headings with the installed fixture font; production uses DM Sans.
+    def fit_heading(layout: TextLayout, text: str) -> str:
+        return layout.fit(text, Font(family="Tuffy", size=108, weight=500), width=1536)
+
+    monkeypatch.setattr(native_signal, "heading", fit_heading)
+    monkeypatch.setattr(compose_signal, "heading", fit_heading)
+    native, composed = native_signal.build(), compose_signal.build().compile()
+    assert len(native) == len(composed) == 720
+    paper, green, ink = (
+        bytes.fromhex("eeeae2ff"),
+        bytes.fromhex("709542ff"),
+        bytes.fromhex("152c2bff"),
+    )
+    for index, x, y, expected in (
+        (0, 1100, 280, paper),  # release panel starts 56 px below its target
+        (90, 1100, 280, ink),
+        (180, 1050, 750, paper),  # data bars restart on the new local clock
+        (270, 1050, 750, bytes.fromhex("b4bdb1ff")),
+        (360, 220, 500, paper),  # process cards start transparent
+        (450, 220, 500, ink),
+        (540, 220, 760, paper),
+        (630, 220, 760, ink),
+    ):
+        offset = (y * 1920 + x) * 4
+        for video in (native, composed):
+            pixels = video.rgba(index)
+            assert pixels[offset : offset + 4] == expected
+            progress = (946 * 1920 + 300) * 4
+            if index >= 180:
+                assert pixels[progress : progress + 4] == green
+    a, b = native.audio_samples(), composed.audio_samples()
+    assert a == b
+    assert any(a[: 48000 * 8])
+    assert not any(a[48000 * 8 :])

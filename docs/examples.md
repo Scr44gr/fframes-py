@@ -58,6 +58,9 @@ The default cache is `fframes-py/examples` under Windows `%LOCALAPPDATA%`, macOS
 `FFRAMES_EXAMPLE_CACHE` to choose another directory. Assets and rendered output
 do not belong in Git; no submodule initialization is needed.
 
+`signal_lab` uses the same fetch/run commands. Its four six-second studies run
+at 1920×1080, 30 fps, with continuous progress and the pinned `pulse.wav` track.
+
 ## Port status
 
 The wrapper does **not yet have full upstream feature parity**. Pending entries
@@ -70,12 +73,12 @@ not an exhaustive engine API inventory.
 | `hello-world` | Ported: [native](../examples/native/hello_world.py), [compose](../examples/compose/hello_world.py); [native scenes](../examples/native/scenes.py), [compose scenes](../examples/compose/scenes.py). |
 | `shaders` | Ported: [native](../examples/native/shaders.py), [compose](../examples/compose/shaders.py). |
 | `neon-triangle` | Ported: [native](../examples/native/neon_triangle.py), [compose](../examples/compose/neon_triangle.py). |
-| `audio-announce` | Pending: synchronized video clips, spectrum analysis, subtitles, filters. |
+| `audio-announce` | Pending: spectrum analysis, subtitles and filters; video/audio bindings are available. |
 | `tiktok` | Pending: audio spectrum, VTT subtitles, text wrapping, filters. |
 | `podcast` | Pending: audio visualization, subtitles, text layout, image masks. |
-| `teej-podcast` | Pending: synchronized clips and chapter layout; user media required. |
+| `teej-podcast` | Pending: chapter layout; video/audio bindings are available, user media required. |
 | `motion-graphics` | Ported: [native](../examples/native/motion_graphics.py), [compose](../examples/compose/motion_graphics.py), including quote and install variants. |
-| `signal-lab` | Pending: springs/Bézier easing, text fitting, animated geometry, audio. |
+| `signal-lab` | Ported: [native](../examples/native/signal_lab.py), [compose](../examples/compose/signal_lab.py); four studies with the original soundtrack. |
 | `conference-splash-screen` | Pending: speaker/sponsor layouts, text wrapping and masks. |
 | `marketing` | Pending: media, filters and animated graphics. |
 | `beta` | Pending: nested demonstration scenes, paths and embedded media. |
