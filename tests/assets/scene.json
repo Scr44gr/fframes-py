@@ -1,0 +1,29 @@
+{
+  "resolution": [16, 8],
+  "fps": 2,
+  "frames": 3,
+  "fonts": [],
+  "load_system_fonts": false,
+  "sounds": [],
+  "layers": [
+    {
+      "parent": null,
+      "start": 0.0,
+      "end": 1.5,
+      "graphic": {
+        "kind": "rectangle",
+        "size": [4.0, 4.0],
+        "radius": 0.0,
+        "fill": "#FF0000",
+        "stroke": null,
+        "position": {
+          "x": {"from_value": 0.0, "to_value": 8.0, "duration": 1.0, "easing": "linear"},
+          "y": 0.0
+        },
+        "opacity": 1.0,
+        "rotation": 0.0,
+        "scale": 1.0
+      }
+    }
+  ]
+}
