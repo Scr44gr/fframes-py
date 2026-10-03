@@ -5,6 +5,9 @@
 Import these classes from `fframes.compose`. All visuals use the
 [shared placement and transforms](layers.md#drawing-order-and-coordinates).
 Sizes are positive pixel lengths, at most 10,000,000 per dimension.
+Rectangle dimensions also accept `Tween` or `Samples`; layout alignment and the
+default transform origin use their initial dimensions. Set an explicit origin
+and position when an expanding shape must stay centered.
 
 | Class | Required inputs | Additional configuration |
 | --- | --- | --- |
@@ -27,10 +30,36 @@ positions and `anchor="baseline"`. Rust formats the item's local frame index and
 elapsed seconds during rendering. Supported fields are `{frame}` and
 `{seconds:.0f}` through `{seconds:.9f}`; double braces produce literal braces.
 
+With baseline coordinates, `text_anchor="start" | "middle" | "end"` aligns the
+text horizontally; `baseline="central"` centers it vertically on y. Font style
+is `font_style="normal" | "italic" | "oblique"`, subject to available faces.
+
 For finite custom readouts, use `TextFrames(frames=("First", "Second", ...))`.
 It selects one line per local frame and holds the last line. Like templates, it
 requires numeric position and baseline anchoring. Precompute lines once; Rust
 borrows them during rendering.
+Empty frames are valid for reveals and pauses.
+
+## Text layout
+
+`Font` and `TextLayout` are available from both APIs. Load fonts once and perform
+layout during construction:
+
+```python
+from fframes import Font, TextLayout
+
+layout = TextLayout(fonts=("assets/Inter.ttf",))
+font = Font(family="Inter", size=32)
+widths = layout.widths(("Hello", "Hello world"), font)
+title = layout.fit("A longer title", font, 240)
+lines = layout.wrap("Words that wrap into separate lines", font, 240)
+```
+
+These are upstream's integer character-advance metrics, including spaces, not
+shaped ink bounds. They exclude kerning and additional letter spacing. `fit`
+uses an ellipsis by default (`marker=""` clips); `wrap` preserves whole words,
+so a word wider than the requested width remains on its own line. A missing
+font family raises `ValueError`. Position the resulting lines with `Text`.
 
 All visuals support [masks and filter graphs](filters.md).
 

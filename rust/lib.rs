@@ -9,6 +9,7 @@ mod encoder;
 mod fonts;
 mod render;
 mod shader;
+mod text;
 mod values;
 mod video;
 
@@ -20,6 +21,8 @@ fn _native(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_class::<animation::ColorAnimation>()?;
     module.add_class::<video::SvgVideo>()?;
     module.add_class::<compose::SceneVideo>()?;
+    module.add_class::<text::TextLayout>()?;
+    module.add_function(wrap_pyfunction!(text::compile_text_layout, module)?)?;
     module.add_function(wrap_pyfunction!(animation::compile_animation, module)?)?;
     module.add_function(wrap_pyfunction!(
         animation::compile_color_animation,

@@ -13,7 +13,7 @@ use super::input::{Segment, Shape, Stroke, TextAnchor, TextContent};
 use super::text::Template;
 use crate::color::parse as parse_color;
 use crate::render::{media_error, render_error};
-use crate::values::{ColorValue, Paint};
+use crate::values::{ColorValue, Paint, Scalar, Value};
 
 pub(super) struct Asset {
     pub node: Option<NestedNodeData<'static>>,
@@ -23,6 +23,7 @@ pub(super) struct Asset {
     template: Option<Template>,
     text_frames: Vec<String>,
     shader: Option<crate::shader::Program>,
+    numbers: Vec<(usize, Value)>,
 }
 
 struct AnimatedPaint {
@@ -38,6 +39,9 @@ impl Asset {
         }
         for color in &self.colors {
             node.attrs[color.index].value = color.value.value(time).into();
+        }
+        for (index, value) in &self.numbers {
+            node.attrs[*index].value = value.value(time).into();
         }
         if let Some(template) = &self.template
             && let Some(Some(text)) = node.children.first_mut()
@@ -183,6 +187,7 @@ pub(super) fn prepare(
     let mut template = None;
     let mut text_frames = Vec::new();
     let mut shader = None;
+    let mut numbers = Vec::new();
     let (mut node, size) = match shape {
         Shape::Shader {
             shader: input,
@@ -213,13 +218,23 @@ pub(super) fn prepare(
             if !radius.is_finite() || radius < 0. {
                 return Err(PyValueError::new_err("invalid radius"));
             }
+            let mut extent = [0., 0.];
+            for (index, value) in size.into_iter().enumerate() {
+                value.check(f64::MIN_POSITIVE, 1e7)?;
+                let animated = !matches!(value, Scalar::Constant(_));
+                let value = value.compile();
+                extent[index] = value.value(0.);
+                if animated {
+                    numbers.push((index, value));
+                }
+            }
             let mut attrs = vec![
-                attribute(AId::Width, size[0]),
-                attribute(AId::Height, size[1]),
+                attribute(AId::Width, extent[0]),
+                attribute(AId::Height, extent[1]),
                 attribute(AId::Rx, radius),
             ];
             paint(&mut attrs, fill, stroke, &mut colors)?;
-            (Some(element(EId::Rect, attrs, vec![])), size)
+            (Some(element(EId::Rect, attrs, vec![])), extent)
         }
         Shape::Circle {
             radius,
@@ -280,6 +295,9 @@ pub(super) fn prepare(
             font_weight,
             anchor,
             letter_spacing,
+            text_anchor,
+            baseline,
+            font_style,
         } => {
             length(font_size)?;
             if !letter_spacing.is_finite() {
@@ -307,13 +325,9 @@ pub(super) fn prepare(
                 }
                 TextContent::Frames { frames } => {
                     if frames.is_empty()
-                        || frames
-                            .iter()
-                            .any(|line| line.is_empty() || line.contains(['\0', '\r', '\n']))
+                        || frames.iter().any(|line| line.contains(['\0', '\r', '\n']))
                     {
-                        return Err(PyValueError::new_err(
-                            "text frames require nonempty single lines",
-                        ));
+                        return Err(PyValueError::new_err("text frames require single lines"));
                     }
                     let first = frames[0].clone();
                     text_frames = frames;
@@ -331,6 +345,9 @@ pub(super) fn prepare(
                 attribute(AId::FontSize, font_size),
                 attribute(AId::FontWeight, font_weight.to_string()),
                 attribute(AId::LetterSpacing, letter_spacing),
+                attribute(AId::TextAnchor, text_anchor),
+                attribute(AId::DominantBaseline, baseline),
+                attribute(AId::FontStyle, font_style),
             ];
             color(&mut attrs, AId::Fill, Some(fill), &mut colors)?;
             let node = element(EId::Text, attrs, vec![Some(text)]);
@@ -378,7 +395,11 @@ pub(super) fn prepare(
     length(size[0])?;
     length(size[1])?;
     if let Some(node) = node.as_mut().filter(|_| {
-        colors.is_empty() && template.is_none() && text_frames.is_empty() && shader.is_none()
+        colors.is_empty()
+            && template.is_none()
+            && text_frames.is_empty()
+            && shader.is_none()
+            && numbers.is_empty()
     }) {
         // Include the element tag, which compute_runtime_hash expects in its seed.
         node.static_hash = Some(node.compute_runtime_hash(match node.kind {
@@ -394,6 +415,7 @@ pub(super) fn prepare(
         template,
         text_frames,
         shader,
+        numbers,
     })
 }
 

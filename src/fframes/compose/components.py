@@ -110,8 +110,16 @@ class Rectangle(Shape):
     """A rectangle with an optional corner radius."""
 
     kind: Literal["rectangle"] = "rectangle"
-    size: Size
+    size: tuple[Scalar, Scalar]
     radius: Annotated[float, Field(ge=0, le=1e7, allow_inf_nan=False)] = 0.0
+
+    @model_validator(mode="after")
+    def check_size(self) -> Self:
+        """Keep animated extents positive throughout the clip."""
+        if any(not 0 < bound <= 1e7 for value in self.size for bound in endpoints(value)):
+            msg = "rectangle size must stay between 0 (exclusive) and 10000000"
+            raise ValueError(msg)
+        return self
 
 
 class Circle(Shape):
@@ -144,7 +152,9 @@ Line: TypeAlias = Annotated[str, Field(min_length=1, pattern=r"^[^\r\n\x00]+$")]
 class TextFrames(Model):
     """Precomputed lines, one per local frame; hold the last line after the sequence."""
 
-    frames: Annotated[tuple[Line, ...], Field(min_length=1)]
+    frames: Annotated[
+        tuple[Annotated[str, Field(pattern=r"^[^\r\n\x00]*$")], ...], Field(min_length=1)
+    ]
 
 
 class Text(Visual):
@@ -158,6 +168,9 @@ class Text(Visual):
     font_weight: Annotated[int, Field(ge=100, le=900)] = 400
     anchor: Literal["bounds", "baseline"] = "bounds"
     letter_spacing: FiniteFloat = 0.0
+    text_anchor: Literal["start", "middle", "end"] = "start"
+    baseline: Literal["auto", "central", "middle", "hanging", "text-before-edge"] = "auto"
+    font_style: Literal["normal", "italic", "oblique"] = "normal"
 
     @model_validator(mode="after")
     def check_template_anchor(self) -> Self:

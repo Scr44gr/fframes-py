@@ -9,6 +9,10 @@ use serde::Deserialize;
 #[serde(untagged)]
 pub(crate) enum Scalar {
     Constant(f64),
+    Samples {
+        values: Vec<f64>,
+        fps: usize,
+    },
     Tween {
         from_value: f64,
         to_value: f64,
@@ -23,6 +27,15 @@ impl Scalar {
     pub fn check(&self, low: f64, high: f64) -> PyResult<()> {
         let (a, b) = match self {
             Self::Constant(value) => (*value, *value),
+            Self::Samples { values, fps } => {
+                if values.is_empty() || *fps == 0 || *fps > i32::MAX as usize {
+                    return Err(PyValueError::new_err("invalid scalar samples"));
+                }
+                for value in values {
+                    Self::Constant(*value).check(low, high)?;
+                }
+                return Ok(());
+            }
             Self::Tween {
                 from_value,
                 to_value,
@@ -55,6 +68,7 @@ impl Scalar {
     pub fn compile(self) -> Value {
         match self {
             Self::Constant(value) => Value::Constant(value),
+            Self::Samples { values, fps } => Value::Samples { values, fps },
             Self::Tween {
                 from_value,
                 to_value,
@@ -78,6 +92,10 @@ impl Scalar {
 
 pub(crate) enum Value {
     Constant(f64),
+    Samples {
+        values: Vec<f64>,
+        fps: usize,
+    },
     Tween {
         from: f64,
         delta: f64,
@@ -91,6 +109,10 @@ impl Value {
     pub fn value(&self, time: f64) -> f64 {
         match self {
             Self::Constant(value) => *value,
+            Self::Samples { values, fps } => {
+                let index = (time.max(0.) * *fps as f64 + 1e-9).floor() as usize;
+                values[index.min(values.len() - 1)]
+            }
             Self::Tween {
                 from,
                 delta,

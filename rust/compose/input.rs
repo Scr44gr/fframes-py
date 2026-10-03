@@ -105,7 +105,7 @@ pub(super) enum Shape {
         size: [f64; 2],
     },
     Rectangle {
-        size: [f64; 2],
+        size: [Scalar; 2],
         radius: f64,
         fill: Option<Paint>,
         stroke: Option<Stroke>,
@@ -125,6 +125,12 @@ pub(super) enum Shape {
         anchor: TextAnchor,
         #[serde(default)]
         letter_spacing: f64,
+        #[serde(default = "text_anchor")]
+        text_anchor: String,
+        #[serde(default = "baseline")]
+        baseline: String,
+        #[serde(default = "font_style")]
+        font_style: String,
     },
     Path {
         size: [f64; 2],
@@ -136,6 +142,16 @@ pub(super) enum Shape {
         source: PathBuf,
         size: [f64; 2],
     },
+}
+
+fn text_anchor() -> String {
+    "start".into()
+}
+fn baseline() -> String {
+    "auto".into()
+}
+fn font_style() -> String {
+    "normal".into()
 }
 
 #[derive(Deserialize)]

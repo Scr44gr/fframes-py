@@ -13,7 +13,8 @@ from fframes.shaders import (
     ShaderBinding,
     VectorUniform,
 )
-from fframes.values import ColorTween, Tween
+from fframes.text import Font, TextLayout
+from fframes.values import ColorTween, Samples, Tween
 from fframes.video import Video, compile_video, render
 
 __all__ = [
@@ -24,14 +25,17 @@ __all__ = [
     "ColorUniform",
     "CubicBezier",
     "FloatUniform",
+    "Font",
     "ImageUniform",
     "IntUniform",
     "Keyframe",
     "RenderOptions",
+    "Samples",
     "Shader",
     "ShaderBinding",
     "Spring",
     "SvgVideo",
+    "TextLayout",
     "Timeline",
     "Tween",
     "VectorUniform",

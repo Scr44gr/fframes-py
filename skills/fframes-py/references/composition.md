@@ -48,9 +48,15 @@ numeric x/y, opacity, rotation or scale. Other easing values are `ease_in`,
 `ease_out`, `ease_in_out`, `Spring(...)` and `CubicBezier(...)`. `start_at` delays
 the tween locally; endpoints hold. Springs can overshoot; duration caps settling. Opacity stays within 0–1, scale stays
 positive. Fill and stroke accept `ColorTween` with hex endpoints and the same
-duration/easing fields. Geometry does not accept tweens. For discrete changes,
+duration/easing fields. Rectangle dimensions accept tweens. For discrete changes,
 schedule separate items in adjacent clips. Avoid Python loops rebuilding SVG per
 frame when compose can express the scene.
+
+Use `Samples(values=(...), fps=30)` for procedural scalar values prepared once.
+Rust holds each value for `1/fps` local seconds, then holds the last. This works
+for transforms, rectangle extents and shader float uniforms. It transfers owned
+values through JSON, not a shared NumPy view. Animated rectangle layout uses its
+initial size; choose explicit positions and origins when needed.
 
 `Text(anchor="baseline", position=Position(x=..., y=...))` uses SVG baseline
 coordinates instead of ink bounds. A live readout can use
@@ -59,6 +65,12 @@ and numeric positions. Only `{frame}` and `{seconds:.0f}` through `{seconds:.9f}
 are supported; fields use the item's local clock and are formatted in Rust.
 For finite custom readouts, `TextFrames(frames=(...))` selects precomputed lines by
 local frame and holds the last line; it has the same anchoring requirements.
+Empty lines are allowed in `TextFrames`. Text accepts `text_anchor="middle"`
+or `"end"`, `baseline="central"`, and `font_style="italic" | "oblique"`.
+For layout, use `TextLayout(fonts=(...))` and `Font(family=..., size=32)` from
+either API. `widths((...), font)` batches upstream integer advance metrics;
+`fit(text, font, width, marker="…")` truncates, and `wrap(text, font, width)`
+returns lines. Metrics exclude kerning and letter spacing; missing families fail.
 `letter_spacing` adjusts text spacing in pixels. See [effects](shaders.md) for
 shader layers, clipping masks and filter graphs.
 

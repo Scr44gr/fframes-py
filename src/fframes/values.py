@@ -5,7 +5,7 @@ from typing import Annotated, Self, TypeAlias
 
 from pydantic import Field, model_validator
 
-from fframes.models import Color, Easing, FiniteFloat, Model, Spring
+from fframes.models import Color, Easing, FiniteFloat, Model, PositiveInt, Spring
 
 Duration: TypeAlias = Annotated[float, Field(gt=0, le=86400, allow_inf_nan=False)]
 Start: TypeAlias = Annotated[float, Field(ge=0, le=86400, allow_inf_nan=False)]
@@ -39,12 +39,21 @@ class ColorTween(Model):
     start_at: Start = 0.0
 
 
-Scalar: TypeAlias = FiniteFloat | Tween
+class Samples(Model):
+    """Hold precomputed values at a fixed rate on the local clock, then hold the last."""
+
+    values: Annotated[tuple[FiniteFloat, ...], Field(min_length=1)]
+    fps: PositiveInt
+
+
+Scalar: TypeAlias = FiniteFloat | Tween | Samples
 Paint: TypeAlias = Color | ColorTween
 
 
 def endpoints(value: Scalar) -> tuple[float, float]:
     """Bound a scalar's full range, including an underdamped spring's overshoot."""
+    if isinstance(value, Samples):
+        return min(value.values), max(value.values)
     if isinstance(value, Tween):
         a, b = value.from_value, value.to_value
         if isinstance(value.easing, Spring):

@@ -24,6 +24,8 @@ from fframes.compose.filters import Blur, Composite, Filter, Flood, Merge
 from fframes.compose.media import Audio, Image
 from fframes.compose.video import CompiledVideo, RenderOptions, Video
 from fframes.models import CubicBezier, Spring
+from fframes.text import Font, TextLayout
+from fframes.values import Samples
 
 __all__ = [
     "Audio",
@@ -40,6 +42,7 @@ __all__ = [
     "CubicTo",
     "Filter",
     "Flood",
+    "Font",
     "Image",
     "LineTo",
     "Mask",
@@ -48,11 +51,13 @@ __all__ = [
     "Position",
     "Rectangle",
     "RenderOptions",
+    "Samples",
     "ShaderLayer",
     "Spring",
     "Stroke",
     "Text",
     "TextFrames",
+    "TextLayout",
     "TextTemplate",
     "Tween",
     "VectorPath",

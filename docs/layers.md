@@ -66,8 +66,14 @@ holding its initial value before then. Easing accepts `linear`, `ease_in`,
 `Spring(mass=1, stiffness=180, damping=20)`. Spring duration caps its native settling
 time; underdamped springs can overshoot, including beyond their endpoints.
 Opacity and scale validation includes this overshoot.
-Geometry, dimensions and audio controls do not accept tweens. For animated paint
+Rectangle dimensions also accept tweens; other geometry and audio controls do not. For animated paint
 and frame counters, see [ColorTween and TextTemplate](graphics.md).
+
+For procedural motion, `Samples(values=(0.0, 4.0, 2.0), fps=30)` works wherever
+a numeric tween does, including shader float uniforms. Rust selects
+`floor(local_seconds * fps)` and holds the last value. Sampling is discrete,
+with no interpolation. Values are validated and transferred once into owned
+native storage; this JSON-based path copies data and is not a NumPy buffer view.
 
 Visuals are sampled at `index / fps`; frame indices start at zero. A start between
 frames first appears at the next frame, and the end is exclusive. The video frame
