@@ -8,19 +8,38 @@ from pydantic import ConfigDict, TypeAdapter, validate_call
 
 from fframes import _native
 from fframes._native import SvgVideo
+from fframes.audio import AudioTrack
+from fframes.media import ImageBinding, VideoBinding
 from fframes.models import Frames, Index, Model, OutputPath, RenderOptions, VideoConfig
 from fframes.shaders import ShaderBinding
 
 _bindings = TypeAdapter(tuple[ShaderBinding, ...])
 
 
+class MediaBindings(Model):
+    """Transfer explicit local resources together to the native engine."""
+
+    audio: tuple[AudioTrack, ...] = ()
+    images: tuple[ImageBinding, ...] = ()
+    clips: tuple[VideoBinding, ...] = ()
+
+
 @validate_call(config=ConfigDict(strict=True))
 def compile_video(
-    config: VideoConfig, frames: Frames, *, shaders: tuple[ShaderBinding, ...] = ()
+    config: VideoConfig,
+    frames: Frames,
+    *,
+    shaders: tuple[ShaderBinding, ...] = (),
+    audio: tuple[AudioTrack, ...] = (),
+    images: tuple[ImageBinding, ...] = (),
+    clips: tuple[VideoBinding, ...] = (),
 ) -> SvgVideo:
     """Transfer a validated SVG sequence to an immutable native video."""
     return _native.compile_video(
-        config.model_dump_json(), frames, _bindings.dump_json(shaders).decode()
+        config.model_dump_json(),
+        frames,
+        _bindings.dump_json(shaders).decode(),
+        MediaBindings(audio=audio, images=images, clips=clips).model_dump_json(),
     )
 
 
@@ -44,6 +63,9 @@ class Video(Model):
     config: VideoConfig = VideoConfig()
     frames: Frames
     shaders: tuple[ShaderBinding, ...] = ()
+    audio: tuple[AudioTrack, ...] = ()
+    images: tuple[ImageBinding, ...] = ()
+    clips: tuple[VideoBinding, ...] = ()
 
     def __len__(self) -> int:
         """Return the number of frames."""
@@ -57,7 +79,14 @@ class Video(Model):
     @cached_property
     def native(self) -> SvgVideo:
         """Return the cached low-level video."""
-        return compile_video(self.config, self.frames, shaders=self.shaders)
+        return compile_video(
+            self.config,
+            self.frames,
+            shaders=self.shaders,
+            audio=self.audio,
+            images=self.images,
+            clips=self.clips,
+        )
 
     @validate_call(config=ConfigDict(strict=True))
     def rgba(self, index: Index = 0) -> bytes:
@@ -77,3 +106,7 @@ class Video(Model):
     def render(self, path: OutputPath, *, options: RenderOptions | None = None) -> Path:
         """Encode all frames; MPEG-4 is available in the default LGPL build."""
         return render(self.native, path, options)
+
+    def audio_samples(self) -> bytes:
+        """Return owned stereo float32 little-endian PCM at 48 kHz."""
+        return self.native.audio_samples()

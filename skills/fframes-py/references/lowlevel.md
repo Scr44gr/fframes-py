@@ -14,15 +14,20 @@ Keep it separate from compose; neither API's native video is an item in the othe
    after compilation. Enable system fonts only when host-dependent faces are intended.
 3. Call `native = fframes.compile_video(config, frames)` once. It owns the
    sequence; malformed SVG can still fail later when rasterized.
-   Ordinary `<image>` references, including URLs, are skipped; registered
-   `shader:` references use the [shader bindings](shaders.md). Use compose
-   `Image` for local raster assets.
+   Unregistered `<image>` references, including URLs, are skipped. Pass
+   `images=(ImageBinding(name="logo", source=path),)` for `image:logo` references,
+   or `clips=(VideoBinding(name="clip", source=path),)` for `video:clip` references.
+   `shader:` references use the [shader bindings](shaders.md).
 4. Preview with `native.rgba(index)` or `native.save_png(index, Path(...))`.
    Unlike compose, native `save_png` takes the index first and returns `None`.
 5. Encode with `fframes.render(native, path, fframes.RenderOptions(concurrency=...))`.
    This public helper manages temporary files and returns a `Path`.
 
-The result is silent; no Python callback runs during rendering. All SVG strings
+Pass `audio=(AudioTrack(source=path, start_at=1),)` to mix sound. Video/audio
+bindings support `start_at`, optional `duration`, source `offset` and `loop`.
+Video bindings are silent unless accompanied by an audio track; timing and mixing
+match compose. `native.audio_samples()` returns stereo float32 little-endian PCM.
+No Python callback runs during rendering. All SVG strings
 are held in memory. `len(native) / config.fps` gives duration. Do not call
 `native.render` directly unless deliberately managing its extra temporary-directory
 argument. Even dimensions and codec/container rules from the media reference apply.

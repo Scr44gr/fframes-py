@@ -30,6 +30,12 @@ pub(crate) struct Resources<'a> {
     pub timeline: &'a ResolvedRenderingTimeline<'a, AudioTimelineSamples>,
 }
 
+#[derive(Default)]
+pub(crate) struct FrameCache {
+    pub trees: usvgr::Cache,
+    pub decoders: crate::clips::Decoders,
+}
+
 impl<'a> Resources<'a> {
     pub fn context(&self) -> FFramesContext<'a, 'a> {
         FFramesContext {
@@ -52,7 +58,7 @@ impl<'a> Resources<'a> {
 
     pub fn render(
         &self,
-        tree: impl Fn(usize, &mut usvgr::Cache) -> PyResult<usvgr::Tree> + Sync,
+        tree: impl Fn(usize, &mut FrameCache) -> PyResult<usvgr::Tree> + Sync,
         path: PathBuf,
         directory: PathBuf,
         encoder: &str,
@@ -131,7 +137,7 @@ impl<'a> Resources<'a> {
                         (&tree, &writer, &scheduler, &failed, &device);
                     scope.spawn(move || -> PyResult<()> {
                         let result = (|| {
-                            let mut cache = usvgr::Cache::default();
+                            let mut cache = FrameCache::default();
                             let mut renderer =
                                 device.encoder(writer.encoder_input(), self.width, self.height)?;
                             while let Some(claim) = scheduler.claim(worker) {

@@ -1,4 +1,5 @@
-use std::borrow::Cow;
+use serde::Deserialize;
+use std::{borrow::Cow, path::PathBuf};
 
 use fframes::{
     AudioData, AudioMap, AudioTimelineSamples, AudioTimestamp, AudioTrack, DynamicMediaProvider,
@@ -6,10 +7,56 @@ use fframes::{
 };
 use pyo3::{PyResult, exceptions::PyValueError};
 
-use super::input::Sound;
 use crate::render::{media_error, render_error};
 
-pub(super) const SAMPLE_RATE: usize = 48000;
+pub(crate) const SAMPLE_RATE: usize = 48000;
+
+#[derive(Deserialize)]
+pub(crate) struct Sound {
+    pub start: f64,
+    pub end: f64,
+    pub audio: Audio,
+}
+
+#[derive(Deserialize)]
+pub(crate) struct Audio {
+    pub source: PathBuf,
+    pub gain_db: f32,
+    pub pan: f32,
+    pub offset: f64,
+    pub fade_in: f32,
+    pub fade_out: f32,
+    pub r#loop: bool,
+}
+
+#[derive(Deserialize)]
+pub(crate) struct Input {
+    pub start_at: f64,
+    pub duration: Option<f64>,
+    #[serde(flatten)]
+    pub audio: Audio,
+}
+
+impl Input {
+    pub fn sound(self, duration: f64) -> PyResult<Option<Sound>> {
+        if !self.start_at.is_finite()
+            || self.start_at < 0.
+            || self.start_at > 86400.
+            || self
+                .duration
+                .is_some_and(|d| !d.is_finite() || d <= 0. || d > 86400.)
+        {
+            return Err(PyValueError::new_err("invalid audio track interval"));
+        }
+        Ok((self.start_at < duration).then(|| Sound {
+            start: self.start_at,
+            end: self
+                .duration
+                .map_or(duration, |d| (self.start_at + d).min(duration)),
+            audio: self.audio,
+        }))
+    }
+}
 
 struct Track {
     file: String,
@@ -18,12 +65,34 @@ struct Track {
     mix: TrackMix,
 }
 
-pub(super) struct Soundtrack {
+pub(crate) struct Soundtrack {
     pub media: DynamicMediaProvider<'static>,
     pub map: Option<ResolvedAudioMap<AudioTimelineSamples>>,
 }
 
-pub(super) fn prepare(sounds: Vec<Sound>, duration: f64) -> PyResult<Soundtrack> {
+pub(crate) fn samples(
+    media: &DynamicMediaProvider<'_>,
+    map: Option<&ResolvedAudioMap<AudioTimelineSamples>>,
+    frames: usize,
+    fps: usize,
+) -> Vec<u8> {
+    let count = (frames as f64 / fps as f64 * SAMPLE_RATE as f64).round() as usize;
+    let (left, right) = fframes::AudioMixer::new(
+        map,
+        Some(media),
+        SAMPLE_RATE,
+        0..count,
+        count,
+        Default::default(),
+    )
+    .render_all();
+    left.into_iter()
+        .zip(right)
+        .flat_map(|(left, right)| left.to_le_bytes().into_iter().chain(right.to_le_bytes()))
+        .collect()
+}
+
+pub(crate) fn prepare(sounds: Vec<Sound>, duration: f64) -> PyResult<Soundtrack> {
     let mut media = DynamicMediaProvider::default();
     let mut tracks = Vec::with_capacity(sounds.len());
     for sound in sounds {

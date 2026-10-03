@@ -31,5 +31,6 @@ the namespace you intend to use. `fframes._native` and `compose.compiler` are in
 | [Development](development.md) | Rebuild, check and package the bindings. |
 
 Current scope: finite, in-memory scenes rendered with CPU or Skia backends.
-Compose still has no video-file visual clip, HTML/CSS layout or streaming API.
+Both APIs support synchronized video files. HTML/CSS layout and streaming
+authoring are not exposed.
 Upstream fframes capabilities are not automatically exposed by this wrapper.

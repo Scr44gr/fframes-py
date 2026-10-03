@@ -16,6 +16,7 @@ and position when an expanding shape must stay centered.
 | `Text` | `content` | `font_family="sans-serif"`, `font_size=32`, `font_weight=400`. |
 | `ShaderLayer` | `shader`, `size` | [Native shader program](shaders.md). |
 | `Image` | `source`, `size` | Raster file stretched to the given dimensions. |
+| `VideoClip` | `source`, `size` | Synchronized local video; `offset=0`, `loop=False`. |
 | `VectorPath` | `size`, `segments` | Absolute coordinates within its local canvas. |
 
 `Text` accepts one nonempty line, with no newline or NUL. Weight is an integer
@@ -105,3 +106,30 @@ paths are relative to the process working directory. PNG is a useful choice for
 transparency. The decoder determines which other raster formats are available.
 Images are loaded at compilation, not at model construction. There is no automatic
 contain/cover mode: compute a size with the source's aspect ratio to avoid stretching.
+
+## Video clips
+
+```python
+from fframes import probe_video
+from fframes.compose import Audio, Composition, VideoClip
+
+info = probe_video("interview.mp4")
+scene = Composition(
+    duration=8,
+    children=(
+        VideoClip(source="interview.mp4", size=(1280, 720), offset=2).at(1, duration=6),
+        Audio(source="interview.mp4", offset=2).at(1, duration=6),
+    ),
+)
+```
+
+`offset` is a source timestamp; `.at()` places the clip on the parent's clock.
+Playback uses the output frame rate and becomes transparent at source EOF.
+`loop=True` repeats the interval from offset to EOF. Audio is explicit: add an
+`Audio` item with matching timing to keep sound, or omit it for a silent clip.
+Masks and transforms work like other visuals.
+
+Each render worker owns its decoder cache, keyed by the complete local path.
+Source pixels stay in Rust; decoding and color conversion can allocate new
+buffers. Keep source files unchanged and available while using the compiled
+video. This differs from images and audio, which are loaded into owned memory.

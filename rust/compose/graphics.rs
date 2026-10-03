@@ -24,6 +24,7 @@ pub(super) struct Asset {
     text_frames: Vec<String>,
     shader: Option<crate::shader::Program>,
     numbers: Vec<(usize, Value)>,
+    clip: Option<crate::clips::Source>,
 }
 
 struct AnimatedPaint {
@@ -32,8 +33,23 @@ struct AnimatedPaint {
 }
 
 impl Asset {
-    pub fn node_at(&self, time: f64, frame: usize, fps: usize) -> Option<NestedNodeData<'_>> {
-        let mut node = borrow_node(self.node.as_ref()?);
+    pub fn node_at(
+        &self,
+        time: f64,
+        frame: usize,
+        fps: usize,
+        cache: &mut crate::clips::Decoders,
+    ) -> PyResult<Option<NestedNodeData<'_>>> {
+        let Some(source) = self.node.as_ref() else {
+            return Ok(None);
+        };
+        let mut node = borrow_node(source);
+        if let Some(clip) = &self.clip {
+            let Some(image) = clip.image(time, fps, cache)? else {
+                return Ok(None);
+            };
+            node.attrs[0].value = image.into();
+        }
         if let Some(shader) = &self.shader {
             node.attrs[0].value = shader.draw(frame, fps).into();
         }
@@ -55,7 +71,7 @@ impl Asset {
             let content = &self.text_frames[frame.min(self.text_frames.len() - 1)];
             text.kind = NestedNodeKind::Text(StringStorage::Borrowed(content));
         }
-        Some(node)
+        Ok(Some(node))
     }
 }
 
@@ -181,6 +197,7 @@ pub(super) fn prepare(
     shape: Shape,
     fonts: &usvgr::fontdb::Database,
     images: &mut Images,
+    fps: usize,
 ) -> PyResult<Asset> {
     let mut offset = [0., 0.];
     let mut colors = Vec::new();
@@ -188,7 +205,36 @@ pub(super) fn prepare(
     let mut text_frames = Vec::new();
     let mut shader = None;
     let mut numbers = Vec::new();
+    let mut clip = None;
     let (mut node, size) = match shape {
+        Shape::Video {
+            source,
+            offset,
+            r#loop,
+            size,
+        } => {
+            clip = Some(crate::clips::Source::open(
+                crate::clips::Input {
+                    source,
+                    offset,
+                    r#loop,
+                },
+                fps,
+            )?);
+            (
+                Some(element(
+                    EId::Image,
+                    vec![
+                        attribute(AId::Href, ""),
+                        attribute(AId::Width, size[0]),
+                        attribute(AId::Height, size[1]),
+                        attribute(AId::PreserveAspectRatio, "none"),
+                    ],
+                    vec![],
+                )),
+                size,
+            )
+        }
         Shape::Shader {
             shader: input,
             size,
@@ -400,6 +446,7 @@ pub(super) fn prepare(
             && text_frames.is_empty()
             && shader.is_none()
             && numbers.is_empty()
+            && clip.is_none()
     }) {
         // Include the element tag, which compute_runtime_hash expects in its seed.
         node.static_hash = Some(node.compute_runtime_hash(match node.kind {
@@ -416,6 +463,7 @@ pub(super) fn prepare(
         text_frames,
         shader,
         numbers,
+        clip,
     })
 }
 

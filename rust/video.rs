@@ -1,9 +1,9 @@
 use crate::{
     backend::Backend,
-    render::{Resources, render_error},
+    render::{FrameCache, Resources, media_error, render_error},
 };
 use serde::Deserialize;
-use std::{collections::HashMap, path::PathBuf};
+use std::{collections::HashMap, path::PathBuf, sync::Arc};
 
 use fframes::{AudioTimelineSamples, Color, ResolvedRenderingTimeline, usvgr};
 use pyo3::{
@@ -22,19 +22,46 @@ pub(crate) struct SvgVideo {
     fonts: usvgr::fontdb::Database,
     backend: Backend,
     shaders: HashMap<String, crate::shader::Program>,
+    media: fframes::DynamicMediaProvider<'static>,
+    timeline: ResolvedRenderingTimeline<'static, AudioTimelineSamples>,
+    images: HashMap<String, Arc<usvgr::PreloadedImageData>>,
+    clips: Vec<Clip>,
+}
+
+struct Clip {
+    name: String,
+    source: crate::clips::Source,
+    start: f64,
+    end: f64,
 }
 
 impl SvgVideo {
-    fn tree(&self, index: usize) -> PyResult<usvgr::Tree> {
+    fn tree(&self, index: usize, cache: &mut FrameCache) -> PyResult<usvgr::Tree> {
         let svg = self
             .frames
             .get(index)
             .ok_or_else(|| PyIndexError::new_err("frame index out of range"))?;
-        let images = self
+        let mut images: HashMap<_, _> = self
             .shaders
             .iter()
             .map(|(name, shader)| (name.clone(), shader.draw(index, self.fps)))
             .collect();
+        images.extend(
+            self.images
+                .iter()
+                .map(|(name, image)| (name.clone(), Arc::clone(image))),
+        );
+        let time = index as f64 / self.fps as f64;
+        for clip in &self.clips {
+            if time >= clip.start
+                && time < clip.end
+                && let Some(image) =
+                    clip.source
+                        .image(time - clip.start, self.fps, &mut cache.decoders)?
+            {
+                images.insert(clip.name.clone(), image);
+            }
+        }
         let options = usvgr::Options {
             image_data: Some(&images),
             ..Default::default()
@@ -44,7 +71,7 @@ impl SvgVideo {
     }
 
     fn rasterize(&self, index: usize) -> PyResult<fframes::RgbaFrame> {
-        let tree = self.tree(index)?;
+        let tree = self.tree(index, &mut FrameCache::default())?;
         crate::backend::Device::new(self.backend, self.width, self.height)?
             .frame()
             .render_tree(&tree, Color::TRANSPARENT, self.width, self.height)
@@ -56,6 +83,18 @@ impl SvgVideo {
 impl SvgVideo {
     fn __len__(&self) -> usize {
         self.frames.len()
+    }
+
+    fn audio_samples<'py>(&self, py: Python<'py>) -> Bound<'py, PyBytes> {
+        let bytes = py.detach(|| {
+            crate::audio::samples(
+                &self.media,
+                self.timeline.audio_map.as_ref(),
+                self.frames.len(),
+                self.fps,
+            )
+        });
+        PyBytes::new(py, &bytes)
     }
 
     /// Rasterize one frame to straight-alpha RGBA bytes.
@@ -84,22 +123,17 @@ impl SvgVideo {
             .join("output")
             .with_extension(path.extension().unwrap_or_default());
         py.detach(|| {
-            let timeline = ResolvedRenderingTimeline::<AudioTimelineSamples> {
-                audio_map: None,
-                scenes: None,
-                duration_in_frames: self.frames.len(),
-            };
             Resources {
                 width: self.width,
                 height: self.height,
                 fps: self.fps,
                 sample_rate: 48000,
-                media: None,
-                timeline: &timeline,
+                media: Some(&self.media),
+                timeline: &self.timeline,
                 backend: self.backend,
             }
             .render(
-                |index, _| self.tree(index).map_err(render_error),
+                |index, cache| self.tree(index, cache).map_err(render_error),
                 staged.clone(),
                 directory,
                 encoder,
@@ -129,14 +163,38 @@ struct Binding {
     shader: crate::shader::Input,
 }
 
+#[derive(Default, Deserialize)]
+#[serde(default, deny_unknown_fields)]
+struct Media {
+    audio: Vec<crate::audio::Input>,
+    images: Vec<ImageBinding>,
+    clips: Vec<VideoBinding>,
+}
+
+#[derive(Deserialize)]
+struct ImageBinding {
+    name: String,
+    source: PathBuf,
+}
+
+#[derive(Deserialize)]
+struct VideoBinding {
+    name: String,
+    start_at: f64,
+    duration: Option<f64>,
+    #[serde(flatten)]
+    input: crate::clips::Input,
+}
+
 /// Store SVG frames and owned fonts/shaders for subsequent renders.
 #[pyfunction]
-#[pyo3(signature = (config, frames, shaders="[]"))]
+#[pyo3(signature = (config, frames, shaders="[]", media="{}"))]
 pub(crate) fn compile_video(
     py: Python<'_>,
     config: &str,
     frames: Vec<String>,
     shaders: &str,
+    media: &str,
 ) -> PyResult<SvgVideo> {
     let config: Config =
         serde_json::from_str(config).map_err(|err| PyValueError::new_err(err.to_string()))?;
@@ -158,6 +216,58 @@ pub(crate) fn compile_video(
         return Err(PyValueError::new_err("shaders require a Skia backend"));
     }
     py.detach(|| {
+        let duration = frames.len() as f64 / config.fps as f64;
+        let inputs: Media =
+            serde_json::from_str(media).map_err(|err| PyValueError::new_err(err.to_string()))?;
+        let sounds = inputs
+            .audio
+            .into_iter()
+            .map(|input| input.sound(duration))
+            .collect::<PyResult<Vec<_>>>()?
+            .into_iter()
+            .flatten()
+            .collect();
+        let soundtrack = crate::audio::prepare(sounds, duration)?;
+        let mut images = HashMap::new();
+        for binding in inputs.images {
+            let path = binding.source.canonicalize()?;
+            let bytes = std::fs::read(&path)?;
+            let image = fframes::media::decode_image(&path.to_string_lossy(), &bytes)
+                .map_err(media_error)?;
+            if images
+                .insert(format!("image:{}", binding.name), Arc::new(image))
+                .is_some()
+            {
+                return Err(PyValueError::new_err("duplicate image binding"));
+            }
+        }
+        let mut names = std::collections::HashSet::new();
+        let mut clips = Vec::new();
+        for binding in inputs.clips {
+            if !names.insert(binding.name.clone()) {
+                return Err(PyValueError::new_err("duplicate video binding"));
+            }
+            if !binding.start_at.is_finite()
+                || binding.start_at < 0.
+                || binding.start_at > 86400.
+                || binding
+                    .duration
+                    .is_some_and(|d| !d.is_finite() || d <= 0. || d > 86400.)
+            {
+                return Err(PyValueError::new_err("invalid video binding interval"));
+            }
+            if binding.start_at >= duration {
+                continue;
+            }
+            clips.push(Clip {
+                name: format!("video:{}", binding.name),
+                source: crate::clips::Source::open(binding.input, config.fps)?,
+                start: binding.start_at,
+                end: binding
+                    .duration
+                    .map_or(duration, |d| (binding.start_at + d).min(duration)),
+            });
+        }
         let mut programs = HashMap::new();
         for binding in shaders {
             let name = format!("shader:{}", binding.name);
@@ -169,6 +279,14 @@ pub(crate) fn compile_video(
             }
         }
         Ok(SvgVideo {
+            images,
+            clips,
+            media: soundtrack.media,
+            timeline: ResolvedRenderingTimeline {
+                audio_map: soundtrack.map,
+                scenes: None,
+                duration_in_frames: frames.len(),
+            },
             width: config.width,
             height: config.height,
             fps: config.fps,

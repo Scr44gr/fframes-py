@@ -21,7 +21,7 @@ from fframes.compose.components import (
     VectorPath,
 )
 from fframes.compose.filters import Blur, Composite, Filter, Flood, Merge
-from fframes.compose.media import Audio, Image
+from fframes.compose.media import Audio, Image, VideoClip
 from fframes.compose.video import CompiledVideo, RenderOptions, Video
 from fframes.models import CubicBezier, Spring
 from fframes.text import Font, TextLayout
@@ -62,4 +62,5 @@ __all__ = [
     "Tween",
     "VectorPath",
     "Video",
+    "VideoClip",
 ]

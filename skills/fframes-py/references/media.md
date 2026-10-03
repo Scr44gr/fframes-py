@@ -35,6 +35,13 @@ currently native-default behavior rather than a Python option.
 
 ## Compile and export
 
+`VideoClip(source="clip.mp4", size=(1280, 720), offset=2, loop=False)` is a visual
+from `fframes.compose`. Place it with `.at()`; it becomes transparent at EOF.
+Looping repeats the suffix from offset to EOF. Add a separate `Audio` with the
+same timing for sound. Each rendering worker owns its decoder; keep video files
+unchanged and available until rendering ends. `fframes.probe_video(path)` returns
+dimensions, duration and source fps. Decoded pixels never pass through Python.
+
 Call `compiled = video.compile()` once, then reuse:
 
 | Call | Use |

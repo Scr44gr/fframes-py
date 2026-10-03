@@ -1,6 +1,5 @@
 //! The Python authoring layer's private native plan, separate from SVG bindings.
 
-mod audio;
 mod filters;
 mod graphics;
 mod input;
@@ -9,7 +8,7 @@ mod text;
 use std::path::PathBuf;
 
 use fframes::{
-    AudioMixer, AudioTimelineSamples, Color, ResolvedRenderingTimeline,
+    AudioTimelineSamples, Color, ResolvedRenderingTimeline,
     usvgr::{
         self,
         svgtree::{AId, EId, NestedNodeData, svgrtypes::Transform},
@@ -21,9 +20,9 @@ use pyo3::{
     types::PyBytes,
 };
 
-use crate::render::{Resources, render_error};
+use crate::audio::{self, SAMPLE_RATE, Soundtrack};
+use crate::render::{FrameCache, Resources, render_error};
 use crate::values::Value;
-use audio::{SAMPLE_RATE, Soundtrack};
 use graphics::{Asset, attribute, document, element};
 use input::Plan;
 
@@ -115,7 +114,7 @@ impl SceneVideo {
             graphic.opacity.check(0., 1.)?;
             graphic.rotation.check(-1e7, 1e7)?;
             graphic.scale.check(f64::MIN_POSITIVE, 1e4)?;
-            let asset = graphics::prepare(graphic.shape, &fonts, &mut images)?;
+            let asset = graphics::prepare(graphic.shape, &fonts, &mut images, plan.fps)?;
             let mask = graphic
                 .mask
                 .map(|mask| graphics::mask(mask, index, asset.offset))
@@ -172,15 +171,20 @@ impl SceneVideo {
         })
     }
 
-    fn node(&self, index: usize, frame: usize) -> Option<NestedNodeData<'_>> {
+    fn node(
+        &self,
+        index: usize,
+        frame: usize,
+        cache: &mut crate::clips::Decoders,
+    ) -> PyResult<Option<NestedNodeData<'_>>> {
         let layer = &self.layers[index];
         if frame < layer.first || frame >= layer.end {
-            return None;
+            return Ok(None);
         }
         let time = frame as f64 / self.fps as f64 - layer.start;
         let opacity = layer.opacity.value(time);
         if opacity == 0. {
-            return None;
+            return Ok(None);
         }
         let angle = layer.rotation.value(time).to_radians();
         let scale = layer.scale.value(time);
@@ -197,13 +201,17 @@ impl SceneVideo {
             f: layer.y.value(time) + cy + b * (ox - cx) + d * (oy - cy),
         };
         let mut children = if layer.asset.node.is_some() {
-            vec![layer.asset.node_at(time, frame - layer.first, self.fps)]
+            vec![
+                layer
+                    .asset
+                    .node_at(time, frame - layer.first, self.fps, cache)?,
+            ]
         } else {
             layer
                 .children
                 .iter()
-                .map(|index| self.node(*index, frame))
-                .collect()
+                .map(|index| self.node(*index, frame, cache))
+                .collect::<PyResult<Vec<_>>>()?
         };
         let mut attributes = vec![
             attribute(AId::Transform, transform),
@@ -217,10 +225,10 @@ impl SceneVideo {
             children.push(Some(graphics::borrow_node(filter)));
             attributes.push(attribute(AId::Filter, format!("url(#filter-{index})")));
         }
-        Some(element(EId::G, attributes, children))
+        Ok(Some(element(EId::G, attributes, children)))
     }
 
-    fn tree(&self, index: usize, cache: &mut usvgr::Cache) -> PyResult<usvgr::Tree> {
+    fn tree(&self, index: usize, cache: &mut FrameCache) -> PyResult<usvgr::Tree> {
         if index >= self.timeline.duration_in_frames {
             return Err(PyIndexError::new_err("frame index out of range"));
         }
@@ -229,20 +237,20 @@ impl SceneVideo {
             self.height,
             self.roots
                 .iter()
-                .map(|root| self.node(*root, index))
-                .collect(),
+                .map(|root| self.node(*root, index, &mut cache.decoders))
+                .collect::<PyResult<Vec<_>>>()?,
         );
         usvgr::Tree::from_nested_svgtree_with_cache(
             &doc,
             &usvgr::Options::default(),
-            cache,
+            &mut cache.trees,
             &self.fonts,
         )
         .map_err(render_error)
     }
 
     fn rasterize(&self, index: usize) -> PyResult<fframes::RgbaFrame> {
-        let tree = self.tree(index, &mut usvgr::Cache::default())?;
+        let tree = self.tree(index, &mut FrameCache::default())?;
         crate::backend::Device::new(self.backend, self.width, self.height)?
             .frame()
             .render_tree(&tree, Color::TRANSPARENT, self.width, self.height)
@@ -279,22 +287,12 @@ impl SceneVideo {
 
     fn audio_samples<'py>(&self, py: Python<'py>) -> Bound<'py, PyBytes> {
         let bytes = py.detach(|| {
-            let count = (self.timeline.duration_in_frames as f64 / self.fps as f64
-                * SAMPLE_RATE as f64)
-                .round() as usize;
-            let (left, right) = AudioMixer::new(
+            audio::samples(
+                &self.media,
                 self.timeline.audio_map.as_ref(),
-                Some(&self.media),
-                SAMPLE_RATE,
-                0..count,
-                count,
-                Default::default(),
+                self.timeline.duration_in_frames,
+                self.fps,
             )
-            .render_all();
-            left.into_iter()
-                .zip(right)
-                .flat_map(|(left, right)| left.to_le_bytes().into_iter().chain(right.to_le_bytes()))
-                .collect::<Vec<_>>()
         });
         PyBytes::new(py, &bytes)
     }
@@ -345,7 +343,7 @@ mod tests {
     {
         let plan = plan().map_err(|error| PyValueError::new_err(error.to_string()))?;
         let scene = SceneVideo::compile(plan)?;
-        let mut cache = usvgr::Cache::default();
+        let mut cache = FrameCache::default();
         let mut renderer = CpuFrameRenderer::new(20);
         for index in [2, 0, 1, 2] {
             let tree = scene.tree(index, &mut cache)?;

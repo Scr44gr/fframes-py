@@ -1,5 +1,6 @@
 use std::path::PathBuf;
 
+use crate::audio::Sound;
 use crate::values::{Paint, Scalar};
 use pyo3::{PyResult, exceptions::PyValueError};
 use serde::Deserialize;
@@ -97,6 +98,12 @@ pub(super) enum TextAnchor {
 #[derive(Deserialize)]
 #[serde(tag = "kind", rename_all = "lowercase")]
 pub(super) enum Shape {
+    Video {
+        source: PathBuf,
+        offset: f64,
+        r#loop: bool,
+        size: [f64; 2],
+    },
     Shader {
         shader: crate::shader::Input,
         size: [f64; 2],
@@ -177,22 +184,4 @@ pub(super) enum Segment {
         end: [f64; 2],
     },
     Close,
-}
-
-#[derive(Deserialize)]
-pub(super) struct Sound {
-    pub start: f64,
-    pub end: f64,
-    pub audio: Audio,
-}
-
-#[derive(Deserialize)]
-pub(super) struct Audio {
-    pub source: PathBuf,
-    pub gain_db: f32,
-    pub pan: f32,
-    pub offset: f64,
-    pub fade_in: f32,
-    pub fade_out: f32,
-    pub r#loop: bool,
 }

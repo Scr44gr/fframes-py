@@ -33,20 +33,39 @@ the compiled video; see [font configuration](rendering.md#fonts).
 The sequence is owned in memory; rendering is not a streaming callback interface.
 SVG syntax is parsed when frames render, so compilation alone does not validate
 every SVG document. SVG support follows the native renderer, not a web browser.
-Ordinary `<image>` references, including URLs, are skipped. Registered
-`shader:` bindings render through Skia; see [shaders](shaders.md). Use compose
-`Image` items for local raster assets.
+Unregistered `<image>` references, including URLs, are skipped. Explicit
+`image:` and `video:` bindings load local sources; `shader:` bindings render
+through Skia. See [shaders](shaders.md).
+
+Pass resources to `compile_video` or `Video`:
+
+```python
+native = fframes.compile_video(
+    config,
+    frames,
+    images=(fframes.ImageBinding(name="logo", source="logo.png"),),
+    clips=(fframes.VideoBinding(name="interview", source="interview.mp4", start_at=1),),
+    audio=(fframes.AudioTrack(source="interview.mp4", start_at=1, gain_db=-3),),
+)
+```
+
+Use `<image href="image:logo" .../>` and `<image href="video:interview" .../>`
+in the SVG frames. Video/audio accept source `offset`, `loop`, placement
+`start_at` and an optional `duration`. Tracks and clips are capped by the output
+duration. Video bindings do not add sound automatically. Images are owned after
+compilation; video sources must remain available and unchanged while rendering.
 
 | Operation | Result |
 | --- | --- |
 | `len(native)` | Number of SVG frames; duration is this value divided by fps. |
 | `native.rgba(index)` | Straight-alpha RGBA8 bytes for one zero-based frame index. |
 | `native.save_png(index, Path(...))` | Write a PNG; returns `None`. Note the argument order. |
-| `fframes.render(native, path, options=None)` | Encode silent video; return the destination `Path`. |
+| `native.audio_samples()` | Owned stereo float32 little-endian PCM at 48 kHz. |
+| `fframes.render(native, path, options=None)` | Encode video and its audio; return the destination `Path`. |
 
 Prefer `fframes.render` over calling `native.render` directly: it manages the
 temporary directory. [Encoding constraints](rendering.md#encoding) apply. Both APIs share
-`RenderOptions`; the raw SVG video remains silent.
+`RenderOptions` and the same native mixer.
 
 ## Scalar animation
 
