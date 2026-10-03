@@ -19,12 +19,24 @@ from 100 through 900; available faces determine the result. Use separate positio
 text items for multiple lines. Characters such as `<` and `&` need no XML escaping.
 See [font configuration](rendering.md#fonts).
 
+By default, position aligns the shaped ink bounds. Use `anchor="baseline"` to
+interpret x/y as SVG baseline coordinates. For a live counter, pass
+`content=TextTemplate(template="Frame {frame} / {seconds:.2f}s")`, explicit numeric
+positions and `anchor="baseline"`. Rust formats the item's local frame index and
+elapsed seconds during rendering. Supported fields are `{frame}` and
+`{seconds:.0f}` through `{seconds:.9f}`; double braces produce literal braces.
+
 ## Paint
 
 Colors are `#RRGGBB` or `#RRGGBBAA`; named colors and three-digit hex are rejected.
 Shapes and text default to black. `Rectangle`, `Circle` and `VectorPath` accept
 `fill=None` for no fill and `stroke=Stroke(color=..., width=...)` for an outline.
 Stroke width defaults to 1 and is centered on the geometry's boundary.
+
+Fill and stroke colors also accept
+`ColorTween(from_value="#FF0000", to_value="#0000FF", duration=2)`.
+It uses the same local clock and easing options as `Tween`, interpolates all four
+RGBA channels in Rust, and holds its final color after the duration.
 
 ## Paths
 

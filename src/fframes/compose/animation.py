@@ -5,7 +5,7 @@ from typing import Annotated, Self, TypeAlias
 
 from pydantic import Field, model_validator
 
-from fframes.models import Easing, FiniteFloat, Model
+from fframes.models import Color, Easing, FiniteFloat, Model
 
 Duration: TypeAlias = Annotated[float, Field(gt=0, le=86400, allow_inf_nan=False)]
 
@@ -27,7 +27,17 @@ class Tween(Model):
         return self
 
 
+class ColorTween(Model):
+    """Interpolate RGBA channels with the upstream color animation rules."""
+
+    from_value: Color
+    to_value: Color
+    duration: Duration
+    easing: Easing = "linear"
+
+
 Scalar: TypeAlias = FiniteFloat | Tween
+Paint: TypeAlias = Color | ColorTween
 
 
 def endpoints(value: Scalar) -> tuple[float, float]:

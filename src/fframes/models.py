@@ -4,7 +4,7 @@ from itertools import pairwise
 from math import isfinite
 from os import cpu_count
 from pathlib import Path
-from typing import Annotated, Literal, Self, TypeAlias
+from typing import Annotated, Literal, Self, TypeAlias, TypeVar
 
 from pydantic import AfterValidator, BaseModel, ConfigDict, Field, model_validator
 
@@ -15,12 +15,23 @@ Seconds: TypeAlias = Annotated[float, Field(ge=0, le=3.4028234e38, allow_inf_nan
 Svg: TypeAlias = Annotated[str, Field(min_length=1)]
 Frames: TypeAlias = Annotated[tuple[Svg, ...], Field(min_length=1)]
 Easing: TypeAlias = Literal["linear", "ease_in", "ease_out", "ease_in_out"]
+Color: TypeAlias = Annotated[str, Field(pattern=r"^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$")]
 
 
 class Model(BaseModel):
     """Validate once and prevent mutation during native work."""
 
     model_config = ConfigDict(frozen=True, extra="forbid", strict=True, validate_default=True)
+
+
+def _source(value: str | Path) -> str | Path:
+    if not str(value) or "\0" in str(value):
+        msg = "source must be a nonempty filesystem path without NUL characters"
+        raise ValueError(msg)
+    return value
+
+
+Source: TypeAlias = Annotated[str | Path, AfterValidator(_source)]
 
 
 class VideoConfig(Model):
@@ -30,6 +41,7 @@ class VideoConfig(Model):
     height: PositiveInt = 1080
     fps: PositiveInt = 30
     load_system_fonts: bool = False
+    fonts: tuple[Source, ...] = ()
 
 
 class RenderOptions(Model):
@@ -39,13 +51,11 @@ class RenderOptions(Model):
     concurrency: PositiveInt = Field(default_factory=lambda: cpu_count() or 1)
 
 
-class Keyframe(Model):
-    """Interpolate a scalar over the half-open interval [start, end)."""
+class Interval(Model):
+    """A finite interpolation interval shared by scalar and color keyframes."""
 
     start: Seconds
     end: Seconds
-    from_value: FiniteFloat
-    to_value: FiniteFloat
     easing: Easing = "linear"
 
     @model_validator(mode="after")
@@ -54,13 +64,35 @@ class Keyframe(Model):
         if self.end <= self.start:
             msg = "end must be greater than start"
             raise ValueError(msg)
+        return self
+
+
+class Keyframe(Interval):
+    """Interpolate a scalar over the half-open interval [start, end)."""
+
+    from_value: FiniteFloat
+    to_value: FiniteFloat
+
+    @model_validator(mode="after")
+    def check_range(self) -> Self:
+        """Reject interpolation ranges that overflow native arithmetic."""
         if not isfinite(self.to_value - self.from_value):
             msg = "interpolation range must be finite"
             raise ValueError(msg)
         return self
 
 
-def _ordered(keyframes: tuple[Keyframe, ...]) -> tuple[Keyframe, ...]:
+class ColorKeyframe(Interval):
+    """Interpolate RGBA channels using the original fframes color rules."""
+
+    from_value: Color
+    to_value: Color
+
+
+Key = TypeVar("Key", bound=Interval)
+
+
+def _ordered(keyframes: tuple[Key, ...]) -> tuple[Key, ...]:
     for previous, current in pairwise(keyframes):
         if current.start < previous.end:
             msg = "keyframes must be ordered and must not overlap"
@@ -70,6 +102,9 @@ def _ordered(keyframes: tuple[Keyframe, ...]) -> tuple[Keyframe, ...]:
 
 Keyframes: TypeAlias = Annotated[
     tuple[Keyframe, ...], Field(min_length=1), AfterValidator(_ordered)
+]
+ColorKeyframes: TypeAlias = Annotated[
+    tuple[ColorKeyframe, ...], Field(min_length=1), AfterValidator(_ordered)
 ]
 
 

@@ -16,8 +16,8 @@ from fframes.compose.components import (
     VectorPath,
     Visual,
 )
-from fframes.compose.media import Audio, Image, Source
-from fframes.models import Model
+from fframes.compose.media import Audio, Image
+from fframes.models import Model, Source
 
 
 class Group(Visual):
@@ -114,6 +114,7 @@ class Compiler:
                             opacity=item.opacity,
                             rotation=item.rotation,
                             scale=item.scale,
+                            origin=item.origin,
                         ),
                     )
                 )

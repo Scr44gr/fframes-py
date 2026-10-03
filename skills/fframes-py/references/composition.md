@@ -32,7 +32,8 @@ and `Close()`. Coordinates are absolute within the path, not normalized to `size
   `left/center/right`; y has `top/center/bottom`. Placement aligns untransformed
   bounds; text uses ink bounds and strokes can overflow.
 - Apply group `opacity`, `rotation` and `scale` to move the visual as a unit.
-  Rotation is clockwise; rotation/scale pivot at the layout center. Group opacity
+  Rotation is clockwise; rotation/scale pivot at the layout center unless
+  `origin=(x, y)` supplies a local pivot. Group opacity
   composites children first. These transforms do not alter audio.
 
 ## Schedule motion
@@ -45,9 +46,16 @@ Unspecified duration inherits the enclosing interval. Root duration caps everyth
 Use `Tween(from_value=..., to_value=..., duration=..., easing="linear")` for
 numeric x/y, opacity, rotation or scale. Other easing values are `ease_in`,
 `ease_out`, `ease_in_out`; endpoints hold. Opacity stays within 0–1, scale stays
-positive. Colors, text and geometry do not accept tweens. For discrete changes,
+positive. Fill and stroke accept `ColorTween` with hex endpoints and the same
+duration/easing fields. Geometry does not accept tweens. For discrete changes,
 schedule separate items in adjacent clips. Avoid Python loops rebuilding SVG per
 frame when compose can express the scene.
+
+`Text(anchor="baseline", position=Position(x=..., y=...))` uses SVG baseline
+coordinates instead of ink bounds. A live readout can use
+`content=TextTemplate(template="Frame {frame}, {seconds:.2f}s")` with that anchor
+and numeric positions. Only `{frame}` and `{seconds:.0f}` through `{seconds:.9f}`
+are supported; fields use the item's local clock and are formatted in Rust.
 
 ## Reuse components
 

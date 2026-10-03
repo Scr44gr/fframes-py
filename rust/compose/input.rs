@@ -30,6 +30,7 @@ pub(super) struct Graphic {
     pub opacity: Scalar,
     pub rotation: Scalar,
     pub scale: Scalar,
+    pub origin: Option<[f64; 2]>,
     #[serde(flatten)]
     pub shape: Shape,
 }
@@ -109,12 +110,7 @@ impl Scalar {
                 duration,
                 easing,
             } => {
-                let easing = match easing {
-                    Easing::Linear => NativeEasing::Linear,
-                    Easing::EaseIn => NativeEasing::EaseIn,
-                    Easing::EaseOut => NativeEasing::EaseOut,
-                    Easing::EaseInOut => NativeEasing::EaseInOut,
-                };
+                let easing = easing.native();
                 Value::Tween {
                     from: from_value,
                     delta: to_value - from_value,
@@ -161,6 +157,44 @@ pub(super) enum Easing {
     EaseInOut,
 }
 
+impl Easing {
+    pub fn native(&self) -> NativeEasing {
+        match self {
+            Self::Linear => NativeEasing::Linear,
+            Self::EaseIn => NativeEasing::EaseIn,
+            Self::EaseOut => NativeEasing::EaseOut,
+            Self::EaseInOut => NativeEasing::EaseInOut,
+        }
+    }
+}
+
+#[derive(Deserialize)]
+#[serde(untagged)]
+pub(super) enum Paint {
+    Constant(String),
+    Tween {
+        from_value: String,
+        to_value: String,
+        duration: f64,
+        easing: Easing,
+    },
+}
+
+#[derive(Deserialize)]
+#[serde(untagged)]
+pub(super) enum TextContent {
+    Constant(String),
+    Template { template: String },
+}
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub(super) enum TextAnchor {
+    #[default]
+    Bounds,
+    Baseline,
+}
+
 #[derive(Deserialize)]
 #[serde(tag = "kind", rename_all = "lowercase")]
 pub(super) enum Shape {
@@ -170,25 +204,27 @@ pub(super) enum Shape {
     Rectangle {
         size: [f64; 2],
         radius: f64,
-        fill: Option<String>,
+        fill: Option<Paint>,
         stroke: Option<Stroke>,
     },
     Circle {
         radius: f64,
-        fill: Option<String>,
+        fill: Option<Paint>,
         stroke: Option<Stroke>,
     },
     Text {
-        content: String,
-        fill: String,
+        content: TextContent,
+        fill: Paint,
         font_family: String,
         font_size: f64,
         font_weight: u16,
+        #[serde(default)]
+        anchor: TextAnchor,
     },
     Path {
         size: [f64; 2],
         segments: Vec<Segment>,
-        fill: Option<String>,
+        fill: Option<Paint>,
         stroke: Option<Stroke>,
     },
     Image {
@@ -199,7 +235,7 @@ pub(super) enum Shape {
 
 #[derive(Deserialize)]
 pub(super) struct Stroke {
-    pub color: String,
+    pub color: Paint,
     pub width: f64,
 }
 

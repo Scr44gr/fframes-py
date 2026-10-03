@@ -1,6 +1,6 @@
 """Compose reusable graphics, local animations and audio in Python."""
 
-from fframes.compose.animation import Tween
+from fframes.compose.animation import ColorTween, Tween
 from fframes.compose.components import (
     Circle,
     Clip,
@@ -14,6 +14,7 @@ from fframes.compose.components import (
     Rectangle,
     Stroke,
     Text,
+    TextTemplate,
     VectorPath,
 )
 from fframes.compose.media import Audio, Image
@@ -24,6 +25,7 @@ __all__ = [
     "Circle",
     "Clip",
     "Close",
+    "ColorTween",
     "CompiledVideo",
     "Component",
     "Composition",
@@ -36,6 +38,7 @@ __all__ = [
     "RenderOptions",
     "Stroke",
     "Text",
+    "TextTemplate",
     "Tween",
     "VectorPath",
     "Video",

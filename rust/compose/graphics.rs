@@ -1,22 +1,52 @@
-use std::{borrow::Cow, collections::HashMap, path::PathBuf, str::FromStr, sync::Arc};
+use std::{borrow::Cow, collections::HashMap, path::PathBuf, sync::Arc};
 
+use fframes::animation::Animatable;
 use fframes::usvgr::{
     self,
     svgtree::{
         AId, Attribute, EId, NestedNodeData, NestedNodeKind, NestedSvgDocument, StringStorage,
-        SvgAttributeValue,
-        svgrtypes::{self, PathSegment},
+        SvgAttributeValue, svgrtypes::PathSegment,
     },
 };
 use pyo3::{PyResult, exceptions::PyValueError};
 
-use super::input::{Segment, Shape, Stroke};
+use super::input::{Paint, Scalar, Segment, Shape, Stroke, TextAnchor, TextContent, Value};
+use super::text::Template;
+use crate::color::parse as parse_color;
 use crate::render::{media_error, render_error};
 
 pub(super) struct Asset {
     pub node: Option<NestedNodeData<'static>>,
     pub size: [f64; 2],
     pub offset: [f64; 2],
+    colors: Vec<AnimatedPaint>,
+    template: Option<Template>,
+}
+
+struct AnimatedPaint {
+    index: usize,
+    from: fframes::Color,
+    to: fframes::Color,
+    progress: Value,
+}
+
+impl Asset {
+    pub fn node_at(&self, time: f64, frame: usize) -> Option<NestedNodeData<'_>> {
+        let mut node = borrow_node(self.node.as_ref()?);
+        for color in &self.colors {
+            node.attrs[color.index].value = color
+                .from
+                .apply_progress(&color.to, color.progress.value(time) as f32)
+                .into();
+        }
+        if let Some(template) = &self.template
+            && let Some(Some(text)) = node.children.first_mut()
+        {
+            text.kind =
+                NestedNodeKind::Text(StringStorage::new_owned(template.render(frame, time)));
+        }
+        Some(node)
+    }
 }
 
 pub(super) type Images = HashMap<PathBuf, Arc<usvgr::PreloadedImageData>>;
@@ -55,30 +85,54 @@ pub(super) fn document(
 
 fn paint(
     attrs: &mut Vec<Attribute<'static>>,
-    fill: Option<String>,
+    fill: Option<Paint>,
     stroke: Option<Stroke>,
+    animations: &mut Vec<AnimatedPaint>,
 ) -> PyResult<()> {
-    attrs.push(color(AId::Fill, fill)?);
+    color(attrs, AId::Fill, fill, animations)?;
     if let Some(stroke) = stroke {
         length(stroke.width)?;
-        attrs.push(color(AId::Stroke, Some(stroke.color))?);
+        color(attrs, AId::Stroke, Some(stroke.color), animations)?;
         attrs.push(attribute(AId::StrokeWidth, stroke.width));
     }
     Ok(())
 }
 
-fn color(name: AId, value: Option<String>) -> PyResult<Attribute<'static>> {
-    match value {
-        Some(value) => {
-            let parsed = svgrtypes::Color::from_str(&value)
-                .map_err(|_| PyValueError::new_err("invalid color"))?;
-            Ok(Attribute {
-                name,
-                value: SvgAttributeValue::Color(parsed),
-            })
+fn color(
+    attrs: &mut Vec<Attribute<'static>>,
+    name: AId,
+    value: Option<Paint>,
+    animations: &mut Vec<AnimatedPaint>,
+) -> PyResult<()> {
+    let value = match value {
+        Some(Paint::Constant(value)) => parse_color(&value)?.into(),
+        Some(Paint::Tween {
+            from_value,
+            to_value,
+            duration,
+            easing,
+        }) => {
+            let from = parse_color(&from_value)?;
+            let to = parse_color(&to_value)?;
+            let progress = Scalar::Tween {
+                from_value: 0.,
+                to_value: 1.,
+                duration,
+                easing,
+            };
+            progress.check(0., 1.)?;
+            animations.push(AnimatedPaint {
+                index: attrs.len(),
+                from,
+                to,
+                progress: progress.compile(),
+            });
+            from.into()
         }
-        None => Ok(attribute(name, "none")),
-    }
+        None => "none".into(),
+    };
+    attrs.push(Attribute { name, value });
+    Ok(())
 }
 
 fn length(value: f64) -> PyResult<()> {
@@ -94,6 +148,8 @@ pub(super) fn prepare(
     images: &mut Images,
 ) -> PyResult<Asset> {
     let mut offset = [0., 0.];
+    let mut colors = Vec::new();
+    let mut template = None;
     let (mut node, size) = match shape {
         Shape::Group { size } => (None, size),
         Shape::Rectangle {
@@ -110,7 +166,7 @@ pub(super) fn prepare(
                 attribute(AId::Height, size[1]),
                 attribute(AId::Rx, radius),
             ];
-            paint(&mut attrs, fill, stroke)?;
+            paint(&mut attrs, fill, stroke, &mut colors)?;
             (Some(element(EId::Rect, attrs, vec![])), size)
         }
         Shape::Circle {
@@ -124,7 +180,7 @@ pub(super) fn prepare(
                 attribute(AId::Cy, radius),
                 attribute(AId::R, radius),
             ];
-            paint(&mut attrs, fill, stroke)?;
+            paint(&mut attrs, fill, stroke, &mut colors)?;
             (
                 Some(element(EId::Circle, attrs, vec![])),
                 [radius * 2., radius * 2.],
@@ -161,7 +217,7 @@ pub(super) fn prepare(
                 })
                 .collect::<Vec<_>>();
             let mut attrs = vec![attribute(AId::D, segments)];
-            paint(&mut attrs, fill, stroke)?;
+            paint(&mut attrs, fill, stroke, &mut colors)?;
             (Some(element(EId::Path, attrs, vec![])), size)
         }
         Shape::Text {
@@ -170,6 +226,7 @@ pub(super) fn prepare(
             font_family,
             font_size,
             font_weight,
+            anchor,
         } => {
             length(font_size)?;
             if fonts.is_empty() {
@@ -177,27 +234,40 @@ pub(super) fn prepare(
                     "text requires a font; supply fonts or enable system fonts",
                 ));
             }
+            let content = match content {
+                TextContent::Constant(content) => content,
+                TextContent::Template { template: source } => {
+                    if !matches!(anchor, TextAnchor::Baseline) {
+                        return Err(PyValueError::new_err(
+                            "text templates require baseline anchoring",
+                        ));
+                    }
+                    let compiled = Template::compile(&source)?;
+                    let content = compiled.render(0, 0.);
+                    template = Some(compiled);
+                    content
+                }
+            };
             let text = NestedNodeData {
                 kind: NestedNodeKind::Text(StringStorage::new_owned(content)),
                 attrs: Box::new([]),
                 children: vec![],
                 static_hash: None,
             };
-            let node = element(
-                EId::Text,
-                vec![
-                    color(AId::Fill, Some(fill))?,
-                    attribute(AId::FontFamily, font_family),
-                    attribute(AId::FontSize, font_size),
-                    attribute(AId::FontWeight, font_weight.to_string()),
-                ],
-                vec![Some(text)],
-            );
+            let mut attrs = vec![
+                attribute(AId::FontFamily, font_family),
+                attribute(AId::FontSize, font_size),
+                attribute(AId::FontWeight, font_weight.to_string()),
+            ];
+            color(&mut attrs, AId::Fill, Some(fill), &mut colors)?;
+            let node = element(EId::Text, attrs, vec![Some(text)]);
             let doc = document(1, 1, vec![Some(borrow_node(&node))]);
             let tree = usvgr::Tree::from_nested_svgtree(&doc, &usvgr::Options::default(), fonts)
                 .map_err(render_error)?;
             let bounds = tree.root().bounding_box();
-            offset = [-f64::from(bounds.x()), -f64::from(bounds.y())];
+            if matches!(anchor, TextAnchor::Bounds) {
+                offset = [-f64::from(bounds.x()), -f64::from(bounds.y())];
+            }
             // Whitespace has no ink but remains a valid text component.
             let size = [
                 f64::from(bounds.width()).max(1.),
@@ -234,14 +304,23 @@ pub(super) fn prepare(
     };
     length(size[0])?;
     length(size[1])?;
-    if let Some(node) = node.as_mut() {
+    if let Some(node) = node
+        .as_mut()
+        .filter(|_| colors.is_empty() && template.is_none())
+    {
         // Include the element tag, which compute_runtime_hash expects in its seed.
         node.static_hash = Some(node.compute_runtime_hash(match node.kind {
             NestedNodeKind::Element { tag_name } => tag_name as u64,
             _ => 0,
         }));
     }
-    Ok(Asset { node, size, offset })
+    Ok(Asset {
+        node,
+        size,
+        offset,
+        colors,
+        template,
+    })
 }
 
 pub(super) fn borrow_node<'a>(node: &'a NestedNodeData<'a>) -> NestedNodeData<'a> {

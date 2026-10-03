@@ -15,7 +15,7 @@ from fframes.models import Frames, Index, Model, OutputPath, RenderOptions, Vide
 def compile_video(config: VideoConfig, frames: Frames) -> SvgVideo:
     """Transfer a validated SVG sequence to an immutable native video."""
     return _native.compile_video(
-        config.width, config.height, config.fps, frames, config.load_system_fonts
+        config.width, config.height, config.fps, frames, config.load_system_fonts, config.fonts
     )
 
 

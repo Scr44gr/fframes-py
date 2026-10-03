@@ -3,8 +3,9 @@
 mod audio;
 mod graphics;
 mod input;
+mod text;
 
-use std::{path::PathBuf, sync::Arc};
+use std::path::PathBuf;
 
 use fframes::{
     AudioMixer, AudioTimelineSamples, Color, CpuFrameRenderer, FrameRenderer,
@@ -22,7 +23,7 @@ use pyo3::{
 
 use crate::render::{Resources, render_error};
 use audio::{SAMPLE_RATE, Soundtrack};
-use graphics::{Asset, attribute, borrow_node, document, element};
+use graphics::{Asset, attribute, document, element};
 use input::{Plan, Value};
 
 struct Layer {
@@ -34,6 +35,7 @@ struct Layer {
     opacity: Value,
     rotation: Value,
     scale: Value,
+    origin: [f64; 2],
     asset: Asset,
     children: Vec<usize>,
     depth: usize,
@@ -71,42 +73,7 @@ impl SceneVideo {
         if duration > 86401. {
             return Err(PyValueError::new_err("composition exceeds 24 hours"));
         }
-        let mut fonts = usvgr::fontdb::Database::new();
-        if plan.load_system_fonts {
-            fonts.load_system_fonts();
-        }
-        for path in plan.fonts {
-            // File sources are reopened by fontdb during shaping. Own explicit
-            // font bytes so a compiled session is independent of later file edits.
-            let bytes = std::fs::read(&path)?;
-            if fonts
-                .load_font_source(usvgr::fontdb::Source::Binary(Arc::new(bytes)))
-                .is_empty()
-            {
-                return Err(PyValueError::new_err(format!(
-                    "invalid font file: {}",
-                    path.display()
-                )));
-            }
-        }
-        if fonts
-            .query(&usvgr::fontdb::Query {
-                families: &[usvgr::fontdb::Family::SansSerif],
-                ..Default::default()
-            })
-            .is_none()
-        {
-            // Preserve system generic-family choices; explicit-only databases need
-            // a fallback for the default sans-serif family.
-            let family = fonts
-                .faces()
-                .next()
-                .and_then(|face| face.families.first())
-                .map(|family| family.0.clone());
-            if let Some(family) = family {
-                fonts.set_sans_serif_family(family);
-            }
-        }
+        let fonts = crate::fonts::load(&plan.fonts, plan.load_system_fonts)?;
         let mut layers: Vec<Layer> = Vec::with_capacity(plan.layers.len());
         let mut roots = Vec::new();
         let mut images = graphics::Images::new();
@@ -140,6 +107,10 @@ impl SceneVideo {
             graphic.rotation.check(-1e7, 1e7)?;
             graphic.scale.check(f64::MIN_POSITIVE, 1e4)?;
             let asset = graphics::prepare(graphic.shape, &fonts, &mut images)?;
+            let origin = graphic.origin.unwrap_or_else(|| asset.size.map(|v| v / 2.));
+            if origin.iter().any(|v| !v.is_finite() || v.abs() > 1e7) {
+                return Err(PyValueError::new_err("invalid transform origin"));
+            }
             let x = graphic
                 .position
                 .x
@@ -158,6 +129,7 @@ impl SceneVideo {
                 opacity: graphic.opacity.compile(),
                 rotation: graphic.rotation.compile(),
                 scale: graphic.scale.compile(),
+                origin,
                 asset,
                 children: Vec::new(),
                 depth,
@@ -194,7 +166,7 @@ impl SceneVideo {
         let scale = layer.scale.value(time);
         let (sin, cos) = angle.sin_cos();
         let (a, b, c, d) = (cos * scale, sin * scale, -sin * scale, cos * scale);
-        let [cx, cy] = layer.asset.size.map(|extent| extent / 2.);
+        let [cx, cy] = layer.origin;
         let [ox, oy] = layer.asset.offset;
         let transform = Transform {
             a,
@@ -204,8 +176,8 @@ impl SceneVideo {
             e: layer.x.value(time) + cx + a * (ox - cx) + c * (oy - cy),
             f: layer.y.value(time) + cy + b * (ox - cx) + d * (oy - cy),
         };
-        let children = if let Some(node) = &layer.asset.node {
-            vec![Some(borrow_node(node))]
+        let children = if layer.asset.node.is_some() {
+            vec![layer.asset.node_at(time, frame - layer.first)]
         } else {
             layer
                 .children

@@ -1,22 +1,11 @@
 """File-backed images and audio; files are loaded during compilation."""
 
-from pathlib import Path
-from typing import Annotated, Literal, TypeAlias
+from typing import Annotated, Literal
 
-from pydantic import AfterValidator, Field
+from pydantic import Field
 
 from fframes.compose.components import Item, Size, Visual
-from fframes.models import Seconds
-
-
-def _source(value: str | Path) -> str | Path:
-    if not str(value) or "\0" in str(value):
-        msg = "source must be a nonempty filesystem path without NUL characters"
-        raise ValueError(msg)
-    return value
-
-
-Source: TypeAlias = Annotated[str | Path, AfterValidator(_source)]
+from fframes.models import Seconds, Source
 
 
 class Image(Visual):

@@ -25,7 +25,8 @@ text uses its shaped ink bounds. Stroke can extend beyond layout bounds.
 
 All visuals and compositions share `position`, `opacity` (0–1), `rotation`
 (clockwise degrees), and `scale` (positive, at most 10,000). Rotation and scale
-use the item's layout center. Group opacity applies to the composited children,
+use the item's layout center unless `origin=(x, y)` supplies a local pivot.
+For example, `origin=(0, 0)` rotates about the top-left. Group opacity applies to the composited children,
 so it differs from lowering each child's opacity separately.
 
 ## Clips and local time
@@ -60,7 +61,8 @@ looping. Content wholly outside the parent interval is skipped during compilatio
 `Tween(from_value=..., to_value=..., duration=..., easing="linear")` can replace
 numeric `Position.x/y`, `opacity`, `rotation` or `scale`. It holds the final value
 after its duration. Supported easing: `linear`, `ease_in`, `ease_out`, `ease_in_out`.
-Geometry, text content, colors, dimensions and audio controls do not accept tweens.
+Geometry, dimensions and audio controls do not accept tweens. For animated paint
+and frame counters, see [ColorTween and TextTemplate](graphics.md).
 
 Visuals are sampled at `index / fps`; frame indices start at zero. A start between
 frames first appears at the next frame, and the end is exclusive. The video frame

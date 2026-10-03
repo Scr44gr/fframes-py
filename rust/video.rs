@@ -174,6 +174,7 @@ impl SvgVideo {
 /// # Errors
 /// Returns ValueError for invalid dimensions, frame rate or an empty frame sequence.
 #[pyfunction]
+#[pyo3(signature = (width, height, fps, frames, load_system_fonts, fonts=Vec::new()))]
 pub(crate) fn compile_video(
     py: Python<'_>,
     width: u32,
@@ -181,6 +182,7 @@ pub(crate) fn compile_video(
     fps: usize,
     frames: Vec<String>,
     load_system_fonts: bool,
+    fonts: Vec<PathBuf>,
 ) -> PyResult<SvgVideo> {
     if width == 0
         || height == 0
@@ -194,17 +196,13 @@ pub(crate) fn compile_video(
             "invalid dimensions, fps or empty frames",
         ));
     }
-    Ok(py.detach(|| {
-        let mut fonts = usvgr::fontdb::Database::new();
-        if load_system_fonts {
-            fonts.load_system_fonts();
-        }
-        SvgVideo {
+    py.detach(|| {
+        Ok(SvgVideo {
             width,
             height,
             fps,
             frames,
-            fonts,
-        }
-    }))
+            fonts: crate::fonts::load(&fonts, load_system_fonts)?,
+        })
+    })
 }

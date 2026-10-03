@@ -9,9 +9,9 @@ Keep it separate from compose; neither API's native video is an item in the othe
 1. Build a nonempty **tuple** of complete SVG strings, one string per frame.
    Match SVG and output dimensions. Escape dynamic text/attributes when authoring
    XML, or choose compose when no SVG input exists.
-2. Set `fframes.VideoConfig(width=w, height=h, fps=n, load_system_fonts=False)`; enable
-   system fonts if the SVG contains text that requires them. This API has no
-   explicit font-file parameter.
+2. Set `fframes.VideoConfig(width=w, height=h, fps=n, fonts=(font_path,),
+   load_system_fonts=False)` for reproducible text. Explicit font bytes are owned
+   after compilation. Enable system fonts only when host-dependent faces are intended.
 3. Call `native = fframes.compile_video(config, frames)` once. It owns the
    sequence; malformed SVG can still fail later when rasterized.
    This API skips `<image>` references, including URLs; use compose `Image` for
@@ -39,6 +39,10 @@ Prefer `animation.sample_many(indices, fps)` for batches; use
 `animation.sample(index, fps)` for one frame. Both native methods take fps
 positionally; indices are nonnegative. Values hold outside intervals and in gaps.
 Native timestamps are float32; avoid huge absolute clocks with tiny intervals.
+
+For color interpolation use `ColorKeyframe` with six/eight-digit hex strings and
+`compile_color_animation`. Sampling returns `#RRGGBBAA` using upstream channel
+rounding; do not reconstruct colors from independently rounded scalar samples.
 
 `fframes.Timeline(keyframes=...)` is a cached scalar wrapper, not a scene timeline.
 Its sample methods accept keyword-only `fps=30`. `fframes.Video(config=..., frames=...)`

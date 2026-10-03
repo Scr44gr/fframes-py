@@ -8,6 +8,11 @@ class Animation:
     def sample_many(self, indices: Sequence[int], fps: int) -> list[float]: ...
 
 @final
+class ColorAnimation:
+    def sample(self, index: int, fps: int) -> str: ...
+    def sample_many(self, indices: Sequence[int], fps: int) -> list[str]: ...
+
+@final
 class SvgVideo:
     def __len__(self) -> int: ...
     def rgba(self, index: int) -> bytes: ...
@@ -15,8 +20,16 @@ class SvgVideo:
     def render(self, path: Path, directory: Path, encoder: str, concurrency: int) -> None: ...
 
 def compile_animation(keyframes: list[tuple[float, float, float, float, str]]) -> Animation: ...
+def compile_color_animation(
+    keyframes: list[tuple[float, float, str, str, str]],
+) -> ColorAnimation: ...
 def compile_video(
-    width: int, height: int, fps: int, frames: Sequence[str], load_system_fonts: bool
+    width: int,
+    height: int,
+    fps: int,
+    frames: Sequence[str],
+    load_system_fonts: bool,
+    fonts: Sequence[str | Path] = (),
 ) -> SvgVideo: ...
 
 @final

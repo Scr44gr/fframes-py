@@ -62,3 +62,31 @@ def test_native_boundary_rejects_invalid_keyframes() -> None:
         _native.compile_animation([])
     with pytest.raises(ValueError, match="unsupported easing"):
         _native.compile_animation([(0, 1, 0, 1, "typo")])
+
+
+def test_color_keyframes_preserve_upstream_rgba_rounding_and_holds() -> None:
+    color = fframes.compile_color_animation(
+        (
+            fframes.ColorKeyframe(start=1, end=2, from_value="#FF000000", to_value="#0000FFFF"),
+            fframes.ColorKeyframe(start=3, end=4, from_value="#0000FF", to_value="#FFFFFF"),
+        )
+    )
+    indices = (150, 45, 0, 75, 105)
+    expected = ["#FFFFFFFF", "#7F007F7F", "#FF000000", "#0000FFFF", "#7F7FFFFF"]
+    assert color.sample_many(indices, 30) == expected
+    assert [color.sample(i, 30) for i in indices] == expected
+    assert color.sample_many((), 30) == []
+    with pytest.raises(ValueError, match="fps"):
+        color.sample_many([0], 0)
+
+
+def test_color_keyframes_validate_intervals_and_native_colors() -> None:
+    with pytest.raises(ValidationError, match="overlap"):
+        fframes.compile_color_animation(
+            (
+                fframes.ColorKeyframe(start=0, end=2, from_value="#000000", to_value="#FFFFFF"),
+                fframes.ColorKeyframe(start=1, end=3, from_value="#000000", to_value="#FFFFFF"),
+            )
+        )
+    with pytest.raises(ValueError, match="color"):
+        _native.compile_color_animation([(0, 1, "invalid", "#FFFFFF", "linear")])

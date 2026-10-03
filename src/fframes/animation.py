@@ -6,14 +6,22 @@ from functools import cached_property
 from pydantic import ConfigDict, validate_call
 
 from fframes import _native
-from fframes._native import Animation
-from fframes.models import Index, Keyframes, Model, PositiveInt
+from fframes._native import Animation, ColorAnimation
+from fframes.models import ColorKeyframes, Index, Keyframes, Model, PositiveInt
 
 
 @validate_call(config=ConfigDict(strict=True))
 def compile_animation(keyframes: Keyframes) -> Animation:
     """Prepare the upstream keyframe animation once for scalar or batch sampling."""
     return _native.compile_animation(
+        [(k.start, k.end, k.from_value, k.to_value, k.easing) for k in keyframes]
+    )
+
+
+@validate_call(config=ConfigDict(strict=True))
+def compile_color_animation(keyframes: ColorKeyframes) -> ColorAnimation:
+    """Compile RGBA keyframes for native sampling as eight-digit hex colors."""
+    return _native.compile_color_animation(
         [(k.start, k.end, k.from_value, k.to_value, k.easing) for k in keyframes]
     )
 

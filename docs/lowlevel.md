@@ -1,4 +1,4 @@
-# Low-level SVG and scalar animation
+# Low-level SVG and animation
 
 [Index](index.md)
 
@@ -27,7 +27,9 @@ fframes.render(native, output / "raw.mp4", fframes.RenderOptions(concurrency=2))
 
 `frames` is a nonempty tuple of complete SVG strings, one per frame. Match SVG
 dimensions to the output configuration. `VideoConfig` defaults to width 1920,
-height 1080, fps 30, and `load_system_fonts=False`; enable it for system-font text.
+height 1080, fps 30, and `load_system_fonts=False`. Supply `fonts=(Path(...), ...)`
+for reproducible text or enable system fonts. Explicit font bytes are owned by
+the compiled video; see [font configuration](rendering.md#fonts).
 The sequence is owned in memory; rendering is not a streaming callback interface.
 SVG syntax is parsed when frames render, so compilation alone does not validate
 every SVG document. SVG support follows the native renderer, not a web browser.
@@ -69,6 +71,15 @@ Use `sample(index, fps)` for one value and `sample_many(indices, fps)` for batch
 Batch sampling releases the GIL and avoids repeated Python/native calls. This
 animation is not a composition timeline and cannot hold visual or audio layers.
 The [motion example](../examples/motion.py) combines batch sampling with SVG frames.
+
+## Color animation
+
+`compile_color_animation((ColorKeyframe(...), ...))` has the same interval and
+sampling rules. Set `from_value` and `to_value` to `#RRGGBB` or `#RRGGBBAA`.
+Its `ColorAnimation` returns `#RRGGBBAA` strings, using fframes' native RGBA
+interpolation and rounding. Use it instead of rounding four scalar animations in
+Python. The [hello-world port](../examples/native/hello_world.py) animates its
+background this way.
 
 ## Convenience wrappers
 

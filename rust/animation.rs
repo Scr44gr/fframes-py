@@ -1,7 +1,12 @@
-use fframes::animation::{Easing, KeyFrame, KeyFramesAnimation};
+use std::fmt::Debug;
+
+use fframes::{
+    Color,
+    animation::{Animatable, Easing, KeyFrame, KeyFramesAnimation},
+};
 use pyo3::{exceptions::PyValueError, prelude::*};
 
-type KeyframeInput = (f32, f32, f64, f64, String);
+type KeyframeInput<T = f64> = (f32, f32, T, T, String);
 
 /// Compiled scalar keyframes, reusable across frame samples.
 #[pyclass(frozen, module = "fframes._native")]
@@ -13,25 +18,63 @@ pub(crate) struct Animation {
 impl Animation {
     /// Interpolate a value at a frame index using the supplied frame rate.
     fn sample(&self, index: usize, fps: usize) -> PyResult<f64> {
-        check_fps(fps)?;
-        Ok(fframes::Frame::new(index, index, fps).animate(&self.animation))
+        sample(&self.animation, index, fps)
     }
 
     /// Interpolate a batch while reusing one frame context and releasing the GIL.
     fn sample_many(&self, py: Python<'_>, indices: Vec<usize>, fps: usize) -> PyResult<Vec<f64>> {
         check_fps(fps)?;
-        Ok(py.detach(|| {
-            let mut frame = fframes::Frame::new(0, 0, fps);
-            indices
-                .into_iter()
-                .map(|index| {
-                    frame.index = index;
-                    frame.global_index = index;
-                    frame.animate(&self.animation)
-                })
-                .collect()
-        }))
+        Ok(py.detach(|| samples(&self.animation, indices, fps, std::convert::identity)))
     }
+}
+
+/// Compiled color keyframes using the original RGBA interpolation arithmetic.
+#[pyclass(frozen, module = "fframes._native")]
+pub(crate) struct ColorAnimation {
+    animation: KeyFramesAnimation<Color>,
+}
+
+#[pymethods]
+impl ColorAnimation {
+    fn sample(&self, index: usize, fps: usize) -> PyResult<String> {
+        sample(&self.animation, index, fps).map(crate::color::hex)
+    }
+
+    fn sample_many(
+        &self,
+        py: Python<'_>,
+        indices: Vec<usize>,
+        fps: usize,
+    ) -> PyResult<Vec<String>> {
+        check_fps(fps)?;
+        Ok(py.detach(|| samples(&self.animation, indices, fps, crate::color::hex)))
+    }
+}
+
+fn sample<T: Animatable + Default + Debug>(
+    animation: &KeyFramesAnimation<T>,
+    index: usize,
+    fps: usize,
+) -> PyResult<T> {
+    check_fps(fps)?;
+    Ok(fframes::Frame::new(index, index, fps).animate(animation))
+}
+
+fn samples<T: Animatable + Default + Debug, U>(
+    animation: &KeyFramesAnimation<T>,
+    indices: Vec<usize>,
+    fps: usize,
+    convert: impl Fn(T) -> U,
+) -> Vec<U> {
+    let mut frame = fframes::Frame::new(0, 0, fps);
+    indices
+        .into_iter()
+        .map(|index| {
+            frame.index = index;
+            frame.global_index = index;
+            convert(frame.animate(animation))
+        })
+        .collect()
 }
 
 fn check_fps(fps: usize) -> PyResult<()> {
@@ -49,6 +92,39 @@ fn check_fps(fps: usize) -> PyResult<()> {
 /// Returns ValueError for empty, invalid or overlapping keyframes or unsupported easing.
 #[pyfunction]
 pub(crate) fn compile_animation(keyframes: Vec<KeyframeInput>) -> PyResult<Animation> {
+    Ok(Animation {
+        animation: compile(keyframes, |a, b| {
+            a.is_finite() && b.is_finite() && (b - a).is_finite()
+        })?,
+    })
+}
+
+/// Compile validated string colors into reusable upstream RGBA keyframes.
+#[pyfunction]
+pub(crate) fn compile_color_animation(
+    keyframes: Vec<KeyframeInput<String>>,
+) -> PyResult<ColorAnimation> {
+    let keyframes = keyframes
+        .into_iter()
+        .map(|(start, end, from, to, easing)| {
+            Ok((
+                start,
+                end,
+                crate::color::parse(&from)?,
+                crate::color::parse(&to)?,
+                easing,
+            ))
+        })
+        .collect::<PyResult<Vec<_>>>()?;
+    Ok(ColorAnimation {
+        animation: compile(keyframes, |_, _| true)?,
+    })
+}
+
+fn compile<T: Animatable + Default>(
+    keyframes: Vec<KeyframeInput<T>>,
+    valid: impl Fn(T, T) -> bool,
+) -> PyResult<KeyFramesAnimation<T>> {
     if keyframes.is_empty() {
         return Err(PyValueError::new_err("at least one keyframe is required"));
     }
@@ -57,9 +133,7 @@ pub(crate) fn compile_animation(keyframes: Vec<KeyframeInput>) -> PyResult<Anima
     for (start, end, from, to, kind) in keyframes {
         if !start.is_finite()
             || !end.is_finite()
-            || !from.is_finite()
-            || !to.is_finite()
-            || !(to - from).is_finite()
+            || !valid(from, to)
             || start < previous_end
             || end <= start
         {
@@ -83,9 +157,7 @@ pub(crate) fn compile_animation(keyframes: Vec<KeyframeInput>) -> PyResult<Anima
             easing,
         });
     }
-    Ok(Animation {
-        animation: KeyFramesAnimation::new(frames),
-    })
+    Ok(KeyFramesAnimation::new(frames))
 }
 
 #[cfg(test)]

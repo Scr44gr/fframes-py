@@ -11,8 +11,7 @@ from pydantic import ConfigDict, model_validator, validate_call
 from fframes import _native
 from fframes.compose.compiler import Compiler, Plan
 from fframes.compose.components import Composition
-from fframes.compose.media import Source
-from fframes.models import Index, Model, OutputPath, PositiveInt
+from fframes.models import Index, Model, OutputPath, PositiveInt, Source
 from fframes.models import RenderOptions as BaseRenderOptions
 
 
