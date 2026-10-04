@@ -2,6 +2,8 @@ repository = "dmtrKovalenko/fframes"
 revision = "055bb6b9dcbbcca6532206847d43ea8e81fa2a0b"
 
 [examples]
+low_poly = ["art_owl", "art_pelican", "art_popuga", "art_spektacled_owl", "fredoka", "owl_audio", "noise", "license"]
+conference = ["sessions", "camel", "inter_title", "inter_bold", "inter_regular", "montserrat", "conference_background", "conference_gradient", "speaker_placeholder", "sponsors", "conference_audio", "thibaut.jpg", "adam.jpg", "nathan.jpg", "tikhon.jpg", "dmitriy.jpg", "malcolm.jpg", "emma.jpg", "nicolas.jpg", "xavier.jpg", "mindy.jpg", "paul-elliot.jpg", "jetbrains_mono", "license"]
 podcast = ["podcast_art", "podcast_audio", "podcast_goose", "podcast_guest", "podcast_duck", "license"]
 audio_announce = ["jetbrains_mono", "announce_background", "announce_video", "announce_avatar", "announce_captions", "license"]
 teej_podcast = ["sofia", "teej_left", "teej_right", "teej_left_still", "teej_right_still", "license"]
@@ -111,3 +113,119 @@ sha256 = "6f713b93a09f310733f3f4febe0c228771fe1fd61e504067d7fa42b5ed787583"
 [files.podcast_duck]
 path = "examples/podcast/media/duck.jpg"
 sha256 = "04bb98121309d59ec2d440a3dd535681394f742b41f10fb0e0011a674ae05a53"
+
+[files."art_owl"]
+path = "examples/low-poly-art/src/low_poly_art/owl.rs"
+sha256 = "711169ea1c9f798c44be29e589a8e3ccf4fd2d06a602a4f7c5ca9660e23d4675"
+
+[files."art_pelican"]
+path = "examples/low-poly-art/src/low_poly_art/pelican.rs"
+sha256 = "c46f330a2a5a5c9968e95971ab3a9fd3b7e48770cc18b61b6bf43c2ce34bc314"
+
+[files."art_popuga"]
+path = "examples/low-poly-art/src/low_poly_art/popuga.rs"
+sha256 = "5957d7f8a9269625435a50f59a2186dc4e91ba959ee7662af3ea74f96a3228c8"
+
+[files."art_spektacled_owl"]
+path = "examples/low-poly-art/src/low_poly_art/spektacled_owl.rs"
+sha256 = "46cad15dde652f0fe0587b6eda7d72226a7b776e81b5bfcc58b2b711557282ee"
+
+[files."fredoka"]
+path = "examples/low-poly-art/media/FredokaOne-Regular.ttf"
+sha256 = "b8872191d5632ad3d98e72dc75d3621d14dfc230d41ba6ed540cffbabc0548c0"
+
+[files."owl_audio"]
+path = "examples/low-poly-art/media/owl/owl.mp3"
+sha256 = "8aae0a6720f78655113ae03654f25fb37c514d466bdf101dcdce531365c23f79"
+
+[files."noise"]
+path = "examples/low-poly-art/media/white_noise.png"
+sha256 = "e0192517321145e8111da63dc7ac886180a7f30296aa1e3d0f69d790074569e6"
+
+[files."sessions"]
+path = "examples/conference-splash-screen/sessions.json"
+sha256 = "fe9f8639f383721009f58fbae358c2597ed037e0b34812986c3a0c362608d2ff"
+
+[files."camel"]
+path = "examples/conference-splash-screen/src/sponsor_screen.rs"
+sha256 = "44a20a8fcc6a510603a6163a1de95f49afeb865393e93d641aeed7490d66f1ae"
+
+[files."inter_title"]
+path = "examples/conference-splash-screen/media/Inter_18pt-ExtraBold.ttf"
+sha256 = "99fa7026168b7cd8077c99a365eeb0a57d736296afc866d033039817aa787fbd"
+
+[files."inter_bold"]
+path = "examples/conference-splash-screen/media/Inter_24pt-Bold.ttf"
+sha256 = "6e56a080abad19a16d985801909378d26d0da425265289d5d1ebf38baa50cba9"
+
+[files."inter_regular"]
+path = "examples/conference-splash-screen/media/Inter_24pt-Regular.ttf"
+sha256 = "d2a4911506ea4e124a47ca044e5e79f671ddf8f1a55f1ab9a56c58d088124b63"
+
+[files."montserrat"]
+path = "examples/conference-splash-screen/media/Montserrat-Regular.ttf"
+sha256 = "c3fb0280e4339f6c70cea42b8b432c6fb17fde130fbb12e9209c7cdfa79d976f"
+
+[files."conference_background"]
+path = "examples/conference-splash-screen/media/background_2025.png"
+sha256 = "b26ee78003cea468e61561096f701a33cc8acf45ac8004fdcbbccd1f6776a676"
+
+[files."conference_gradient"]
+path = "examples/conference-splash-screen/media/background_gradient.jpg"
+sha256 = "53196e54ff1d30df9db0dcf46ba099593355edc4a4ad354218e9739f016f6076"
+
+[files."speaker_placeholder"]
+path = "examples/conference-splash-screen/media/speaker_placeholder.png"
+sha256 = "9d739a8c8339c4cbd5e5db5b8500061f96c498a7c3146a094d1ef596ebdd01a5"
+
+[files."sponsors"]
+path = "examples/conference-splash-screen/media/sponsors.png"
+sha256 = "d7863a8f331e527870c53c58700f72c7b5c019a7579760a34f1e73a38f7c7e63"
+
+[files."conference_audio"]
+path = "examples/conference-splash-screen/media/track.mp3"
+sha256 = "92952b61ffaf883a4c5e7c678fea132d4214461dc031f03487e8892df7567ec5"
+
+[files."thibaut.jpg"]
+path = "examples/conference-splash-screen/dynamic_media/thibaut.jpg"
+sha256 = "4d4ae3c7b945d648a3c846856acc02a16ec9ac5e8fee996ac925836aae5c5b46"
+
+[files."adam.jpg"]
+path = "examples/conference-splash-screen/dynamic_media/adam.jpg"
+sha256 = "fadf96c643fa662394e852908a7c8439e62cdcfcd07921dc8b78a05a0b851afe"
+
+[files."nathan.jpg"]
+path = "examples/conference-splash-screen/dynamic_media/nathan.jpg"
+sha256 = "9f933e78072849fcc719ff8108e71c3b1bfbb958263e504a256c1f3d3fd1fff3"
+
+[files."tikhon.jpg"]
+path = "examples/conference-splash-screen/dynamic_media/tikhon.jpg"
+sha256 = "b854fbd278e2829e089bb0903d758d34745012e2ad80fbbe536e3182cc5aa289"
+
+[files."dmitriy.jpg"]
+path = "examples/conference-splash-screen/dynamic_media/dmitriy.jpg"
+sha256 = "40f8d483e6ed7f0a2bd5ca78303177986be503247cd53ad4d139b99bc0c1f63f"
+
+[files."malcolm.jpg"]
+path = "examples/conference-splash-screen/dynamic_media/malcolm.jpg"
+sha256 = "447b80eaa48d028478e1bb7a07ed764c7805e19a15017cc3a5f9336017e357f2"
+
+[files."emma.jpg"]
+path = "examples/conference-splash-screen/dynamic_media/emma.jpg"
+sha256 = "70bf8794969e29cc0982c95a0156fab0f43a3e0703212a5b2b60586dab4e96ca"
+
+[files."nicolas.jpg"]
+path = "examples/conference-splash-screen/dynamic_media/nicolas.jpg"
+sha256 = "bb611840a8d44f08222ca603ff2e8a3e9c291b0fdede4cc0fe81b9ec87f36ec6"
+
+[files."xavier.jpg"]
+path = "examples/conference-splash-screen/dynamic_media/xavier.jpg"
+sha256 = "b272cf2fa55d5998dcdc6fa402ddaf641bbd11ea56ff232d52a7c764c3619d41"
+
+[files."mindy.jpg"]
+path = "examples/conference-splash-screen/dynamic_media/mindy.jpg"
+sha256 = "9ecfcdda23750f75a5b9920dc9f5de9c3905dd3c3b7aff17951951c142a1394b"
+
+[files."paul-elliot.jpg"]
+path = "examples/conference-splash-screen/dynamic_media/paul-elliot.jpg"
+sha256 = "c7a8101c4ab07e691da2802121fa5bb8fcaddde41e474b5994d114e2f14d5389"

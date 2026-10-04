@@ -69,6 +69,15 @@ optional `--goose-audio`, `--guest-audio` and `--duck-audio` paths to animate ea
 speaker independently; its soundtrack is the original mix. Its guest panel
 correctly follows the guest track, fixing upstream's accidental goose dependency.
 
+`low_poly` renders the owl by default. `--bird pelican`, `--bird popuga` and
+`--bird spektacled_owl` select the other original artworks. Their source files
+are cached as data; Python reads only polygon coordinates and colors. The owl
+runs for 10 seconds with sound and animated texture; the others last 15 seconds.
+
+`conference` accepts `--talk 0` or a speaker-name fragment such as `--talk Mattio`.
+Its 11 sessions, speaker photos, sponsor artwork and fonts are pinned together.
+The original track determines its duration; the second scene begins at frame 91.
+
 ## Port status
 
 The wrapper does **not yet have full upstream feature parity**. Pending entries
@@ -87,10 +96,10 @@ not an exhaustive engine API inventory.
 | `teej-podcast` | Ported: [native](../examples/native/teej_podcast.py), [compose](../examples/compose/teej_podcast.py); five-minute interview, two synchronized clips and chapter navigation. |
 | `motion-graphics` | Ported: [native](../examples/native/motion_graphics.py), [compose](../examples/compose/motion_graphics.py), including quote and install variants. |
 | `signal-lab` | Ported: [native](../examples/native/signal_lab.py), [compose](../examples/compose/signal_lab.py); four studies with the original soundtrack. |
-| `conference-splash-screen` | Pending: speaker/sponsor layouts, text wrapping and masks. |
+| `conference-splash-screen` | Ported: [native](../examples/native/conference.py), [compose](../examples/compose/conference.py); sponsor intro and selectable speaker cards. |
 | `marketing` | Pending: media, filters and animated graphics. |
 | `beta` | Pending: nested demonstration scenes, paths and embedded media. |
-| `low-poly-art` | Pending: polygon scenes, patterned paint and animated geometry; includes four birds. |
+| `low-poly-art` | Ported: [native](../examples/native/low_poly.py), [compose](../examples/compose/low_poly.py); all four birds, including the owl's patterned title and soundtrack. |
 | `pixel-memory` | Pending: procedural photo scenes, shaders and clips; original photos and videos are published. |
 | `fframes-intro` | Pending: shaders, clips, transitions and text effects; original music and effects are published. |
 
