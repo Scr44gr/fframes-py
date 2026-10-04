@@ -1,8 +1,9 @@
 import math
 
 import pytest
-from fframes import Keyframe, RenderOptions, Timeline, Video, VideoConfig
 from pydantic import ValidationError
+
+from fframes import Keyframe, RenderOptions, Timeline, Video, VideoConfig
 
 
 @pytest.mark.parametrize("field", ["width", "height", "fps"])

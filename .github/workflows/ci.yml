@@ -103,7 +103,7 @@ jobs:
           disable_search: true
           use_oidc: true
       - uses: actions/upload-artifact@v7.0.1
-        if: always()
+        if: ${{ !cancelled() && hashFiles('coverage.xml') != '' }}
         with:
           name: coverage-${{ matrix.os }}-${{ matrix.python }}
           path: coverage.xml
