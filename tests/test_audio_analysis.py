@@ -121,3 +121,9 @@ def test_caption_intervals_restore_prior_cues_and_include_the_last_millisecond()
         (11, 21, "Base"),
         (30, 33, "Later"),
     ]
+
+
+@pytest.mark.parametrize("ending", ["", "\n", "\r\n"])
+def test_final_webvtt_cue_can_end_at_eof(ending: str) -> None:
+    track = Subtitles.parse("WEBVTT\n\n00:00.000 --> 00:01.000\nFinal cue" + ending)
+    assert track.cues == (Cue(start=0, end=1, text="Final cue"),)

@@ -2,6 +2,7 @@
 
 use pyo3::{exceptions::PyValueError, prelude::*};
 use serde::Serialize;
+use std::borrow::Cow;
 use subtp::vtt::{VttBlock, VttComment, VttDescription, WebVtt};
 
 #[derive(Serialize)]
@@ -36,7 +37,13 @@ struct Subtitles {
 #[pyfunction]
 pub(crate) fn parse_subtitles(py: Python<'_>, text: &str) -> PyResult<String> {
     py.detach(|| {
-        let vtt = WebVtt::parse(text).map_err(|e| PyValueError::new_err(e.to_string()))?;
+        // WebVTT permits EOF immediately after cue text; subtp requires a line ending.
+        let text = if text.ends_with(['\n', '\r']) {
+            Cow::Borrowed(text)
+        } else {
+            Cow::Owned(format!("{text}\n"))
+        };
+        let vtt = WebVtt::parse(&text).map_err(|e| PyValueError::new_err(e.to_string()))?;
         let mut subtitles = Subtitles {
             description: vtt.header.description.map(|d| match d {
                 VttDescription::Side(text) | VttDescription::Below(text) => text,
