@@ -87,6 +87,16 @@ their soundtracks into its narration. Its seven scenes include the phone/GitHub
 overlap; the audio tail extends it to 2,126 frames. The phone uses the pinned
 Inter 24pt face, and its simulated FPS counter uses a fixed random seed.
 
+`pixel_memory` builds a seeded photo film with four published soundtrack choices.
+Use `--scene float`, `fibonacci`, `polaroid`, `spiral`, `parallax` or `video` to
+inspect an individual algorithm. `--seed` selects repeatable layouts; `--song`
+selects the full-film soundtrack. Indie Flower is not bundled upstream: supply
+`--font`, or use the pinned alternative with `--family "Space Grotesk"`.
+Polaroid dates use EXIF and the original per-photo corrections. The Python random
+generator preserves the source distributions, not Rust's exact seed sequence.
+Scene selection uses the real video metadata; upstream accidentally probes its
+image-only provider. The unpublished Passenger track is not offered.
+
 ## Port status
 
 The wrapper does **not yet have full upstream feature parity**. Pending entries
@@ -109,7 +119,7 @@ not an exhaustive engine API inventory.
 | `marketing` | Ported: [native](../examples/native/marketing.py), [compose](../examples/compose/marketing.py); original audio, Ferris, spectra, captions and logo reveal. |
 | `beta` | Ported: [native](../examples/native/beta.py), [compose](../examples/compose/beta.py); seven scenes with nested examples, phone interface and original narration. |
 | `low-poly-art` | Ported: [native](../examples/native/low_poly.py), [compose](../examples/compose/low_poly.py); all four birds, including the owl's patterned title and soundtrack. |
-| `pixel-memory` | Pending: procedural photo scenes, shaders and clips; original photos and videos are published. |
+| `pixel-memory` | Ported: [native](../examples/native/pixel_memory.py), [compose](../examples/compose/pixel_memory.py); all six gallery algorithms, EXIF dates, heart-shaped bokeh, signature and synchronized clips. |
 | `fframes-intro` | Pending: shaders, clips, transitions and text effects; original music and effects are published. |
 
 Completed ports were rendered locally on Windows with the pinned fonts. Offline
