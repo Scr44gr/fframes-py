@@ -32,6 +32,7 @@ so it differs from lowering each child's opacity separately.
 For imported vector geometry, `matrix=(a, b, c, d, e, f)` applies an SVG affine
 transform after the item's position, rotation and scale. It maps `(x, y)` to
 `(a*x + c*y + e, b*x + d*y + f)` and supports skew and reflection.
+Each coefficient accepts a number, `Tween` or `Samples`, evaluated on the local clock.
 
 ## Clips and local time
 

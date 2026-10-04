@@ -6,13 +6,11 @@ from typing import Annotated, Literal, Self, TypeAlias
 from pydantic import Field, model_validator
 
 from fframes import _native
-from fframes.compose.animation import Duration, Paint, Scalar, endpoints
+from fframes.compose.animation import Duration, Scalar, endpoints
 from fframes.compose.filters import Filter
-from fframes.models import FiniteFloat, Model, Seconds
+from fframes.compose.paint import Brush, Matrix
+from fframes.models import Color, FiniteFloat, Length, Model, Seconds, Size
 from fframes.shaders import Shader
-
-Length: TypeAlias = Annotated[float, Field(gt=0, le=1e7, allow_inf_nan=False)]
-Size: TypeAlias = tuple[Length, Length]
 
 
 class Position(Model):
@@ -62,9 +60,7 @@ class Visual(Item):
     rotation: Scalar = 0.0
     scale: Scalar = 1.0
     origin: tuple[FiniteFloat, FiniteFloat] | None = None
-    matrix: (
-        tuple[FiniteFloat, FiniteFloat, FiniteFloat, FiniteFloat, FiniteFloat, FiniteFloat] | None
-    ) = None
+    matrix: Matrix | None = None
     mask: Mask | None = None
     filter: Filter | None = None
 
@@ -99,15 +95,21 @@ class Composition(Visual):
 class Stroke(Model):
     """An outline centered on the shape boundary."""
 
-    color: Paint
+    color: Brush
     width: Length = 1.0
+    cap: Literal["butt", "round", "square"] = "butt"
+    join: Literal["miter", "round", "bevel"] = "miter"
+    miter_limit: Annotated[float, Field(ge=1, allow_inf_nan=False)] = 4.0
+    dash: tuple[Annotated[float, Field(ge=0, allow_inf_nan=False)], ...] = ()
+    dash_offset: Scalar = 0.0
 
 
 class Shape(Visual):
     """Shared paint for vector geometry."""
 
-    fill: Paint | None = "#000000"
+    fill: Brush | None = "#000000"
     stroke: Stroke | None = None
+    rendering: Literal["auto", "crispEdges", "geometricPrecision", "optimizeSpeed"] = "auto"
 
 
 class Rectangle(Shape):
@@ -168,11 +170,21 @@ class TextFrames(Model):
     ]
 
 
+class TextRun(Model):
+    """A static text span; omitted font and color fields inherit from its Text."""
+
+    content: Line
+    font_family: Annotated[str, Field(min_length=1)] | None = None
+    font_size: Length | None = None
+    font_weight: Annotated[int, Field(ge=100, le=900)] | None = None
+    fill: Color | None = None
+
+
 class Text(Shape):
     """Single-line text positioned using its shaped visual bounds."""
 
     kind: Literal["text"] = "text"
-    content: Line | TextTemplate | TextFrames
+    content: Line | TextTemplate | TextFrames | Annotated[tuple[TextRun, ...], Field(min_length=1)]
     font_family: Annotated[str, Field(min_length=1)] = "sans-serif"
     font_size: Length = 32.0
     font_weight: Annotated[int, Field(ge=100, le=900)] = 400
@@ -185,7 +197,7 @@ class Text(Shape):
     @model_validator(mode="after")
     def check_template_anchor(self) -> Self:
         """Use explicit baseline coordinates for text whose visual bounds change."""
-        if not isinstance(self.content, str) and (
+        if isinstance(self.content, TextTemplate | TextFrames) and (
             self.anchor != "baseline"
             or isinstance(self.position.x, str)
             or isinstance(self.position.y, str)

@@ -22,6 +22,19 @@ Colors require six or eight hex digits. Shapes and text accept `fill=None` and
 items. Paths start with `MoveTo(x=..., y=...)` and have at least two segments;
 use `LineTo(x=..., y=...)`, `CubicTo(control1=(x, y), control2=(x, y), end=(x, y))`
 and `Close()`. Coordinates are absolute within the path, not normalized to `size`.
+Imported path data can be passed directly as `segments="M0 0h20v20z"`; typed
+segment coordinates accept `Tween` and `Samples`. Use `rendering="crispEdges"`
+only when the artwork intentionally omits antialiasing.
+
+For mixed typography, use `Text(content=(TextRun(content="Hello "),
+TextRun(content="world", fill="#FFD43B")))`. Runs inherit the text's style and
+share its baseline and anchor; they can override font family, size and weight.
+`LinearGradient(stops=(Stop(offset=0, color=...), Stop(offset=1, color=...)))`
+and `RadialGradient(...)` work as fill or stroke paint. Gradient coordinates use
+bounding-box fractions unless `units="user"`. `Pattern(source=path, size=(w, h))`
+repeats a raster tile in local pixels. Paint and visual `matrix=(a,b,c,d,e,f)`
+coefficients accept scalar animations. Stroke supports `cap`, `join`, `miter_limit`,
+`dash=(painted, empty, ...)` and animated `dash_offset`.
 
 ## Arrange the scene
 

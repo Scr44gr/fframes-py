@@ -11,6 +11,8 @@ from pydantic import AfterValidator, BaseModel, ConfigDict, Field, model_validat
 Index: TypeAlias = Annotated[int, Field(ge=0, le=2**63 - 1, strict=True)]
 PositiveInt: TypeAlias = Annotated[int, Field(gt=0, le=2**31 - 1, strict=True)]
 FiniteFloat: TypeAlias = Annotated[float, Field(allow_inf_nan=False)]
+Length: TypeAlias = Annotated[float, Field(gt=0, le=1e7, allow_inf_nan=False)]
+Size: TypeAlias = tuple[Length, Length]
 Seconds: TypeAlias = Annotated[float, Field(ge=0, le=3.4028234e38, allow_inf_nan=False)]
 Svg: TypeAlias = Annotated[str, Field(min_length=1)]
 Frames: TypeAlias = Annotated[tuple[Svg, ...], Field(min_length=1)]

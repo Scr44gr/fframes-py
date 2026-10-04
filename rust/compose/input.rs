@@ -1,7 +1,8 @@
 use std::path::PathBuf;
 
+use super::paint::Brush;
 use crate::audio::Sound;
-use crate::values::{Paint, Scalar};
+use crate::values::Scalar;
 use pyo3::{PyResult, exceptions::PyValueError};
 use serde::Deserialize;
 
@@ -34,7 +35,9 @@ pub(super) struct Graphic {
     pub rotation: Scalar,
     pub scale: Scalar,
     pub origin: Option<[f64; 2]>,
-    pub matrix: Option<[f64; 6]>,
+    pub matrix: Option<[Scalar; 6]>,
+    #[serde(default)]
+    pub rendering: String,
     pub mask: Option<Mask>,
     pub filter: Option<super::filters::Filter>,
     #[serde(flatten)]
@@ -84,8 +87,18 @@ impl Coordinate {
 #[serde(untagged)]
 pub(super) enum TextContent {
     Constant(String),
+    Runs(Vec<TextRun>),
     Template { template: String },
     Frames { frames: Vec<String> },
+}
+
+#[derive(Deserialize)]
+pub(super) struct TextRun {
+    pub content: String,
+    pub font_family: Option<String>,
+    pub font_size: Option<f64>,
+    pub font_weight: Option<u16>,
+    pub fill: Option<String>,
 }
 
 #[derive(Default, Deserialize)]
@@ -117,22 +130,22 @@ pub(super) enum Shape {
     Rectangle {
         size: [Scalar; 2],
         radius: f64,
-        fill: Option<Paint>,
+        fill: Option<Brush>,
         stroke: Option<Stroke>,
     },
     Circle {
         radius: f64,
-        fill: Option<Paint>,
+        fill: Option<Brush>,
         stroke: Option<Stroke>,
     },
     Ellipse {
         size: [f64; 2],
-        fill: Option<Paint>,
+        fill: Option<Brush>,
         stroke: Option<Stroke>,
     },
     Text {
         content: TextContent,
-        fill: Option<Paint>,
+        fill: Option<Brush>,
         stroke: Option<Stroke>,
         font_family: String,
         font_size: f64,
@@ -151,7 +164,7 @@ pub(super) enum Shape {
     Path {
         size: [f64; 2],
         segments: super::paths::Input,
-        fill: Option<Paint>,
+        fill: Option<Brush>,
         stroke: Option<Stroke>,
     },
     Image {
@@ -193,6 +206,29 @@ fn font_style() -> String {
 
 #[derive(Deserialize)]
 pub(super) struct Stroke {
-    pub color: Paint,
+    pub color: Brush,
     pub width: f64,
+    #[serde(default = "cap")]
+    pub cap: String,
+    #[serde(default = "join")]
+    pub join: String,
+    #[serde(default = "miter_limit")]
+    pub miter_limit: f64,
+    #[serde(default)]
+    pub dash: Vec<f64>,
+    #[serde(default = "dash_offset")]
+    pub dash_offset: Scalar,
+}
+
+fn cap() -> String {
+    "butt".into()
+}
+fn join() -> String {
+    "miter".into()
+}
+fn miter_limit() -> f64 {
+    4.
+}
+fn dash_offset() -> Scalar {
+    Scalar::Constant(0.)
 }

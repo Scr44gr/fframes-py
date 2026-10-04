@@ -13,13 +13,12 @@ from fframes.compose.components import (
     Item,
     Rectangle,
     ShaderLayer,
-    Size,
     Text,
     VectorPath,
     Visual,
 )
 from fframes.compose.media import Audio, Image, VideoClip
-from fframes.models import Backend, Model, Source
+from fframes.models import Backend, Model, Size, Source
 
 
 class Group(Visual):

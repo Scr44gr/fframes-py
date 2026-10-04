@@ -105,6 +105,17 @@ pub(crate) enum Value {
     },
 }
 
+pub(crate) fn matrix(input: Option<[Scalar; 6]>) -> PyResult<Option<[Value; 6]>> {
+    input
+        .map(|values| {
+            for value in &values {
+                value.check(-1e7, 1e7)?;
+            }
+            Ok(values.map(Scalar::compile))
+        })
+        .transpose()
+}
+
 impl Value {
     pub fn value(&self, time: f64) -> f64 {
         match self {

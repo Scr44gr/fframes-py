@@ -9,28 +9,23 @@ use fframes::usvgr::{
 };
 use pyo3::{PyResult, exceptions::PyValueError};
 
-use super::input::{Shape, Stroke, TextAnchor, TextContent};
+use super::input::{Shape, TextAnchor, TextContent};
+use super::paint::Paints;
 use super::text::Template;
-use crate::color::parse as parse_color;
 use crate::render::{media_error, render_error};
-use crate::values::{ColorValue, Paint, Scalar, Value};
+use crate::values::{Scalar, Value};
 
 pub(super) struct Asset {
     pub node: Option<NestedNodeData<'static>>,
     pub size: [f64; 2],
     pub offset: [f64; 2],
-    colors: Vec<AnimatedPaint>,
+    paints: Paints,
     template: Option<Template>,
     text_frames: Vec<String>,
     shader: Option<crate::shader::Program>,
     numbers: Vec<(usize, Value)>,
     clip: Option<crate::clips::Source>,
     path_animation: Vec<(usize, super::paths::Command)>,
-}
-
-struct AnimatedPaint {
-    index: usize,
-    value: ColorValue,
 }
 
 impl Asset {
@@ -62,9 +57,6 @@ impl Asset {
         if let Some(shader) = &self.shader {
             node.attrs[0].value = shader.draw(frame, fps).into();
         }
-        for color in &self.colors {
-            node.attrs[color.index].value = color.value.value(time).into();
-        }
         for (index, value) in &self.numbers {
             node.attrs[*index].value = value.value(time).into();
         }
@@ -80,7 +72,7 @@ impl Asset {
             let content = &self.text_frames[frame.min(self.text_frames.len() - 1)];
             text.kind = NestedNodeKind::Text(StringStorage::Borrowed(content));
         }
-        Ok(Some(node))
+        Ok(Some(self.paints.wrap(node, time)))
     }
 }
 
@@ -118,45 +110,7 @@ pub(super) fn document(
     ))])
 }
 
-fn paint(
-    attrs: &mut Vec<Attribute<'static>>,
-    fill: Option<Paint>,
-    stroke: Option<Stroke>,
-    animations: &mut Vec<AnimatedPaint>,
-) -> PyResult<()> {
-    color(attrs, AId::Fill, fill, animations)?;
-    if let Some(stroke) = stroke {
-        length(stroke.width)?;
-        color(attrs, AId::Stroke, Some(stroke.color), animations)?;
-        attrs.push(attribute(AId::StrokeWidth, stroke.width));
-    }
-    Ok(())
-}
-
-fn color(
-    attrs: &mut Vec<Attribute<'static>>,
-    name: AId,
-    value: Option<Paint>,
-    animations: &mut Vec<AnimatedPaint>,
-) -> PyResult<()> {
-    let value = match value {
-        Some(Paint::Constant(value)) => parse_color(&value)?.into(),
-        Some(paint @ Paint::Tween { .. }) => {
-            let value = ColorValue::compile(paint)?;
-            let from = value.value(0.);
-            animations.push(AnimatedPaint {
-                index: attrs.len(),
-                value,
-            });
-            from.into()
-        }
-        None => "none".into(),
-    };
-    attrs.push(Attribute { name, value });
-    Ok(())
-}
-
-fn length(value: f64) -> PyResult<()> {
+pub(super) fn length(value: f64) -> PyResult<()> {
     if !value.is_finite() || value <= 0. || value > 1e7 {
         return Err(PyValueError::new_err("invalid graphic size"));
     }
@@ -207,9 +161,11 @@ pub(super) fn prepare(
     fonts: &usvgr::fontdb::Database,
     images: &mut Images,
     fps: usize,
+    index: usize,
+    rendering: &str,
 ) -> PyResult<Asset> {
     let mut offset = [0., 0.];
-    let mut colors = Vec::new();
+    let mut paints = Paints::default();
     let mut template = None;
     let mut text_frames = Vec::new();
     let mut shader = None;
@@ -290,7 +246,7 @@ pub(super) fn prepare(
                 attribute(AId::Height, extent[1]),
                 attribute(AId::Rx, radius),
             ];
-            paint(&mut attrs, fill, stroke, &mut colors)?;
+            paints.apply(&mut attrs, fill, stroke, &mut numbers, images, index)?;
             (Some(element(EId::Rect, attrs, vec![])), extent)
         }
         Shape::Circle {
@@ -304,7 +260,7 @@ pub(super) fn prepare(
                 attribute(AId::Cy, radius),
                 attribute(AId::R, radius),
             ];
-            paint(&mut attrs, fill, stroke, &mut colors)?;
+            paints.apply(&mut attrs, fill, stroke, &mut numbers, images, index)?;
             (
                 Some(element(EId::Circle, attrs, vec![])),
                 [radius * 2., radius * 2.],
@@ -318,7 +274,7 @@ pub(super) fn prepare(
                 attribute(AId::Rx, rx),
                 attribute(AId::Ry, ry),
             ];
-            paint(&mut attrs, fill, stroke, &mut colors)?;
+            paints.apply(&mut attrs, fill, stroke, &mut numbers, images, index)?;
             (Some(element(EId::Ellipse, attrs, vec![])), size)
         }
         Shape::Path {
@@ -331,7 +287,7 @@ pub(super) fn prepare(
             path_animation = path.animations;
             let segments = path.segments;
             let mut attrs = vec![attribute(AId::D, segments)];
-            paint(&mut attrs, fill, stroke, &mut colors)?;
+            paints.apply(&mut attrs, fill, stroke, &mut numbers, images, index)?;
             (Some(element(EId::Path, attrs, vec![])), size)
         }
         Shape::Text {
@@ -356,15 +312,48 @@ pub(super) fn prepare(
                     "text requires a font; supply fonts or enable system fonts",
                 ));
             }
-            if !matches!(&content, TextContent::Constant(_))
-                && !matches!(anchor, TextAnchor::Baseline)
+            if matches!(
+                &content,
+                TextContent::Template { .. } | TextContent::Frames { .. }
+            ) && !matches!(anchor, TextAnchor::Baseline)
             {
                 return Err(PyValueError::new_err(
                     "dynamic text requires baseline anchoring",
                 ));
             }
+            let mut runs = Vec::new();
             let content = match content {
                 TextContent::Constant(content) => content,
+                TextContent::Runs(input) => {
+                    if input.is_empty() {
+                        return Err(PyValueError::new_err("text runs must not be empty"));
+                    }
+                    for run in input {
+                        if run.content.is_empty() || run.content.contains(['\0', '\r', '\n']) {
+                            return Err(PyValueError::new_err("text runs require single lines"));
+                        }
+                        let mut attrs = Vec::new();
+                        if let Some(family) = run.font_family {
+                            attrs.push(attribute(AId::FontFamily, family));
+                        }
+                        if let Some(size) = run.font_size {
+                            length(size)?;
+                            attrs.push(attribute(AId::FontSize, size));
+                        }
+                        if let Some(weight) = run.font_weight {
+                            attrs.push(attribute(AId::FontWeight, weight.to_string()));
+                        }
+                        if let Some(fill) = run.fill {
+                            attrs.push(attribute(AId::Fill, crate::color::parse(&fill)?));
+                        }
+                        runs.push(Some(element(
+                            EId::Tspan,
+                            attrs,
+                            vec![Some(text_node(run.content))],
+                        )));
+                    }
+                    String::new()
+                }
                 TextContent::Template { template: source } => {
                     let compiled = Template::compile(&source)?;
                     let content = compiled.render(0, 0.);
@@ -382,12 +371,9 @@ pub(super) fn prepare(
                     first
                 }
             };
-            let text = NestedNodeData {
-                kind: NestedNodeKind::Text(StringStorage::new_owned(content)),
-                attrs: Box::new([]),
-                children: vec![],
-                static_hash: None,
-            };
+            if runs.is_empty() {
+                runs.push(Some(text_node(content)));
+            }
             let mut attrs = vec![
                 attribute(AId::FontFamily, font_family),
                 attribute(AId::FontSize, font_size),
@@ -397,9 +383,9 @@ pub(super) fn prepare(
                 attribute(AId::DominantBaseline, baseline),
                 attribute(AId::FontStyle, font_style),
             ];
-            paint(&mut attrs, fill, stroke, &mut colors)?;
-            let node = element(EId::Text, attrs, vec![Some(text)]);
-            let doc = document(1, 1, vec![Some(borrow_node(&node))]);
+            paints.apply(&mut attrs, fill, stroke, &mut numbers, images, index)?;
+            let node = element(EId::Text, attrs, runs);
+            let doc = document(1, 1, vec![Some(paints.wrap(borrow_node(&node), 0.))]);
             let tree = usvgr::Tree::from_nested_svgtree(&doc, &usvgr::Options::default(), fonts)
                 .map_err(render_error)?;
             let bounds = tree.root().bounding_box();
@@ -414,17 +400,7 @@ pub(super) fn prepare(
             (Some(node), size)
         }
         Shape::Image { source, size, fit } => {
-            let source = source.canonicalize()?;
-            let image = if let Some(image) = images.get(&source) {
-                Arc::clone(image)
-            } else {
-                let bytes = std::fs::read(&source)?;
-                let data = fframes::media::decode_image(&source.to_string_lossy(), &bytes)
-                    .map_err(media_error)?;
-                let image = Arc::new(data);
-                images.insert(source, Arc::clone(&image));
-                image
-            };
+            let image = image(source, images)?;
             (
                 Some(element(
                     EId::Image,
@@ -440,10 +416,21 @@ pub(super) fn prepare(
             )
         }
     };
+    if !matches!(
+        rendering,
+        "" | "auto" | "crispEdges" | "geometricPrecision" | "optimizeSpeed"
+    ) {
+        return Err(PyValueError::new_err("invalid shape rendering"));
+    }
+    if let Some(node) = &mut node {
+        let mut attrs = node.attrs.to_vec();
+        attrs.push(attribute(AId::ShapeRendering, rendering.to_owned()));
+        node.attrs = attrs.into_boxed_slice();
+    }
     length(size[0])?;
     length(size[1])?;
     if let Some(node) = node.as_mut().filter(|_| {
-        colors.is_empty()
+        paints.is_empty()
             && template.is_none()
             && text_frames.is_empty()
             && shader.is_none()
@@ -461,7 +448,7 @@ pub(super) fn prepare(
         node,
         size,
         offset,
-        colors,
+        paints,
         template,
         text_frames,
         shader,
@@ -504,5 +491,30 @@ pub(super) fn borrow_node<'a>(node: &'a NestedNodeData<'a>) -> NestedNodeData<'a
             .map(|node| node.as_ref().map(borrow_node))
             .collect(),
         static_hash: node.static_hash,
+    }
+}
+
+pub(super) fn image(
+    source: PathBuf,
+    images: &mut Images,
+) -> PyResult<Arc<usvgr::PreloadedImageData>> {
+    let source = source.canonicalize()?;
+    if let Some(image) = images.get(&source) {
+        return Ok(Arc::clone(image));
+    }
+    let bytes = std::fs::read(&source)?;
+    let data =
+        fframes::media::decode_image(&source.to_string_lossy(), &bytes).map_err(media_error)?;
+    let image = Arc::new(data);
+    images.insert(source, Arc::clone(&image));
+    Ok(image)
+}
+
+fn text_node(content: String) -> NestedNodeData<'static> {
+    NestedNodeData {
+        kind: NestedNodeKind::Text(StringStorage::new_owned(content)),
+        attrs: Box::new([]),
+        children: vec![],
+        static_hash: None,
     }
 }

@@ -3,6 +3,7 @@
 mod filters;
 mod graphics;
 mod input;
+mod paint;
 pub(crate) mod paths;
 mod text;
 
@@ -37,7 +38,7 @@ struct Layer {
     rotation: Value,
     scale: Value,
     origin: [f64; 2],
-    matrix: Option<[f64; 6]>,
+    matrix: Option<[Value; 6]>,
     mask: Option<NestedNodeData<'static>>,
     filter: Option<NestedNodeData<'static>>,
     asset: Asset,
@@ -116,7 +117,14 @@ impl SceneVideo {
             graphic.opacity.check(0., 1.)?;
             graphic.rotation.check(-1e7, 1e7)?;
             graphic.scale.check(f64::MIN_POSITIVE, 1e4)?;
-            let asset = graphics::prepare(graphic.shape, &fonts, &mut images, plan.fps)?;
+            let asset = graphics::prepare(
+                graphic.shape,
+                &fonts,
+                &mut images,
+                plan.fps,
+                index,
+                &graphic.rendering,
+            )?;
             let mask = graphic
                 .mask
                 .map(|mask| graphics::mask(mask, index, asset.offset))
@@ -128,12 +136,6 @@ impl SceneVideo {
             let origin = graphic.origin.unwrap_or_else(|| asset.size.map(|v| v / 2.));
             if origin.iter().any(|v| !v.is_finite() || v.abs() > 1e7) {
                 return Err(PyValueError::new_err("invalid transform origin"));
-            }
-            if graphic
-                .matrix
-                .is_some_and(|m| m.iter().any(|v| !v.is_finite()))
-            {
-                return Err(PyValueError::new_err("affine matrix must be finite"));
             }
             let x = graphic
                 .position
@@ -154,7 +156,7 @@ impl SceneVideo {
                 rotation: graphic.rotation.compile(),
                 scale: graphic.scale.compile(),
                 origin,
-                matrix: graphic.matrix,
+                matrix: crate::values::matrix(graphic.matrix)?,
                 mask,
                 filter,
                 asset,
@@ -209,7 +211,8 @@ impl SceneVideo {
             e: layer.x.value(time) + cx + a * (ox - cx) + c * (oy - cy),
             f: layer.y.value(time) + cy + b * (ox - cx) + d * (oy - cy),
         };
-        let transform = if let Some([a, b, c, d, e, f]) = layer.matrix {
+        let transform = if let Some(matrix) = &layer.matrix {
+            let [a, b, c, d, e, f] = std::array::from_fn(|i| matrix[i].value(time));
             Transform {
                 a: a * transform.a + c * transform.b,
                 b: b * transform.a + d * transform.b,
@@ -392,6 +395,35 @@ mod tests {
         let mut plan = plan()?;
         plan.layers[0].parent = Some(0);
         assert!(SceneVideo::compile(plan).is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn cached_geometry_keeps_animated_gradient_transforms() -> PyResult<()> {
+        let mut plan = plan().map_err(|error| PyValueError::new_err(error.to_string()))?;
+        plan.layers[0].graphic.position.x =
+            input::Coordinate::Value(crate::values::Scalar::Constant(0.));
+        if let input::Shape::Rectangle { fill, .. } = &mut plan.layers[0].graphic.shape {
+            *fill = Some(serde_json::from_str(r##"{
+                "kind":"linear_gradient", "start":[0,0], "end":[4,0], "units":"user", "spread":"pad",
+                "stops":[{"offset":0,"color":"#ff0000"},{"offset":1,"color":"#0000ff"}],
+                "matrix":[1,0,0,1,{"values":[0,-4,0],"fps":2},0]
+            }"##).map_err(|error| PyValueError::new_err(error.to_string()))?);
+        }
+        let scene = SceneVideo::compile(plan)?;
+        let mut cache = FrameCache::default();
+        let mut renderer = CpuFrameRenderer::new(20);
+        for index in [0, 1, 2, 1, 0] {
+            let tree = scene.tree(index, &mut cache)?;
+            let frame = renderer
+                .render_tree(&tree, Color::TRANSPARENT, 16, 8)
+                .map_err(render_error)?;
+            if index == 1 {
+                assert_eq!(&frame.pixels[..4], &[0, 0, 255, 255]);
+            } else {
+                assert!(frame.pixels[0] > 200, "gradient cache at frame {index}");
+            }
+        }
         Ok(())
     }
 }

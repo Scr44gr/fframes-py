@@ -3,9 +3,9 @@
 from typing import Literal
 
 from fframes.audio import AudioSettings
-from fframes.compose.components import Item, Size, Visual
+from fframes.compose.components import Item, Visual
 from fframes.media import ClipSource
-from fframes.models import Source
+from fframes.models import Size, Source
 
 
 class MediaVisual(Visual):

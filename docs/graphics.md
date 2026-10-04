@@ -25,6 +25,11 @@ from 100 through 900; `letter_spacing=0` sets additional spacing in pixels; avai
 text items for multiple lines. Characters such as `<` and `&` need no XML escaping.
 See [font configuration](rendering.md#fonts).
 
+For mixed colors or fonts on one baseline, pass
+`content=(TextRun(content="Hello "), TextRun(content="world", fill="#FFD43B"))`.
+Runs inherit the enclosing `Text` style; optional `font_family`, `font_size`,
+`font_weight` and `fill` override it. Shaping, spacing and anchoring stay native.
+
 By default, position aligns the shaped ink bounds. Use `anchor="baseline"` to
 interpret x/y as SVG baseline coordinates. For a live counter, pass
 `content=TextTemplate(template="Frame {frame} / {seconds:.2f}s")`, explicit numeric
@@ -71,11 +76,37 @@ Colors are `#RRGGBB` or `#RRGGBBAA`; named colors and three-digit hex are reject
 Shapes and text default to black. `Rectangle`, `Circle`, `Ellipse`, `Text` and `VectorPath` accept
 `fill=None` for no fill and `stroke=Stroke(color=..., width=...)` for an outline.
 Stroke width defaults to 1 and is centered on the geometry's boundary.
+Set `cap="round" | "square" | "butt"`, `join="round" | "bevel" | "miter"`,
+and `miter_limit=4`. `dash=(8, 4)` alternates painted and empty lengths;
+`dash_offset` accepts a number, `Tween` or `Samples`. An empty dash tuple is solid.
+`rendering="crispEdges"` disables antialiasing on a shape; the default is `"auto"`.
 
 Fill and stroke colors also accept
 `ColorTween(from_value="#FF0000", to_value="#0000FF", duration=2)`.
 It uses the same local clock and easing options as `Tween`, interpolates all four
 RGBA channels in Rust, and holds its final color after the duration.
+
+Fills and strokes also accept paint objects:
+
+```python
+from fframes.compose import LinearGradient, Pattern, Stop
+
+gradient = LinearGradient(
+    start=(0, 0),
+    end=(0, 1),
+    stops=(Stop(offset=0, color="#A855F7"), Stop(offset=1, color="#22D3EE00")),
+)
+texture = Pattern(source="noise.png", size=(230, 177))
+```
+
+Gradient coordinates default to bounding-box fractions; `units="user"` uses local
+pixels. Stops are ordered, with offsets from 0 to 1; repeated offsets make sharp
+transitions. `spread="pad" | "repeat" | "reflect"` controls values beyond the ends.
+`RadialGradient` uses `center=(0.5, 0.5)`, `radius=0.5` and an optional `focus`.
+`Pattern` repeats a raster image stretched into its pixel-sized tile. Images are
+decoded once and shared with other image components. Both paint types accept
+`matrix=(a, b, c, d, e, f)`, including `Tween` or `Samples` in any coefficient.
+Coordinates are local to the graphic, before its placement transform.
 
 ## Paths
 
