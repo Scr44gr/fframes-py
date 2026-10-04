@@ -26,16 +26,22 @@ def test_depth_animation_keeps_original_ties_and_local_clock(backend: Backend) -
         assert scene.rgba(frame) == color * 64
 
 
-def test_static_root_depth_overrides_insertion_order() -> None:
+@pytest.mark.parametrize(
+    ("depths", "color"), [((2.0, 1.0), b"\xff\x00\x00\xff"), ((0.0, -0.0), b"\x00\x00\xff\xff")]
+)
+def test_static_root_depth_orders_values_and_preserves_equal_keys(
+    depths: tuple[float, float],
+    color: bytes,
+) -> None:
     scene = c.Video(
         resolution=(4, 4),
         load_system_fonts=False,
         composition=c.Composition(
             duration=1,
             children=(
-                c.Rectangle(size=(4, 4), fill="#ff0000", z_index=2),
-                c.Rectangle(size=(4, 4), fill="#0000ff", z_index=1),
+                c.Rectangle(size=(4, 4), fill="#ff0000", z_index=depths[0]),
+                c.Rectangle(size=(4, 4), fill="#0000ff", z_index=depths[1]),
             ),
         ),
     ).compile()
-    assert scene.rgba(0) == b"\xff\x00\x00\xff" * 16
+    assert scene.rgba(0) == color * 16

@@ -181,7 +181,8 @@ impl SceneVideo {
                     layers[*a]
                         .z_index
                         .value(0.)
-                        .total_cmp(&layers[*b].z_index.value(0.))
+                        .partial_cmp(&layers[*b].z_index.value(0.))
+                        .unwrap_or(std::cmp::Ordering::Equal)
                 });
             }
             animated
@@ -292,7 +293,8 @@ impl SceneVideo {
                 let (a, b) = (&self.layers[*a], &self.layers[*b]);
                 a.z_index
                     .value(time - a.start)
-                    .total_cmp(&b.z_index.value(time - b.start))
+                    .partial_cmp(&b.z_index.value(time - b.start))
+                    .unwrap_or(std::cmp::Ordering::Equal)
             });
         }
         indices
