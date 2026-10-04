@@ -9,7 +9,7 @@ from pathlib import Path
 from pydantic import Field, TypeAdapter
 
 from examples.assets import files
-from examples.shaders import keyframe
+from examples.shared.shaders import keyframe
 from fframes import AudioData, Font, Keyframe, Samples, Spring, TextLayout, Tween, compile_animation
 from fframes.models import Model
 

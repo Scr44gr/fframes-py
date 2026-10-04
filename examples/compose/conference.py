@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from examples.conference import CORNERS, CUT, FPS, HEIGHT, MOTION, WIDTH, arguments, prepare
+from examples.shared.conference import CORNERS, CUT, FPS, HEIGHT, MOTION, WIDTH, arguments, prepare
 from fframes.compose import (
     Audio,
     Blur,

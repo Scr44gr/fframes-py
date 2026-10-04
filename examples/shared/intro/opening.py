@@ -4,7 +4,7 @@ from datetime import date
 
 import numpy as np
 
-from examples.intro.drawing import (
+from examples.shared.intro.drawing import (
     BEAT,
     BG,
     BONE,
@@ -26,7 +26,7 @@ from examples.intro.drawing import (
     spring,
     typed,
 )
-from examples.intro.effects import contour
+from examples.shared.intro.effects import contour
 
 PROMPT = "make an intro video for fframes. make it stunning."
 RELEASE = "v1.2.0"

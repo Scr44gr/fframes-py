@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from examples.teej_podcast import CHAPTERS, FPS, HEIGHT, WIDTH, Chapter, arguments, prepare
+from examples.shared.teej_podcast import CHAPTERS, FPS, HEIGHT, WIDTH, Chapter, arguments, prepare
 from fframes.compose import (
     Audio,
     Clip,

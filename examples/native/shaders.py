@@ -4,7 +4,7 @@ from pathlib import Path
 
 import fframes
 from examples.assets import files
-from examples.shaders import (
+from examples.shared.shaders import (
     CARD_OPACITY,
     CARD_Y,
     DURATION,

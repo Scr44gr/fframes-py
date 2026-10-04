@@ -3,9 +3,9 @@ from pathlib import Path
 import pytest
 
 import fframes
-from examples import teej_podcast as interview
 from examples.compose.teej_podcast import build as compose
 from examples.native.teej_podcast import build as native
+from examples.shared import teej_podcast as interview
 from tests.test_composition_audio import write_audio
 
 

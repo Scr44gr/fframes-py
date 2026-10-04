@@ -7,7 +7,7 @@ import numpy as np
 
 import fframes
 from examples.assets import files
-from examples.intro.drawing import (
+from examples.shared.intro.drawing import (
     BONE,
     DISPLAY,
     FPS,
@@ -24,8 +24,8 @@ from examples.intro.drawing import (
     Window,
     Words,
 )
-from examples.intro.effects import scalar
-from examples.intro.sequence import arguments, overlay, pieces, soundtrack
+from examples.shared.intro.effects import scalar
+from examples.shared.intro.sequence import arguments, overlay, pieces, soundtrack
 from fframes import compose as c
 from fframes.compose.components import Item
 from fframes.models import Backend

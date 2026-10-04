@@ -4,7 +4,7 @@ from html import escape
 from pathlib import Path
 
 import fframes
-from examples.tiktok import FPS, GLOWS, HEIGHT, WIDTH, prepare
+from examples.shared.tiktok import FPS, GLOWS, HEIGHT, WIDTH, prepare
 
 
 def build() -> fframes.SvgVideo:

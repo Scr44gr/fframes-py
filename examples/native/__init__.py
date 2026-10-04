@@ -1,1 +1,1 @@
-"""Upstream examples using the direct fframes API."""
+"""Executable examples using the direct fframes API."""

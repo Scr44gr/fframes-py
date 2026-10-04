@@ -8,10 +8,10 @@ import pytest
 import fframes
 from examples import assets
 from examples.compose.intro import build as composed
-from examples.intro.drawing import FRAMES, Window, beat_frame
-from examples.intro.sequence import windows
 from examples.native.intro import Bindings, Native
 from examples.native.intro import build as native
+from examples.shared.intro.drawing import FRAMES, Window, beat_frame
+from examples.shared.intro.sequence import windows
 
 
 def test_intro_intervals_cover_every_frame_and_preserve_scene_origin_when_sliced() -> None:

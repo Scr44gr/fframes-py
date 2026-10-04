@@ -4,9 +4,19 @@ from math import radians, tan
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from examples.beta import BRACKETS, FPS, GITHUB, HEIGHT, MESSAGES, SCENES, TITLES, WIDTH, prepare
 from examples.compose import hello_world, marketing, podcast, tiktok
-from examples.marketing import arguments
+from examples.shared.beta import (
+    BRACKETS,
+    FPS,
+    GITHUB,
+    HEIGHT,
+    MESSAGES,
+    SCENES,
+    TITLES,
+    WIDTH,
+    prepare,
+)
+from examples.shared.marketing import arguments
 from fframes.compose import (
     Audio,
     Blur,

@@ -35,7 +35,7 @@ video.render(output / "hello.mp4")
 This example uses system fonts. For identical font selection on different
 machines, configure [explicit fonts](rendering.md#fonts).
 For a complete animated component with generated sound, run
-`uv run --no-sync python -m examples.composition` from the checkout.
+`uv run --no-sync python -m examples.compose.composition` from the checkout.
 
 ## Model rules
 

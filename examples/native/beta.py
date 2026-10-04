@@ -4,9 +4,19 @@ from html import escape
 from pathlib import Path
 
 import fframes
-from examples.beta import BRACKETS, FPS, GITHUB, HEIGHT, MESSAGES, SCENES, TITLES, WIDTH, prepare
-from examples.marketing import arguments
 from examples.native import hello_world, marketing, podcast, tiktok
+from examples.shared.beta import (
+    BRACKETS,
+    FPS,
+    GITHUB,
+    HEIGHT,
+    MESSAGES,
+    SCENES,
+    TITLES,
+    WIDTH,
+    prepare,
+)
+from examples.shared.marketing import arguments
 
 
 def build(family: str = "Chalkboard SE", fonts: tuple[Path, ...] = ()) -> fframes.SvgVideo:

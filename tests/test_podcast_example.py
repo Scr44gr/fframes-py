@@ -3,9 +3,9 @@ from pathlib import Path
 import pytest
 
 import fframes
-from examples import podcast
 from examples.compose.podcast import build as compose
 from examples.native.podcast import build as native
+from examples.shared import podcast
 from tests.test_composition_audio import write_audio
 
 

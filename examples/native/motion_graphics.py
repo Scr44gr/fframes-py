@@ -4,7 +4,7 @@ from html import escape
 from pathlib import Path
 
 import fframes
-from examples.motion_graphics import (
+from examples.shared.motion_graphics import (
     FPS,
     HEIGHT,
     INSTALL,

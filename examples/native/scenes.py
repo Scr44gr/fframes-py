@@ -4,8 +4,8 @@ from pathlib import Path
 
 import fframes
 from examples.assets import files
-from examples.hello_world import DURATION, FPS, HEIGHT, WIDTH, background
 from examples.native.hello_world import document
+from examples.shared.hello_world import DURATION, FPS, HEIGHT, WIDTH, background
 
 
 def build() -> fframes.SvgVideo:

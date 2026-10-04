@@ -97,7 +97,7 @@ def test_webvtt_retains_overlap_unicode_multiline_and_cue_settings() -> None:
 
 
 def test_caption_intervals_restore_prior_cues_and_include_the_last_millisecond() -> None:
-    from examples.subtitles import captions
+    from examples.shared.subtitles import captions
     from fframes import Font, TextLayout
 
     track = Subtitles(

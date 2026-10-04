@@ -1,1 +1,1 @@
-"""Upstream examples using reusable Python components."""
+"""Executable examples using reusable Python components."""

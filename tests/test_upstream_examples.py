@@ -5,7 +5,6 @@ import pytest
 
 import fframes
 from examples import assets
-from examples import tiktok as portrait
 from examples.compose import hello_world as compose_hello
 from examples.compose import neon_triangle as compose_neon
 from examples.compose import scenes as compose_scenes
@@ -18,6 +17,7 @@ from examples.native import scenes as native_scenes
 from examples.native import shaders as native_shaders
 from examples.native import signal_lab as native_signal
 from examples.native import tiktok as native_tiktok
+from examples.shared import tiktok as portrait
 from fframes import Font, TextLayout
 from tests.test_composition_audio import write_audio
 

@@ -5,7 +5,7 @@ from math import floor
 from pathlib import Path
 
 import fframes
-from examples.pixel_memory import (
+from examples.shared.pixel_memory import (
     FPS,
     GOLD,
     HEIGHT,

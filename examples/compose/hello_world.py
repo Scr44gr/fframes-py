@@ -3,7 +3,7 @@
 from pathlib import Path
 
 from examples.assets import files
-from examples.hello_world import DURATION, FPS, HEIGHT, MOVEMENT, WIDTH, background
+from examples.shared.hello_world import DURATION, FPS, HEIGHT, MOVEMENT, WIDTH, background
 from fframes.compose import (
     Clip,
     ColorTween,

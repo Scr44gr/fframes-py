@@ -1,4 +1,4 @@
-"""Render reusable components and generated audio: python -m examples.composition."""
+"""Render reusable components and generated audio: python -m examples.compose.composition."""
 
 import math
 import struct
@@ -43,7 +43,7 @@ class Badge(Component):
 
 def main() -> None:
     """Generate a short tone and let Rust animate, mix and encode the video."""
-    output = Path("output/composition")
+    output = Path("output/compose/composition")
     output.mkdir(parents=True, exist_ok=True)
     sound = output / "tone.wav"
     rate = 48_000

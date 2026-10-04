@@ -4,7 +4,7 @@ import math
 
 import numpy as np
 
-from examples.intro.drawing import (
+from examples.shared.intro.drawing import (
     BG,
     BONE,
     DIM,
@@ -22,8 +22,8 @@ from examples.intro.drawing import (
     spring,
     typed,
 )
-from examples.intro.effects import contour
-from examples.intro.opening import PROMPT
+from examples.shared.intro.effects import contour
+from examples.shared.intro.opening import PROMPT
 
 CARD_BEATS = (175, 179, 183, 187, 191, 195)
 NODES = ("WRITE", "TIMELINE", "INSPECT", "STRIP", "FRAME", "RENDER")

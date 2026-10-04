@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from examples.intro.drawing import (
+from examples.shared.intro.drawing import (
     BEAT,
     BG,
     BONE,
@@ -25,8 +25,8 @@ from examples.intro.drawing import (
     spring,
     typed,
 )
-from examples.intro.effects import contour, grid
-from examples.intro.opening import RELEASE
+from examples.shared.intro.effects import contour, grid
+from examples.shared.intro.opening import RELEASE
 
 RENDER_SECONDS = 79.6
 

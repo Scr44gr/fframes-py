@@ -5,7 +5,7 @@ from pathlib import Path
 import fframes
 from examples.assets import files
 from examples.native.motion_graphics import label as svg_text
-from examples.signal_lab import (
+from examples.shared.signal_lab import (
     CARDS,
     DURATION,
     FPS,

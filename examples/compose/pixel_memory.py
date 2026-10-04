@@ -4,7 +4,7 @@ from math import floor
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from examples.pixel_memory import (
+from examples.shared.pixel_memory import (
     FPS,
     GOLD,
     HEIGHT,

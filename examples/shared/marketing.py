@@ -10,7 +10,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 from examples.assets import files
-from examples.shaders import keyframe
+from examples.shared.shaders import keyframe
 from fframes import (
     AudioData,
     Font,

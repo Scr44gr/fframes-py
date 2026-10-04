@@ -7,8 +7,8 @@ from pathlib import Path
 
 import numpy as np
 
-from examples.intro import agents, benchmark, closing, media, opening
-from examples.intro.drawing import (
+from examples.shared.intro import agents, benchmark, closing, media, opening
+from examples.shared.intro.drawing import (
     BEAT,
     BONE,
     DOWNBEAT,
@@ -26,7 +26,7 @@ from examples.intro.drawing import (
     pulse,
     timecode,
 )
-from examples.intro.effects import effect
+from examples.shared.intro.effects import effect
 from fframes import AudioTrack
 from fframes.models import Backend
 

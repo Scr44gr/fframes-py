@@ -3,7 +3,7 @@
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from examples.marketing import (
+from examples.shared.marketing import (
     ARROW,
     BOUNCES,
     FPS,

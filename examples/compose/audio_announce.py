@@ -5,7 +5,7 @@ from pathlib import Path
 import numpy as np
 from numpy.typing import NDArray
 
-from examples.audio_announce import FPS, HEIGHT, WIDTH, Wave, prepare
+from examples.shared.audio_announce import FPS, HEIGHT, WIDTH, Wave, prepare
 from fframes.compose import (
     Audio,
     Blur,

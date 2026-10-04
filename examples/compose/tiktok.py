@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from examples.tiktok import FPS, GLOWS, HEIGHT, WIDTH, prepare
+from examples.shared.tiktok import FPS, GLOWS, HEIGHT, WIDTH, prepare
 from fframes.compose import (
     Audio,
     Blur,

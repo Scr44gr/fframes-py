@@ -1,1 +1,1 @@
-"""Executable public-API examples; upstream attribution is in docs/examples.md."""
+"""Public-API examples and shared helpers; see docs/examples.md for usage and attribution."""

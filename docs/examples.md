@@ -4,11 +4,20 @@
 
 Ports target [fframes at `055bb6b9`](https://github.com/dmtrKovalenko/fframes/tree/055bb6b9dcbbcca6532206847d43ea8e81fa2a0b/examples).
 Each port has an SVG version in `examples/native` and a component version in
-`examples/compose`. Shared choreography lives in `examples/`; the intro uses `examples/intro/`.
+`examples/compose`. Shared scene data and helpers live in `examples/shared/`,
+including the intro choreography in `examples/shared/intro/`.
 
 ## Run
 
-From a [configured checkout](development.md), fetch the fonts once:
+From a [configured checkout](development.md), run the standalone examples
+without asset downloads:
+
+```sh
+uv run --no-sync python -m examples.native.motion
+uv run --no-sync python -m examples.compose.composition
+```
+
+For upstream ports, fetch the required assets once:
 
 ```sh
 uv run --no-sync python -m examples.assets hello_world

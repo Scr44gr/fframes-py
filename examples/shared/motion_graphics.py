@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Literal, TypeAlias
 
 from examples.assets import files
-from examples.shaders import keyframe
+from examples.shared.shaders import keyframe
 from fframes import Font, Samples, Spring, TextLayout, Tween, compile_animation
 from fframes.models import Easing
 

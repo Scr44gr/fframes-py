@@ -4,7 +4,7 @@ from html import escape
 from pathlib import Path
 
 import fframes
-from examples.audio_announce import FPS, HEIGHT, WIDTH, Wave, prepare
+from examples.shared.audio_announce import FPS, HEIGHT, WIDTH, Wave, prepare
 
 GLOW = (
     '<filter id="glow" filterUnits="userSpaceOnUse" x="-192" y="-108" '

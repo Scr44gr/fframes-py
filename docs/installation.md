@@ -71,13 +71,13 @@ rustup show
 uv python install 3.14
 uv sync --locked --no-install-project
 uv run --no-sync maturin develop --release --locked --uv
-uv run --no-sync python -m examples.composition
+uv run --no-sync python -m examples.compose.composition
 ```
 
 `rustup show` installs the toolchain selected by `rust-toolchain.toml` if needed.
 The sync installs development dependencies; Maturin builds and installs the
 extension into `.venv`. `--no-sync` keeps later commands from replacing that build.
-The example writes a preview, a generated tone and a video under `output/composition/`.
+The example writes a preview, a generated tone and a video under `output/compose/composition/`.
 
 ## Use it from another uv project
 

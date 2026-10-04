@@ -2,9 +2,9 @@ import numpy as np
 import pytest
 
 import fframes
-from examples.audio_announce import controls, waves
 from examples.compose.audio_announce import wave_path
 from examples.native.audio_announce import path
+from examples.shared.audio_announce import controls, waves
 from fframes import compose as c
 
 

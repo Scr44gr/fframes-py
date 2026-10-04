@@ -3,7 +3,16 @@
 from pathlib import Path
 
 import fframes
-from examples.podcast import DURATION, FPS, HEIGHT, SPEAKERS, WIDTH, YELLOW, arguments, prepare
+from examples.shared.podcast import (
+    DURATION,
+    FPS,
+    HEIGHT,
+    SPEAKERS,
+    WIDTH,
+    YELLOW,
+    arguments,
+    prepare,
+)
 
 
 def build(

@@ -90,7 +90,7 @@ be rejected when they collapse to the same native timestamp.
 Use `sample(index, fps)` for one value and `sample_many(indices, fps)` for batches.
 Batch sampling releases the GIL and avoids repeated Python/native calls. This
 animation is not a composition timeline and cannot hold visual or audio layers.
-The [motion example](../examples/motion.py) combines batch sampling with SVG frames.
+The [motion example](../examples/native/motion.py) combines batch sampling with SVG frames.
 
 ## Color animation
 

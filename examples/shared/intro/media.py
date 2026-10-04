@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from examples.intro.drawing import (
+from examples.shared.intro.drawing import (
     BEAT,
     BG,
     BONE,
@@ -23,7 +23,7 @@ from examples.intro.drawing import (
     spring,
     timecode,
 )
-from examples.intro.effects import effect, grid, guest, tunnel
+from examples.shared.intro.effects import effect, grid, guest, tunnel
 
 
 def typography(p: Painter[N]) -> N:

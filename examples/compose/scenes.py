@@ -4,7 +4,7 @@ from pathlib import Path
 
 from examples.assets import files
 from examples.compose.hello_world import backgrounds, counter
-from examples.hello_world import FPS, HEIGHT, WIDTH
+from examples.shared.hello_world import FPS, HEIGHT, WIDTH
 from fframes.compose import Composition, Position, Rectangle, Text, Tween, Video
 
 

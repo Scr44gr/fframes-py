@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from examples.intro.drawing import (
+from examples.shared.intro.drawing import (
     BEAT,
     BG,
     BONE,
@@ -21,7 +21,7 @@ from examples.intro.drawing import (
     prog,
     spring,
 )
-from examples.intro.effects import grid
+from examples.shared.intro.effects import grid
 
 REMOTION, GPU, CPU = 121.1321, 4.074223, 69.74039
 REMOTION_LABEL, GPU_LABEL = "REMOTION 4.0", "FFRAMES · SKIA ON METAL"

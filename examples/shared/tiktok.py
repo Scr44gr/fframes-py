@@ -8,7 +8,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 from examples.assets import files
-from examples.subtitles import Caption, captions
+from examples.shared.subtitles import Caption, captions
 from fframes import AudioData, Font, Subtitles, TextLayout
 
 WIDTH, HEIGHT, FPS = 1080, 1920, 60

@@ -4,7 +4,7 @@ from html import escape
 from pathlib import Path
 
 import fframes
-from examples.conference import CORNERS, CUT, FPS, HEIGHT, WIDTH, arguments, prepare, samples
+from examples.shared.conference import CORNERS, CUT, FPS, HEIGHT, WIDTH, arguments, prepare, samples
 
 
 def build(talk: str = "0") -> fframes.SvgVideo:

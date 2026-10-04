@@ -4,7 +4,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from examples.pixel_memory import FPS, Gallery, Kind, curve
+from examples.shared.pixel_memory import FPS, Gallery, Kind, curve
 from fframes import ExifField, ImageInfo
 
 

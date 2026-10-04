@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from examples.motion_graphics import (
+from examples.shared.motion_graphics import (
     DURATIONS,
     FPS,
     HEIGHT,

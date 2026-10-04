@@ -5,7 +5,7 @@ from pathlib import Path
 
 import fframes
 from examples.assets import files
-from examples.hello_world import DURATION, FPS, HEIGHT, WIDTH, background, coordinate
+from examples.shared.hello_world import DURATION, FPS, HEIGHT, WIDTH, background, coordinate
 
 
 def document(

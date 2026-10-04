@@ -3,7 +3,7 @@
 from pathlib import Path
 
 import fframes
-from examples.low_poly import FPS, HEIGHT, WIDTH, Bird, arguments, prepare
+from examples.shared.low_poly import FPS, HEIGHT, WIDTH, Bird, arguments, prepare
 
 
 def build(bird: Bird = "owl") -> fframes.SvgVideo:

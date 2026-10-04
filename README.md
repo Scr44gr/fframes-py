@@ -17,7 +17,7 @@
 
 <p align="center">
   <a href="https://github.com/Scr44gr/fframes-py/blob/main/docs/index.md">Documentation</a> ·
-  <a href="https://github.com/Scr44gr/fframes-py/blob/main/examples/composition.py">Example</a> ·
+  <a href="https://github.com/Scr44gr/fframes-py/blob/main/examples/compose/composition.py">Example</a> ·
   <a href="https://github.com/Scr44gr/fframes-py/blob/main/skills/fframes-py/SKILL.md">Agent skill</a>
 </p>
 

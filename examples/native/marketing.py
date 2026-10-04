@@ -4,7 +4,7 @@ from html import escape
 from pathlib import Path
 
 import fframes
-from examples.marketing import (
+from examples.shared.marketing import (
     ARROW,
     BOUNCES,
     FPS,

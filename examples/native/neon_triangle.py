@@ -4,7 +4,7 @@ from pathlib import Path
 
 import fframes
 from examples.assets import files
-from examples.neon_triangle import (
+from examples.shared.neon_triangle import (
     DURATION,
     FPS,
     HEIGHT,
@@ -15,7 +15,7 @@ from examples.neon_triangle import (
     program,
     readouts,
 )
-from examples.shaders import GPU_BACKEND, backend_argument, keyframe
+from examples.shared.shaders import GPU_BACKEND, backend_argument, keyframe
 from fframes.models import Backend
 
 

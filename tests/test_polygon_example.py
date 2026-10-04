@@ -2,9 +2,9 @@ from pathlib import Path
 
 import pytest
 
-from examples import low_poly
 from examples.compose.low_poly import build as compose
 from examples.native.low_poly import build as native
+from examples.shared import low_poly
 
 
 def test_pinned_polygon_extraction_preserves_order_geometry_and_color(

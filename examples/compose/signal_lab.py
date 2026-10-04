@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Literal
 
 from examples.assets import files
-from examples.signal_lab import (
+from examples.shared.signal_lab import (
     CARDS,
     DURATION,
     FPS,

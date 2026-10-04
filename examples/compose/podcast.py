@@ -2,7 +2,16 @@
 
 from pathlib import Path
 
-from examples.podcast import DURATION, FPS, HEIGHT, SPEAKERS, WIDTH, YELLOW, arguments, prepare
+from examples.shared.podcast import (
+    DURATION,
+    FPS,
+    HEIGHT,
+    SPEAKERS,
+    WIDTH,
+    YELLOW,
+    arguments,
+    prepare,
+)
 from fframes.compose import (
     Audio,
     Circle,

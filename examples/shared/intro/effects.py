@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from examples.intro.drawing import BONE, FPS, ORANGE, Box, N, Number, Painter
+from examples.shared.intro.drawing import BONE, FPS, ORANGE, Box, N, Number, Painter
 from fframes import (
     ColorUniform,
     FloatUniform,

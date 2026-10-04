@@ -8,8 +8,8 @@ import numpy as np
 from numpy.typing import NDArray
 
 from examples.assets import files
-from examples.marketing import Prepared as Marketing
-from examples.marketing import prepare as marketing
+from examples.shared.marketing import Prepared as Marketing
+from examples.shared.marketing import prepare as marketing
 from fframes import AudioData, Keyframe, Samples, Spring, compile_animation
 
 WIDTH, HEIGHT, FPS = 1920, 1080, 60

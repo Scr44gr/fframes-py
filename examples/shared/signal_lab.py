@@ -2,7 +2,7 @@
 
 from functools import cache
 
-from examples.shaders import keyframe
+from examples.shared.shaders import keyframe
 from fframes import CubicBezier, Font, Samples, Spring, TextLayout, Tween, compile_animation
 
 WIDTH, HEIGHT, FPS, DURATION = 1920, 1080, 30, 24

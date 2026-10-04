@@ -3,7 +3,7 @@
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from examples.low_poly import FPS, HEIGHT, WIDTH, Bird, arguments, prepare
+from examples.shared.low_poly import FPS, HEIGHT, WIDTH, Bird, arguments, prepare
 from fframes.compose import (
     Audio,
     Composition,
