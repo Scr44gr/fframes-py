@@ -11,7 +11,7 @@ and position when an expanding shape must stay centered.
 
 | Class | Required inputs | Additional configuration |
 | --- | --- | --- |
-| `Rectangle` | `size=(width, height)` | `radius=0` for square corners. |
+| `Rectangle` | `size=(width, height)` | `radius=0` for square corners; accepts scalar animation. |
 | `Circle` | `radius` | Accepts scalar animation, including zero for reveals. |
 | `Ellipse` | `size=(width, height)` | Inscribed in its local bounds. |
 | `Text` | `content` | `font_family="sans-serif"`, `font_size=32`, `font_weight=400`. |

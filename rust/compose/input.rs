@@ -133,7 +133,7 @@ pub(super) enum Shape {
     },
     Rectangle {
         size: [Scalar; 2],
-        radius: f64,
+        radius: Scalar,
         fill: Option<Brush>,
         stroke: Option<Stroke>,
     },

@@ -212,3 +212,33 @@ def test_zero_radius_reveal_and_animated_dash_lengths_use_the_clip_clock() -> No
         assert scene.rgba(index) == reference.rgba(index - 1)
     with pytest.raises(ValidationError, match="radius"):
         Circle(radius=Samples(values=(1, -1), fps=2))
+
+
+def test_rounded_rectangle_keeps_circular_corners_while_expanding() -> None:
+    scene = Video(
+        resolution=(40, 20),
+        fps=1,
+        load_system_fonts=False,
+        composition=Composition(
+            duration=2,
+            children=(
+                Rectangle(
+                    size=(36, Samples(values=(10, 18), fps=1)),
+                    radius=Samples(values=(5, 9), fps=1),
+                    fill="#ffffff",
+                ),
+            ),
+        ),
+    )
+    reference = fframes.Video(
+        config=fframes.VideoConfig(width=40, height=20, fps=1),
+        frames=tuple(
+            f'<svg width="40" height="20"><rect width="36" height="{h}" '
+            f'rx="{h / 2}" fill="white"/></svg>'
+            for h in (10, 18)
+        ),
+    )
+    for index in (1, 0):
+        assert scene.rgba(index) == reference.rgba(index)
+    with pytest.raises(ValidationError, match="radius"):
+        Rectangle(size=(10, 10), radius=Samples(values=(-1, 1), fps=1))

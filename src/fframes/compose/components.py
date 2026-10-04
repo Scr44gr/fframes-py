@@ -124,7 +124,7 @@ class Rectangle(Shape):
 
     kind: Literal["rectangle"] = "rectangle"
     size: tuple[Scalar, Scalar]
-    radius: Annotated[float, Field(ge=0, le=1e7, allow_inf_nan=False)] = 0.0
+    radius: Scalar = 0.0
 
     @model_validator(mode="after")
     def check_size(self) -> Self:
@@ -132,6 +132,8 @@ class Rectangle(Shape):
         if any(not 0 < bound <= 1e7 for value in self.size for bound in endpoints(value)):
             msg = "rectangle size must stay between 0 (exclusive) and 10000000"
             raise ValueError(msg)
+        if any(not 0 <= n <= 1e7 for n in endpoints(self.radius)):
+            raise ValueError("rectangle radius must stay between 0 and 10000000")
         return self
 
 

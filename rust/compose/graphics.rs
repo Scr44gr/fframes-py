@@ -236,8 +236,12 @@ pub(super) fn prepare(
             fill,
             stroke,
         } => {
-            if !radius.is_finite() || radius < 0. {
-                return Err(PyValueError::new_err("invalid radius"));
+            radius.check(0., 1e7)?;
+            let animated = !matches!(radius, Scalar::Constant(_));
+            let value = radius.compile();
+            let radius = value.value(0.);
+            if animated {
+                numbers.push((2, value));
             }
             let mut extent = [0., 0.];
             for (index, value) in size.into_iter().enumerate() {
