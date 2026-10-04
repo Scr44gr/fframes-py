@@ -10,11 +10,12 @@ Do not infer that arbitrary GLSL or every SVG feature is supported.
 
 | Binding from `fframes` | Value |
 | --- | --- |
-| `FloatUniform(name=..., value=...)` | Float or `Tween`. |
-| `ColorUniform(name=..., value=...)` | Hex RGBA or `ColorTween`. |
-| `VectorUniform(name=..., value=(...))` | 2–4 floats. |
+| `FloatUniform(name=..., value=...)` | Float, `Tween` or `Samples`. |
+| `ColorUniform(name=..., value=...)` | Hex RGBA, `ColorTween` or `ColorSamples`. |
+| `VectorUniform(name=..., value=(...))` | 2–4 scalar values, including animations. |
 | `IntUniform(name=..., value=...)` | int32. |
 | `ImageUniform(name=..., source=path)` | Local raster; binds `uniform shader`. |
+| `VideoUniform(name=..., source=path, offset=0, loop=False)` | Local clip on the shader clock; no implicit audio. |
 
 Names must match declarations. Built-ins `iTime`, `iTimeDelta`, `iFrame` and
 `iResolution` are managed by the renderer; do not bind them. Missing values follow
@@ -25,11 +26,15 @@ For compose, use `ShaderLayer(shader=program, size=(w, h))` with ordinary visual
 placement. Its clock restarts at the first visible frame of each occurrence.
 For SVG, bind `ShaderBinding(name="effect", shader=program)` through the `shaders`
 argument of `compile_video` or `Video`, and reference `href="shader:effect"`.
-SVG bindings follow the global video clock; these names do not fetch URLs.
+Bindings accept `start_at` and `duration`; their first visible frame starts the
+local clock. `Shader.time_offset` advances built-ins, animated uniforms and video
+children together, rounded down to the output frame grid. These names do not fetch URLs.
+`ShaderLayer.size` can animate; it controls `iResolution`.
 
 Compose effects attach to any visual or group:
 
-- `Mask(size=(w, h), radius=..., position=(x, y))` clips local layout coordinates.
+- `Mask(size=(w, h), radius=..., position=(x, y))` clips local layout coordinates;
+  all geometry accepts scalar animations.
 - `Filter(steps=(...), region=(x, y, w, h))` describes an ordered graph. Region is
   relative to object bounds; enlarge it for blur halos.
   Use `units="user"` for local pixels and `color_space="srgb"` when required.

@@ -39,7 +39,8 @@ coefficients accept scalar animations. Stroke supports `cap`, `join`, `miter_lim
 ## Arrange the scene
 
 - Put the background first and overlays last in `children`. Nested compositions
-  occupy one place in that order. There is no `z_index` field.
+  occupy one place in that order. `z_index=0` accepts scalar animation; larger
+  values draw later and equal values preserve insertion order.
 - Give reusable groups an explicit `size`. It defines layout coordinates, not a
   clipping mask or resize operation. Omitted size inherits the parent's canvas.
 - Use `Position(x=..., y=...)` in pixels, or axis alignment: x has
@@ -48,7 +49,8 @@ coefficients accept scalar animations. Stroke supports `cap`, `join`, `miter_lim
 - Apply group `opacity`, `rotation` and `scale` to move the visual as a unit.
   Rotation is clockwise; rotation/scale pivot at the layout center unless
   `origin=(x, y)` supplies a local pivot. Group opacity
-  composites children first. These transforms do not alter audio.
+  composites children first; `blend_mode` selects SVG blending. These transforms
+  do not alter audio.
 
 ## Schedule motion
 
@@ -62,8 +64,8 @@ numeric x/y, opacity, rotation or scale. Other easing values are `ease_in`,
 `ease_out`, `ease_in_out`, `Spring(...)` and `CubicBezier(...)`. `start_at` delays
 the tween locally; endpoints hold. Springs can overshoot; duration caps settling. Opacity stays within 0–1, scale stays
 positive. Fill and stroke accept `ColorTween` with hex endpoints and the same
-duration/easing fields. Rectangle dimensions accept tweens. For discrete changes,
-schedule separate items in adjacent clips. Avoid Python loops rebuilding SVG per
+duration/easing fields. `ColorSamples(values=(...), fps=...)` supplies a discrete
+palette sequence. Rectangle dimensions and corner radii accept scalar animations. Avoid Python loops rebuilding SVG per
 frame when compose can express the scene.
 
 Use `Samples(values=(...), fps=30)` for procedural scalar values prepared once.
