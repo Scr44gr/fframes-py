@@ -2,11 +2,15 @@ repository = "dmtrKovalenko/fframes"
 revision = "055bb6b9dcbbcca6532206847d43ea8e81fa2a0b"
 
 [examples]
+podcast = ["podcast_art", "podcast_audio", "podcast_goose", "podcast_guest", "podcast_duck", "license"]
+audio_announce = ["jetbrains_mono", "announce_background", "announce_video", "announce_avatar", "announce_captions", "license"]
+teej_podcast = ["sofia", "teej_left", "teej_right", "teej_left_still", "teej_right_still", "license"]
 hello_world = ["dm_sans", "jetbrains_mono", "license"]
 shaders = ["dm_sans", "aurora", "torus", "license"]
 neon_triangle = ["dm_sans", "jetbrains_mono", "triangle", "license"]
 motion_graphics = ["bebas_neue", "jetbrains_mono", "license"]
 signal_lab = ["dm_sans", "pulse", "license"]
+tiktok = ["jetbrains_mono", "goose", "thought", "thought_captions", "license"]
 
 [files.dm_sans]
 path = "examples/hello-world/media/DMSans-Medium.ttf"
@@ -39,3 +43,71 @@ sha256 = "08e4623805102d819f58601e46e345648846075e363b2ceb23313c2d1c83ec73"
 [files.pulse]
 path = "examples/signal-lab/media/pulse.wav"
 sha256 = "4d6254f07b81c7c3be2b2a4784d5b697ae5a1a6e934189f3e9cdf52febf19e5c"
+
+[files.goose]
+path = "examples/tiktok/media/files/goose2.png"
+sha256 = "d292de63ad869a7217a6d8ac345f98bb2b94304d06bbd3493da70471bc8a2f74"
+
+[files.thought]
+path = "examples/tiktok/media/files/thought.mp3"
+sha256 = "acf8b196f8d35364efb66b6725fcd2d11ae67088a6af50757f7f24bb006d0e62"
+
+[files.thought_captions]
+path = "examples/tiktok/media/files/thought.vtt"
+sha256 = "f6061371375f5786b58201a5fe77159c672f2c44f414ccdcef9b6ea942c8a9bf"
+
+[files.sofia]
+path = "examples/teej-podcast/dynamic_media/SofiaSansSemiCondensed-VariableFont_wght.ttf"
+sha256 = "e6ef4be96602bdfc29fe0f35b5f576c291258acef1d34ba7d5418bd5778b0ae8"
+
+[files.teej_left]
+path = "examples/teej-podcast/dynamic_media/left.mp4"
+sha256 = "b5e4bc0fbfdb9404dcc237e9052b911da2070051f4e9e4da0cb0d664ad777c5c"
+
+[files.teej_right]
+path = "examples/teej-podcast/dynamic_media/right.mp4"
+sha256 = "fdbdd868cb62bff3c01211635b87ce71ba581a23a307e32e23a56fc0b8c95d2b"
+
+[files.teej_left_still]
+path = "examples/teej-podcast/dynamic_media/left.jpg"
+sha256 = "11f5a0be909b82c5ced4240a994cfa3b5f3deb48e6d4cb59098226ce5c6eb8da"
+
+[files.teej_right_still]
+path = "examples/teej-podcast/dynamic_media/right.jpg"
+sha256 = "60fa0141ee6d09b3334ac93f4c548bdd24fd69ba48a8c3834c6d19086d818884"
+
+[files.announce_background]
+path = "examples/audio-announce/media/background.png"
+sha256 = "1816b7be82f9d9c13ef7bfa90d52e13e48432fa102ee2f2019a8cc3cb69451f7"
+
+[files.announce_video]
+path = "examples/audio-announce/dynamic_media/video.mp4"
+sha256 = "515ab47cfaca92bc3d87c469c3ead365187ac934302285d3deeb7d56dd29bfca"
+
+[files.announce_avatar]
+path = "examples/audio-announce/dynamic_media/transparent.mov"
+sha256 = "23b70a14328a74bfde0bd253c423ee883b650b8790ab8fcfabde670b079a9284"
+
+[files.announce_captions]
+path = "examples/audio-announce/dynamic_media/subtitles.vtt"
+sha256 = "b2d77e58be8c5d953037850a878ae9ba9b527fa3ed7d510bde50df0d276b38f1"
+
+[files.podcast_art]
+path = "examples/podcast/src/podcast.rs"
+sha256 = "c2fdb9fc29ee490ee6b2f6f6712f15e278c7ea5def7cde0727bec7228de710bd"
+
+[files.podcast_audio]
+path = "examples/podcast/media/final.mp3"
+sha256 = "c00aa6bbbca83ba4f24dc28fdd5055008797a86d9491684f69503397f32daccd"
+
+[files.podcast_goose]
+path = "examples/podcast/media/goose.jpeg"
+sha256 = "211e8d79435a83dd9b9932204b2cea5c9ab2259eca00d39fbb0055761a76f7b4"
+
+[files.podcast_guest]
+path = "examples/podcast/media/guest.jpg"
+sha256 = "6f713b93a09f310733f3f4febe0c228771fe1fd61e504067d7fa42b5ed787583"
+
+[files.podcast_duck]
+path = "examples/podcast/media/duck.jpg"
+sha256 = "04bb98121309d59ec2d440a3dd535681394f742b41f10fb0e0011a674ae05a53"

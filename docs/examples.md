@@ -61,6 +61,14 @@ do not belong in Git; no submodule initialization is needed.
 `signal_lab` uses the same fetch/run commands. Its four six-second studies run
 at 1920×1080, 30 fps, with continuous progress and the pinned `pulse.wav` track.
 
+The same commands run `tiktok` (portrait, 60 fps), `audio_announce` (30 fps),
+`podcast` (60 fps) and `teej_podcast` (24 fps). Teej defaults to Berkeley Mono,
+which upstream does not distribute; use `--family "Sofia Sans Semi Condensed"`
+for the bundled alternative, or `--font` with your own font. Podcast accepts
+optional `--goose-audio`, `--guest-audio` and `--duck-audio` paths to animate each
+speaker independently; its soundtrack is the original mix. Its guest panel
+correctly follows the guest track, fixing upstream's accidental goose dependency.
+
 ## Port status
 
 The wrapper does **not yet have full upstream feature parity**. Pending entries
@@ -73,18 +81,18 @@ not an exhaustive engine API inventory.
 | `hello-world` | Ported: [native](../examples/native/hello_world.py), [compose](../examples/compose/hello_world.py); [native scenes](../examples/native/scenes.py), [compose scenes](../examples/compose/scenes.py). |
 | `shaders` | Ported: [native](../examples/native/shaders.py), [compose](../examples/compose/shaders.py). |
 | `neon-triangle` | Ported: [native](../examples/native/neon_triangle.py), [compose](../examples/compose/neon_triangle.py). |
-| `audio-announce` | Pending: spectrum analysis, subtitles and filters; video/audio bindings are available. |
-| `tiktok` | Pending: audio spectrum, VTT subtitles, text wrapping, filters. |
-| `podcast` | Pending: audio visualization, subtitles, text layout, image masks. |
-| `teej-podcast` | Pending: chapter layout; video/audio bindings are available, user media required. |
+| `audio-announce` | Ported: [native](../examples/native/audio_announce.py), [compose](../examples/compose/audio_announce.py); cubic spectrum curves, transparent video and glowing captions. |
+| `tiktok` | Ported: [native](../examples/native/tiktok.py), [compose](../examples/compose/tiktok.py); original speech, captions, portrait and spectrum. |
+| `podcast` | Ported: [native](../examples/native/podcast.py), [compose](../examples/compose/podcast.py); original artwork and independent speaker spectra. |
+| `teej-podcast` | Ported: [native](../examples/native/teej_podcast.py), [compose](../examples/compose/teej_podcast.py); five-minute interview, two synchronized clips and chapter navigation. |
 | `motion-graphics` | Ported: [native](../examples/native/motion_graphics.py), [compose](../examples/compose/motion_graphics.py), including quote and install variants. |
 | `signal-lab` | Ported: [native](../examples/native/signal_lab.py), [compose](../examples/compose/signal_lab.py); four studies with the original soundtrack. |
 | `conference-splash-screen` | Pending: speaker/sponsor layouts, text wrapping and masks. |
 | `marketing` | Pending: media, filters and animated graphics. |
 | `beta` | Pending: nested demonstration scenes, paths and embedded media. |
 | `low-poly-art` | Pending: polygon scenes, patterned paint and animated geometry; includes four birds. |
-| `pixel-memory` | Pending: procedural photo scenes, shaders and clips; user photos required. |
-| `fframes-intro` | Pending: shaders, clips, transitions and text effects; referenced audio is absent upstream. |
+| `pixel-memory` | Pending: procedural photo scenes, shaders and clips; original photos and videos are published. |
+| `fframes-intro` | Pending: shaders, clips, transitions and text effects; original music and effects are published. |
 
 Completed ports were rendered locally on Windows with the pinned fonts. Offline
 tests exercise timing and geometry using the repository's test font. Small edge

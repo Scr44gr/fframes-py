@@ -3,17 +3,21 @@ from pathlib import Path
 
 import pytest
 
+import fframes
 from examples import assets
+from examples import tiktok as portrait
 from examples.compose import hello_world as compose_hello
 from examples.compose import neon_triangle as compose_neon
 from examples.compose import scenes as compose_scenes
 from examples.compose import shaders as compose_shaders
 from examples.compose import signal_lab as compose_signal
+from examples.compose import tiktok as compose_tiktok
 from examples.native import hello_world as native_hello
 from examples.native import neon_triangle as native_neon
 from examples.native import scenes as native_scenes
 from examples.native import shaders as native_shaders
 from examples.native import signal_lab as native_signal
+from examples.native import tiktok as native_tiktok
 from fframes import Font, TextLayout
 from tests.test_composition_audio import write_audio
 
@@ -40,6 +44,16 @@ def example_fonts(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     files["pulse"] = assets.File(
         path="pulse.wav", sha256=hashlib.sha256(pulse.read_bytes()).hexdigest()
     )
+    picture = folder / "goose.png"
+    fframes.compile_video(
+        fframes.VideoConfig(width=16, height=8),
+        ('<svg width="16" height="8"><rect width="16" height="8" fill="#00ff00"/></svg>',),
+    ).save_png(0, picture)
+    files["goose"] = assets.File(
+        path="goose.png", sha256=hashlib.sha256(picture.read_bytes()).hexdigest()
+    )
+    files["thought"] = files["pulse"]
+    sources["thought_captions"] = "WEBVTT\n\n00:00.100 --> 00:00.400\nCaption\n"
     for name, shader_source in sources.items():
         payload = shader_source.encode()
         (folder / name).write_bytes(payload)
@@ -53,6 +67,7 @@ def example_fonts(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
             "shaders": ("dm_sans", "aurora", "torus"),
             "neon_triangle": ("dm_sans", "jetbrains_mono", "triangle"),
             "signal_lab": ("dm_sans", "pulse"),
+            "tiktok": ("jetbrains_mono", "thought", "thought_captions", "goose"),
         },
     )
     monkeypatch.setenv("FFRAMES_EXAMPLE_CACHE", str(tmp_path))
@@ -159,3 +174,21 @@ def test_signal_studies_keep_scene_clocks_progress_and_continuous_audio(
     assert a == b
     assert any(a[: 48000 * 8])
     assert not any(a[48000 * 8 :])
+
+
+@pytest.mark.usefixtures("example_fonts")
+def test_portrait_ports_keep_spectrum_glows_caption_intervals_and_image_aspect(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(portrait, "CAPTION_FONT", Font(family="Tuffy", size=100))
+    native, composed = native_tiktok.build(), compose_tiktok.build().compile()
+    assert len(native) == len(composed) == 60
+    for index in (0, 6, 25, 59):
+        a, b = native.rgba(index), composed.rgba(index)
+        for x, y in ((440, 300), (800, 1300), (800, 1600), (300, 1700), (500, 1000)):
+            offset = (y * 1080 + x) * 4
+            assert a[offset : offset + 4] == b[offset : offset + 4]
+        assert a[(1600 * 1080 + 800) * 4 :][:4] == bytes.fromhex("00ff00ff")
+        # The 2:1 fixture has transparent margins in the square image viewport.
+        assert a[(1000 * 1080 + 500) * 4 :][:4] != bytes.fromhex("00ff00ff")
+    assert native.audio_samples() == composed.audio_samples()

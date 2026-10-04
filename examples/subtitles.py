@@ -3,6 +3,7 @@
 from dataclasses import dataclass
 from heapq import heappop, heappush
 from itertools import pairwise
+from typing import Literal
 
 from fframes import Font, Subtitles, TextLayout
 
@@ -17,7 +18,14 @@ class Caption:
 
 
 def captions(
-    track: Subtitles, layout: TextLayout, font: Font, width: int, frames: int, fps: int
+    track: Subtitles,
+    layout: TextLayout,
+    font: Font,
+    width: int,
+    frames: int,
+    fps: int,
+    *,
+    align: Literal["left", "center"] = "center",
 ) -> tuple[Caption, ...]:
     """Prefer the last active source cue and return nonoverlapping frame intervals."""
     events: dict[int, list[int]] = {0: [], frames: []}
@@ -28,10 +36,11 @@ def captions(
         end = ((round(cue.end * 1000) + 1) * fps + 999) // 1000
         ends.append(end)
         wrapped = layout.wrap(cue.text, font, width)
+        lengths = layout.widths(wrapped, font) if align == "center" else (width,) * len(wrapped)
         lines.append(
             tuple(
                 (line, max(0, width - length) // 2)
-                for line, length in zip(wrapped, layout.widths(wrapped, font), strict=True)
+                for line, length in zip(wrapped, lengths, strict=True)
             )
         )
         if start < frames:
