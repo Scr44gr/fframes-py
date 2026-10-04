@@ -78,6 +78,15 @@ runs for 10 seconds with sound and animated texture; the others last 15 seconds.
 Its 11 sessions, speaker photos, sponsor artwork and fonts are pinned together.
 The original track determines its duration; the second scene begins at frame 91.
 
+`marketing` includes the original soundtrack, captions, Ferris animation and logo
+outro. It defaults to upstream's unbundled Chalkboard SE; use `--family Arial`
+or provide the font with `--font`. It runs for 1,310 frames at 60 fps.
+
+`beta` uses the same font flags and embeds four earlier examples without mixing
+their soundtracks into its narration. Its seven scenes include the phone/GitHub
+overlap; the audio tail extends it to 2,126 frames. The phone uses the pinned
+Inter 24pt face, and its simulated FPS counter uses a fixed random seed.
+
 ## Port status
 
 The wrapper does **not yet have full upstream feature parity**. Pending entries
@@ -97,8 +106,8 @@ not an exhaustive engine API inventory.
 | `motion-graphics` | Ported: [native](../examples/native/motion_graphics.py), [compose](../examples/compose/motion_graphics.py), including quote and install variants. |
 | `signal-lab` | Ported: [native](../examples/native/signal_lab.py), [compose](../examples/compose/signal_lab.py); four studies with the original soundtrack. |
 | `conference-splash-screen` | Ported: [native](../examples/native/conference.py), [compose](../examples/compose/conference.py); sponsor intro and selectable speaker cards. |
-| `marketing` | Pending: media, filters and animated graphics. |
-| `beta` | Pending: nested demonstration scenes, paths and embedded media. |
+| `marketing` | Ported: [native](../examples/native/marketing.py), [compose](../examples/compose/marketing.py); original audio, Ferris, spectra, captions and logo reveal. |
+| `beta` | Ported: [native](../examples/native/beta.py), [compose](../examples/compose/beta.py); seven scenes with nested examples, phone interface and original narration. |
 | `low-poly-art` | Ported: [native](../examples/native/low_poly.py), [compose](../examples/compose/low_poly.py); all four birds, including the owl's patterned title and soundtrack. |
 | `pixel-memory` | Pending: procedural photo scenes, shaders and clips; original photos and videos are published. |
 | `fframes-intro` | Pending: shaders, clips, transitions and text effects; original music and effects are published. |

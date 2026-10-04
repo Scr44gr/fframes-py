@@ -9,6 +9,11 @@ from examples.tiktok import FPS, GLOWS, HEIGHT, WIDTH, prepare
 
 def build() -> fframes.SvgVideo:
     """Reuse static markup and precomputed captions while building the frame sequence."""
+    return video().native
+
+
+def video() -> fframes.Video:
+    """Keep frames and bindings reusable in the beta demonstration."""
     data = prepare()
     definitions, glows = [], []
     for index, glow in enumerate(GLOWS):
@@ -51,11 +56,11 @@ def build() -> fframes.SvgVideo:
         'preserveAspectRatio="xMidYMid meet"/></svg>'
         for frame, row in enumerate(data.heights)
     )
-    return fframes.compile_video(
-        fframes.VideoConfig(
+    return fframes.Video(
+        config=fframes.VideoConfig(
             width=WIDTH, height=HEIGHT, fps=FPS, fonts=(data.assets["jetbrains_mono"],)
         ),
-        frames,
+        frames=frames,
         images=(fframes.ImageBinding(name="goose", source=data.assets["goose"]),),
         audio=(fframes.AudioTrack(source=data.assets["thought"]),),
     )

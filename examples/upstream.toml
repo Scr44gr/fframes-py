@@ -2,6 +2,313 @@ repository = "dmtrKovalenko/fframes"
 revision = "055bb6b9dcbbcca6532206847d43ea8e81fa2a0b"
 
 [examples]
+intro = [
+    "intro_left_clip_mp4",
+    "intro_music_wav",
+    "intro_preview_capture_mp4",
+    "intro_right_clip_mp4",
+    "intro_sfx_blip_mp3",
+    "intro_sfx_braam_mp3",
+    "intro_sfx_enter_mp3",
+    "intro_sfx_glitch_mp3",
+    "intro_sfx_impact_mp3",
+    "intro_sfx_shutter_mp3",
+    "intro_sfx_typing_mp3",
+    "intro_sfx_whoosh_mp3",
+    "intro_anton_regular_ttf",
+    "intro_archivoblack_regular_ttf",
+    "intro_ibmplexmono_bold_ttf",
+    "intro_ibmplexmono_medium_ttf",
+    "intro_ibmplexmono_regular_ttf",
+    "intro_ibmplexmono_semibold_ttf",
+    "intro_instrumentserif_italic_ttf",
+    "intro_beta_poster_jpg",
+    "intro_fly_0_jpg",
+    "intro_fly_1_jpg",
+    "intro_fly_2_jpg",
+    "intro_fly_3_jpg",
+    "intro_fly_4_jpg",
+    "intro_fly_5_jpg",
+    "intro_fly_6_jpg",
+    "intro_fly_7_jpg",
+    "intro_fly_8_jpg",
+    "intro_fly_9_jpg",
+    "intro_frame_self_jpg",
+    "intro_strip_self_jpg",
+    "intro_contour_sksl",
+    "intro_develop_sksl",
+    "intro_grain_sksl",
+    "intro_grid_sksl",
+    "intro_key_sksl",
+    "intro_tunnel_sksl",
+    "license",
+]
+pixel_memory = [
+    "pixel_spacegrotesk_medium_ttf",
+    "pixel_the_farewell_mp3",
+    "pixel_naruto_grief_mp3",
+    "pixel_revenge_mp3",
+    "pixel_vostok_zapomny_mp3",
+    "pixel_1_mp4",
+    "pixel_10_jpg",
+    "pixel_10_mp4",
+    "pixel_100_jpg",
+    "pixel_101_jpg",
+    "pixel_102_jpg",
+    "pixel_103_jpg",
+    "pixel_104_jpg",
+    "pixel_105_jpg",
+    "pixel_106_jpg",
+    "pixel_107_jpg",
+    "pixel_108_jpg",
+    "pixel_109_jpg",
+    "pixel_11_jpg",
+    "pixel_11_mp4",
+    "pixel_110_jpg",
+    "pixel_111_jpg",
+    "pixel_112_jpg",
+    "pixel_113_jpg",
+    "pixel_114_jpg",
+    "pixel_115_jpg",
+    "pixel_116_jpg",
+    "pixel_117_jpg",
+    "pixel_118_jpg",
+    "pixel_119_jpg",
+    "pixel_12_jpg",
+    "pixel_12_mp4",
+    "pixel_120_jpg",
+    "pixel_121_jpg",
+    "pixel_122_jpg",
+    "pixel_123_jpg",
+    "pixel_124_jpg",
+    "pixel_125_jpg",
+    "pixel_126_jpg",
+    "pixel_127_jpg",
+    "pixel_128_jpg",
+    "pixel_129_jpg",
+    "pixel_13_jpg",
+    "pixel_13_mp4",
+    "pixel_130_jpg",
+    "pixel_131_jpg",
+    "pixel_132_jpg",
+    "pixel_133_jpg",
+    "pixel_134_jpg",
+    "pixel_135_jpg",
+    "pixel_136_jpg",
+    "pixel_137_jpg",
+    "pixel_138_jpg",
+    "pixel_139_jpg",
+    "pixel_14_jpg",
+    "pixel_14_mp4",
+    "pixel_140_jpg",
+    "pixel_141_jpg",
+    "pixel_142_jpg",
+    "pixel_143_jpg",
+    "pixel_144_jpg",
+    "pixel_145_jpg",
+    "pixel_146_jpg",
+    "pixel_147_jpg",
+    "pixel_148_jpg",
+    "pixel_149_jpg",
+    "pixel_15_jpg",
+    "pixel_15_mp4",
+    "pixel_150_jpg",
+    "pixel_151_jpg",
+    "pixel_152_jpg",
+    "pixel_153_jpg",
+    "pixel_154_jpg",
+    "pixel_155_jpg",
+    "pixel_156_jpg",
+    "pixel_157_jpg",
+    "pixel_158_jpg",
+    "pixel_159_jpg",
+    "pixel_16_jpg",
+    "pixel_16_mp4",
+    "pixel_160_jpg",
+    "pixel_161_jpg",
+    "pixel_162_jpg",
+    "pixel_163_jpg",
+    "pixel_164_jpg",
+    "pixel_165_jpg",
+    "pixel_166_jpg",
+    "pixel_167_jpg",
+    "pixel_168_jpg",
+    "pixel_169_jpg",
+    "pixel_17_jpg",
+    "pixel_17_mp4",
+    "pixel_170_jpg",
+    "pixel_171_jpg",
+    "pixel_172_jpg",
+    "pixel_173_jpg",
+    "pixel_174_jpg",
+    "pixel_175_jpg",
+    "pixel_176_jpg",
+    "pixel_177_jpg",
+    "pixel_178_jpg",
+    "pixel_179_jpg",
+    "pixel_18_jpg",
+    "pixel_18_mp4",
+    "pixel_180_jpg",
+    "pixel_181_jpg",
+    "pixel_182_jpg",
+    "pixel_183_jpg",
+    "pixel_185_jpg",
+    "pixel_186_jpg",
+    "pixel_187_jpg",
+    "pixel_188_jpg",
+    "pixel_189_jpg",
+    "pixel_19_jpg",
+    "pixel_19_mp4",
+    "pixel_190_jpg",
+    "pixel_191_jpg",
+    "pixel_192_jpg",
+    "pixel_193_jpg",
+    "pixel_194_jpg",
+    "pixel_195_jpg",
+    "pixel_196_jpg",
+    "pixel_197_jpg",
+    "pixel_198_jpg",
+    "pixel_199_jpg",
+    "pixel_2_jpg",
+    "pixel_2_mp4",
+    "pixel_20_jpg",
+    "pixel_20_mp4",
+    "pixel_200_jpg",
+    "pixel_201_jpg",
+    "pixel_202_jpg",
+    "pixel_203_jpg",
+    "pixel_204_jpg",
+    "pixel_205_jpg",
+    "pixel_206_jpg",
+    "pixel_207_jpg",
+    "pixel_208_jpg",
+    "pixel_209_jpg",
+    "pixel_21_jpg",
+    "pixel_21_mp4",
+    "pixel_210_jpg",
+    "pixel_211_jpg",
+    "pixel_212_jpg",
+    "pixel_213_jpg",
+    "pixel_214_jpg",
+    "pixel_215_jpg",
+    "pixel_216_jpg",
+    "pixel_217_jpg",
+    "pixel_218_jpg",
+    "pixel_219_jpg",
+    "pixel_22_jpg",
+    "pixel_22_mp4",
+    "pixel_220_jpg",
+    "pixel_221_jpg",
+    "pixel_222_jpg",
+    "pixel_223_jpg",
+    "pixel_224_jpg",
+    "pixel_225_jpg",
+    "pixel_226_jpg",
+    "pixel_227_jpg",
+    "pixel_228_jpg",
+    "pixel_229_jpg",
+    "pixel_23_jpg",
+    "pixel_230_jpg",
+    "pixel_231_jpg",
+    "pixel_232_jpg",
+    "pixel_233_jpg",
+    "pixel_234_jpg",
+    "pixel_235_jpg",
+    "pixel_24_jpg",
+    "pixel_25_jpg",
+    "pixel_26_jpg",
+    "pixel_27_jpg",
+    "pixel_28_jpg",
+    "pixel_29_jpg",
+    "pixel_3_jpg",
+    "pixel_3_mp4",
+    "pixel_30_jpg",
+    "pixel_31_jpg",
+    "pixel_32_jpg",
+    "pixel_33_jpg",
+    "pixel_34_jpg",
+    "pixel_35_jpg",
+    "pixel_36_jpg",
+    "pixel_37_jpg",
+    "pixel_38_jpg",
+    "pixel_39_jpg",
+    "pixel_4_jpg",
+    "pixel_4_mp4",
+    "pixel_40_jpg",
+    "pixel_41_jpg",
+    "pixel_42_jpg",
+    "pixel_43_jpg",
+    "pixel_44_jpg",
+    "pixel_45_jpg",
+    "pixel_46_jpg",
+    "pixel_47_jpg",
+    "pixel_48_jpg",
+    "pixel_49_jpg",
+    "pixel_5_jpg",
+    "pixel_5_mp4",
+    "pixel_50_jpg",
+    "pixel_51_jpg",
+    "pixel_52_jpg",
+    "pixel_53_jpg",
+    "pixel_54_jpg",
+    "pixel_55_jpg",
+    "pixel_56_jpg",
+    "pixel_57_jpg",
+    "pixel_58_jpg",
+    "pixel_59_jpg",
+    "pixel_6_jpg",
+    "pixel_6_mp4",
+    "pixel_60_jpg",
+    "pixel_61_jpg",
+    "pixel_62_jpg",
+    "pixel_63_jpg",
+    "pixel_64_jpg",
+    "pixel_65_jpg",
+    "pixel_66_jpg",
+    "pixel_67_jpg",
+    "pixel_68_jpg",
+    "pixel_69_jpg",
+    "pixel_7_jpg",
+    "pixel_7_mp4",
+    "pixel_70_jpg",
+    "pixel_71_jpg",
+    "pixel_72_jpg",
+    "pixel_73_jpg",
+    "pixel_74_jpg",
+    "pixel_75_jpg",
+    "pixel_76_jpg",
+    "pixel_77_jpg",
+    "pixel_78_jpg",
+    "pixel_79_jpg",
+    "pixel_8_jpg",
+    "pixel_8_mp4",
+    "pixel_80_jpg",
+    "pixel_81_jpg",
+    "pixel_82_jpg",
+    "pixel_83_jpg",
+    "pixel_84_jpg",
+    "pixel_85_jpg",
+    "pixel_86_jpg",
+    "pixel_87_jpg",
+    "pixel_88_jpg",
+    "pixel_89_jpg",
+    "pixel_9_jpg",
+    "pixel_9_mp4",
+    "pixel_90_jpg",
+    "pixel_91_jpg",
+    "pixel_92_jpg",
+    "pixel_93_jpg",
+    "pixel_94_jpg",
+    "pixel_95_jpg",
+    "pixel_96_jpg",
+    "pixel_97_jpg",
+    "pixel_98_jpg",
+    "pixel_99_jpg",
+    "pixel_final_scene_rs",
+    "license",
+]
+beta = ["dm_sans", "jetbrains_mono", "license", "bubble", "marketing_code", "marketing_end", "marketing_audio", "marketing_captions", "marketing_woosh", "marketing_art", "podcast_art", "podcast_audio", "podcast_goose", "podcast_guest", "podcast_duck", "goose", "thought", "thought_captions", "inter_regular", "beta_background", "beta_audio", "beta_code", "beta_camera_ui", "beta_discord_ui", "beta_dmitriy", "beta_github_screenshot", "beta_iphone_frame", "beta_john", "beta_me", "beta_pop", "beta_qr", "beta_torvalds"]
+marketing = ["bubble", "marketing_code", "marketing_end", "marketing_audio", "marketing_captions", "marketing_woosh", "marketing_art", "license"]
 low_poly = ["art_owl", "art_pelican", "art_popuga", "art_spektacled_owl", "fredoka", "owl_audio", "noise", "license"]
 conference = ["sessions", "camel", "inter_title", "inter_bold", "inter_regular", "montserrat", "conference_background", "conference_gradient", "speaker_placeholder", "sponsors", "conference_audio", "thibaut.jpg", "adam.jpg", "nathan.jpg", "tikhon.jpg", "dmitriy.jpg", "malcolm.jpg", "emma.jpg", "nicolas.jpg", "xavier.jpg", "mindy.jpg", "paul-elliot.jpg", "jetbrains_mono", "license"]
 podcast = ["podcast_art", "podcast_audio", "podcast_goose", "podcast_guest", "podcast_duck", "license"]
@@ -229,3 +536,1279 @@ sha256 = "9ecfcdda23750f75a5b9920dc9f5de9c3905dd3c3b7aff17951951c142a1394b"
 [files."paul-elliot.jpg"]
 path = "examples/conference-splash-screen/dynamic_media/paul-elliot.jpg"
 sha256 = "c7a8101c4ab07e691da2802121fa5bb8fcaddde41e474b5994d114e2f14d5389"
+
+[files.bubble]
+path = "examples/marketing/media/Bubble.ttf"
+sha256 = "f4fd370789338a6295454c5c053492289e3187a821f4a11f0969550c266bc1fa"
+
+[files.marketing_code]
+path = "examples/marketing/media/code.png"
+sha256 = "ebeee30e09e47ead0b1489c4ed93738757c30518b2b1b73819fa975827829abb"
+
+[files.marketing_end]
+path = "examples/marketing/media/end.mp3"
+sha256 = "67192c4409578484b3db3858946c949a41ef343bd21bd88ced1e7f86fe6ff5c6"
+
+[files.marketing_audio]
+path = "examples/marketing/media/marketing.mp3"
+sha256 = "127af356eab6df64aba99bb41e161dc5a0bdd14c6f43128e6de40bf8473c3cd3"
+
+[files.marketing_captions]
+path = "examples/marketing/media/subtitles.vtt"
+sha256 = "154949f462fb44c6cdc196201e528046f9e71ab76e7f7554f4aab5c06756ac17"
+
+[files.marketing_woosh]
+path = "examples/marketing/media/woosh.mp3"
+sha256 = "afbf295e2eda97d5e997684495704d878dae7991431d9ce4a271f79e08ff28be"
+
+[files.marketing_art]
+path = "examples/marketing/src/marketing.rs"
+sha256 = "feab6f7f86dc3f311e636136a6602818bae936d6968c895145c1249b7802479b"
+
+[files.beta_background]
+path = "examples/beta/media/background.png"
+sha256 = "02f00f862716b396377a538b22264f39aee31250a53edef5e33194cde26d6cb3"
+
+[files.beta_audio]
+path = "examples/beta/media/beta.mp3"
+sha256 = "48630aad60bd587556dea19c2d401ccc430bdf9b87e96dda355e60c355aef7fe"
+
+[files.beta_code]
+path = "examples/beta/media/beta_code.png"
+sha256 = "644edfcec1279e8727f3103d30dcfbb5ea340168eab3eca2ae5200f3d709dae7"
+
+[files.beta_camera_ui]
+path = "examples/beta/media/camera_ui.png"
+sha256 = "26e1ce2da7186f06c7956c088f6f6a5e6a260d1dbaff5f12df177597d4774489"
+
+[files.beta_discord_ui]
+path = "examples/beta/media/discord_ui.png"
+sha256 = "0a3d4e4f7d5510fc8058f7dae0fb2822b7dab01f8cf5bab3226c844f7937306c"
+
+[files.beta_dmitriy]
+path = "examples/beta/media/dmitriy.png"
+sha256 = "9ff2873fa39762f829aa88f11e5ecafdd7419800f017096106bce880d1dba3b3"
+
+[files.beta_github_screenshot]
+path = "examples/beta/media/github_screenshot.png"
+sha256 = "1839ae0c18808e6e31a10bbf1473745a472c0ce52f929fc517f88396b56ddb5b"
+
+[files.beta_iphone_frame]
+path = "examples/beta/media/iphone_frame.png"
+sha256 = "c4156b3df36b7827249a38bdf715c258a336cd698011050863e92d8f3416a69d"
+
+[files.beta_john]
+path = "examples/beta/media/john.png"
+sha256 = "1b761a133f3f1cdf390d3a41306a29cdee50da598cc305b5b00f70b2e0d34544"
+
+[files.beta_me]
+path = "examples/beta/media/me.png"
+sha256 = "ad804739a1f091c7425600c04fea94749259ce799dbcd69fb4ab667cbf9f2f16"
+
+[files.beta_pop]
+path = "examples/beta/media/pop.mp3"
+sha256 = "b41a8e8fa941f62752f5180ccd8d7cf7eb5fa7ef90938b8fc503127cd564f02f"
+
+[files.beta_qr]
+path = "examples/beta/media/qr.png"
+sha256 = "bb7f30c625af9aca68761c81d0d82bf15360ba7c0e585e238eda4c521d7c7d90"
+
+[files.beta_torvalds]
+path = "examples/beta/media/torvalds.png"
+sha256 = "9a4721121bdcbd5d2eda67ec03b9eea425701a2b3acf767478372b3dc21f0752"
+
+[files.intro_left_clip_mp4]
+path = "examples/fframes-intro/dynamic_media/left_clip.mp4"
+sha256 = "fa0aed32b349a42cbfd683e6d764606c9d5d9070d12791e4d4c694b69242d72f"
+
+[files.intro_music_wav]
+path = "examples/fframes-intro/dynamic_media/music.wav"
+sha256 = "8a98270eda0e68655230e49f027df8e3e49840244773e7b2ff5c522629930810"
+
+[files.intro_preview_capture_mp4]
+path = "examples/fframes-intro/dynamic_media/preview_capture.mp4"
+sha256 = "bbc572f6d5ed977a1533115fddd4ec17f2b1c65f0e8cdf546692174997dd21d2"
+
+[files.intro_right_clip_mp4]
+path = "examples/fframes-intro/dynamic_media/right_clip.mp4"
+sha256 = "65f854ccd0f06c4ade239ab34e5c003e0ea0673c35eb563fe1d642ff34b0c9b6"
+
+[files.intro_sfx_blip_mp3]
+path = "examples/fframes-intro/dynamic_media/sfx_blip.mp3"
+sha256 = "fe9624dcfe52f4717f628260bfa017a2649351e23b7a3af39e43b2d0ec5dc25e"
+
+[files.intro_sfx_braam_mp3]
+path = "examples/fframes-intro/dynamic_media/sfx_braam.mp3"
+sha256 = "4fec5e02b2db4b9bcc6037808115152ac432b555f3c6334292ae8059df93c350"
+
+[files.intro_sfx_enter_mp3]
+path = "examples/fframes-intro/dynamic_media/sfx_enter.mp3"
+sha256 = "fc37605f381a69356636c2e331eacfce0c5b6dab4e10bef8a4894a0a4ff86395"
+
+[files.intro_sfx_glitch_mp3]
+path = "examples/fframes-intro/dynamic_media/sfx_glitch.mp3"
+sha256 = "e8850d60d19fd6ccb798408f78bfd2daa224a74d33ce1e45643fdbff4b4df4be"
+
+[files.intro_sfx_impact_mp3]
+path = "examples/fframes-intro/dynamic_media/sfx_impact.mp3"
+sha256 = "cc47647bf621efc9574a1426c93145921d1067ace8d72a870835045a1a5f6168"
+
+[files.intro_sfx_shutter_mp3]
+path = "examples/fframes-intro/dynamic_media/sfx_shutter.mp3"
+sha256 = "9853fd09ea5e9ff9dbba99a69a555f2e6f7d354ccd3481f54a9bfa63b7f8730c"
+
+[files.intro_sfx_typing_mp3]
+path = "examples/fframes-intro/dynamic_media/sfx_typing.mp3"
+sha256 = "843b8e48324a41dfae47d44921369bff3b4a1b49c47797522fb18510a2fe98cc"
+
+[files.intro_sfx_whoosh_mp3]
+path = "examples/fframes-intro/dynamic_media/sfx_whoosh.mp3"
+sha256 = "cc20f796b6561fc806b79d6bca976bf30df760a58c00138449eb49ca6ad4bd52"
+
+[files.intro_anton_regular_ttf]
+path = "examples/fframes-intro/media/Anton-Regular.ttf"
+sha256 = "a4ba3a92350ebb031da0cb47630ac49eb265082ca1bc0450442f4a83ab947cab"
+
+[files.intro_archivoblack_regular_ttf]
+path = "examples/fframes-intro/media/ArchivoBlack-Regular.ttf"
+sha256 = "dd9a89a019b4849f66ab75455fe7bdf931311042cbb0f0f97acc061539703180"
+
+[files.intro_ibmplexmono_bold_ttf]
+path = "examples/fframes-intro/media/IBMPlexMono-Bold.ttf"
+sha256 = "ac27abd6450a64dd94467580a02fe6235156d5b92f2926ebbc8e7489df64e0be"
+
+[files.intro_ibmplexmono_medium_ttf]
+path = "examples/fframes-intro/media/IBMPlexMono-Medium.ttf"
+sha256 = "a9b4c49bb299e05b5f6c481e7fb5e78943d2793249a0c8874ab574a2d1ea6755"
+
+[files.intro_ibmplexmono_regular_ttf]
+path = "examples/fframes-intro/media/IBMPlexMono-Regular.ttf"
+sha256 = "6a3412f058c7d8dfd9170c41e85ade48e5156ecb89356110ca57a0a27734af46"
+
+[files.intro_ibmplexmono_semibold_ttf]
+path = "examples/fframes-intro/media/IBMPlexMono-SemiBold.ttf"
+sha256 = "d3c38e55c78f5b0f28009fddba4834ec503278936a5986032424c9bd2d23aa46"
+
+[files.intro_instrumentserif_italic_ttf]
+path = "examples/fframes-intro/media/InstrumentSerif-Italic.ttf"
+sha256 = "08939b8bdf534afec24ae0ef5e03f948940cd9a8fe08e7fecbad040e62327385"
+
+[files.intro_beta_poster_jpg]
+path = "examples/fframes-intro/media/beta_poster.jpg"
+sha256 = "fd26c4701be3ca2836c6fac52996926ca4467c56e6d52eed8e7612f0edfa8766"
+
+[files.intro_fly_0_jpg]
+path = "examples/fframes-intro/media/fly_0.jpg"
+sha256 = "240a79f715e9733e51ffd214528e8ffde7aefac7f8587f1c554633eaf1d23694"
+
+[files.intro_fly_1_jpg]
+path = "examples/fframes-intro/media/fly_1.jpg"
+sha256 = "0086c242b40717769df3f10d96d64fa83b4692e45313c263ca0480b087abc15b"
+
+[files.intro_fly_2_jpg]
+path = "examples/fframes-intro/media/fly_2.jpg"
+sha256 = "3a1e2418e258292c314929f5840a8b78994d534a3863f1d419bf8a2f40dc50bf"
+
+[files.intro_fly_3_jpg]
+path = "examples/fframes-intro/media/fly_3.jpg"
+sha256 = "79406397748a9478996c4415114f2e8468ac6c0085b147678c680ef2b508dd0a"
+
+[files.intro_fly_4_jpg]
+path = "examples/fframes-intro/media/fly_4.jpg"
+sha256 = "ea6e925c9efcac8e1c4e146a088e40dd8bf61624fd3dc1c48d2ab1dc5cf0ece4"
+
+[files.intro_fly_5_jpg]
+path = "examples/fframes-intro/media/fly_5.jpg"
+sha256 = "88c7fd1052bc3476aff2c6a5af2deec2aa4b05f4dfad3e98f9aa181448c2aab3"
+
+[files.intro_fly_6_jpg]
+path = "examples/fframes-intro/media/fly_6.jpg"
+sha256 = "8105e5c2ab445f701295e68d9599190085dafc3fe48a8b815f92dc38b261ce5b"
+
+[files.intro_fly_7_jpg]
+path = "examples/fframes-intro/media/fly_7.jpg"
+sha256 = "1c65eb9dfc84dd08f741b91351d03af630f8aaf62bf63bd2c3cbbe0d55e1303b"
+
+[files.intro_fly_8_jpg]
+path = "examples/fframes-intro/media/fly_8.jpg"
+sha256 = "1d431753358e35892033ebca571c4b6a41c0d9a0b4e996a38e04fbf374818f75"
+
+[files.intro_fly_9_jpg]
+path = "examples/fframes-intro/media/fly_9.jpg"
+sha256 = "80af9dd01649cfdb91c9094cebdd3464c25095dbc51ff429f8962a9ebbe7845a"
+
+[files.intro_frame_self_jpg]
+path = "examples/fframes-intro/media/frame_self.jpg"
+sha256 = "a4b6029dc0b13e89e1b095e2862b3ffe5b80470ec7ddbd2cce9948f800490468"
+
+[files.intro_strip_self_jpg]
+path = "examples/fframes-intro/media/strip_self.jpg"
+sha256 = "48027625d18d19e9fd3edb65fb87281dfb4dfc38c58959ddbb4ff3fb86613f5c"
+
+[files.intro_contour_sksl]
+path = "examples/fframes-intro/src/shaders/contour.sksl"
+sha256 = "934027332a48c4f68043617ca0bba7f6457d0e028ecfc70b63218caa31860583"
+
+[files.intro_develop_sksl]
+path = "examples/fframes-intro/src/shaders/develop.sksl"
+sha256 = "f78a68030c67251ec6b115ede8da6cafc8b6ee5c7fcf3f7b27760f11c4a1f5de"
+
+[files.intro_grain_sksl]
+path = "examples/fframes-intro/src/shaders/grain.sksl"
+sha256 = "1b020530f7135cf7627f9cd7bd9df1200fe067e4bdab2b8b26d7ab6fb15a39a0"
+
+[files.intro_grid_sksl]
+path = "examples/fframes-intro/src/shaders/grid.sksl"
+sha256 = "91527e2caeaf5b263f0633d853dcbb0a28c8f1a42727832732e63c5a6af86e68"
+
+[files.intro_key_sksl]
+path = "examples/fframes-intro/src/shaders/key.sksl"
+sha256 = "0dc8ce4db5e7c6ba6eaac897f8c523dd81af952b0a96419638bff4354a612872"
+
+[files.intro_tunnel_sksl]
+path = "examples/fframes-intro/src/shaders/tunnel.sksl"
+sha256 = "7c3e309d9c86471e62d0af9046b59d9da15b2ba9dd287095a36ce8a034937be3"
+
+[files.pixel_spacegrotesk_medium_ttf]
+path = "examples/pixel-memory/media/SpaceGrotesk-Medium.ttf"
+sha256 = "d8135bce6603398f3d0cdb478a018d7fa869b0168d037a9408cad23e030bfa7a"
+
+[files.pixel_the_farewell_mp3]
+path = "examples/pixel-memory/media/The_Farewell.mp3"
+sha256 = "e0ec34b14fc6a3c1cbf0b8e0f36526b5600ede08dafb4a94397152abb808484d"
+
+[files.pixel_naruto_grief_mp3]
+path = "examples/pixel-memory/media/naruto_grief.mp3"
+sha256 = "31b51b0df787e7d836155de8af4bb8e1c7a7bdc1062c493629e4895b525cc612"
+
+[files.pixel_revenge_mp3]
+path = "examples/pixel-memory/media/revenge.mp3"
+sha256 = "8982c230b9fdbf1a3319edac4e885286b24c1bd9ab774df346bfea8b8512d0ba"
+
+[files.pixel_vostok_zapomny_mp3]
+path = "examples/pixel-memory/media/vostok_zapomny.mp3"
+sha256 = "909412f85f99d98e7580a96ac4c14a8cd58b57618dbb80d0821867cc1092d8f0"
+
+[files.pixel_1_mp4]
+path = "examples/pixel-memory/photos/1.mp4"
+sha256 = "74a9cbcca60e88ae87b2afc9d1c1e8c232dcc222625cc1991d2b663bded94071"
+
+[files.pixel_10_jpg]
+path = "examples/pixel-memory/photos/10.jpg"
+sha256 = "edc799d0b87140f500e82ef6b35b24892f1508578cf10414bbb159740c8eed4a"
+
+[files.pixel_10_mp4]
+path = "examples/pixel-memory/photos/10.mp4"
+sha256 = "d1afe298ebceecb6c4adb0a4c259c37d3ab87a9819b475e3be5a39927e3c1336"
+
+[files.pixel_100_jpg]
+path = "examples/pixel-memory/photos/100.jpg"
+sha256 = "344ce77411646ea0ad8fefc756bf2f24b5b6bf03656fefba9b9bee123f778e56"
+
+[files.pixel_101_jpg]
+path = "examples/pixel-memory/photos/101.jpg"
+sha256 = "f08b1a24c987a850cf3dd5065b8ebfebcde6d9c26fbac3f3fe1398e3ea6e7452"
+
+[files.pixel_102_jpg]
+path = "examples/pixel-memory/photos/102.jpg"
+sha256 = "3a949ce94d3255b028f4e80466cb961a0528272e502ade726672028cc01e8f09"
+
+[files.pixel_103_jpg]
+path = "examples/pixel-memory/photos/103.jpg"
+sha256 = "dd87bc2f25fb240c105d6af827bacd37571d635d4457d74bdfdf06302ec2014e"
+
+[files.pixel_104_jpg]
+path = "examples/pixel-memory/photos/104.jpg"
+sha256 = "e3c36044b742c43e42a2b40aba96f98acc7f07bcc588f8d96a81b9a326b92ea1"
+
+[files.pixel_105_jpg]
+path = "examples/pixel-memory/photos/105.jpg"
+sha256 = "07d17ef3d8ba62cb0aef99edc743338f655fae44ac9e7048f06ccf1cbc8bb8a3"
+
+[files.pixel_106_jpg]
+path = "examples/pixel-memory/photos/106.jpg"
+sha256 = "1930b50dde972317f712c95b5e46a96d7d5f6a63ad9ccd2c63296785cb11c195"
+
+[files.pixel_107_jpg]
+path = "examples/pixel-memory/photos/107.jpg"
+sha256 = "c056ad1ec6f27e6c43a872cde53c8bcb0e9e1fcaa98981c788c1be9ae2918212"
+
+[files.pixel_108_jpg]
+path = "examples/pixel-memory/photos/108.jpg"
+sha256 = "241f3047e7bc00aae790a19225b333be9e9daa2638f25faf1a4dd45977aa1622"
+
+[files.pixel_109_jpg]
+path = "examples/pixel-memory/photos/109.jpg"
+sha256 = "931f0c89415257cc4cd1f3b4ec823cce6bb6d5cf78b89d1dc5d5162e5ff6be52"
+
+[files.pixel_11_jpg]
+path = "examples/pixel-memory/photos/11.jpg"
+sha256 = "250e688d3ddd789e56e68f6d18b6129a80b0b220d4af4d4cd60783e4850cb56d"
+
+[files.pixel_11_mp4]
+path = "examples/pixel-memory/photos/11.mp4"
+sha256 = "bed324a7ea10cd2d0d7d2bfd848b1e1a2f6485ada0a2efec03d48915575b7732"
+
+[files.pixel_110_jpg]
+path = "examples/pixel-memory/photos/110.jpg"
+sha256 = "e368fa95990a11ad8a1347984b6adb0bb71fb0ae0a1dc30a26d977cdeed35638"
+
+[files.pixel_111_jpg]
+path = "examples/pixel-memory/photos/111.jpg"
+sha256 = "0cc1ff1f927b98f28ca42bcd9a15feba26461a14d6c9adb026cdab82eef943b1"
+
+[files.pixel_112_jpg]
+path = "examples/pixel-memory/photos/112.jpg"
+sha256 = "199612bfe1917d2076e3556eadbfed9e932025b5ec6c5bd06046894dd60fb2c2"
+
+[files.pixel_113_jpg]
+path = "examples/pixel-memory/photos/113.jpg"
+sha256 = "75787caa804169014dd70795749eb7dccb2c944955052ac8d314e1f61986c72f"
+
+[files.pixel_114_jpg]
+path = "examples/pixel-memory/photos/114.jpg"
+sha256 = "39de17fe0d44a1898dabd3ed81b8e8230e327562ba822f2f5eca4dad2fc6d92a"
+
+[files.pixel_115_jpg]
+path = "examples/pixel-memory/photos/115.jpg"
+sha256 = "25d5ae0c1bd9512a7785061a766febf69ef2d9df34b9268a0b490eadb114b6d8"
+
+[files.pixel_116_jpg]
+path = "examples/pixel-memory/photos/116.jpg"
+sha256 = "39466678277643a416ccc400aa26815a80e90b6d41025bd3cde09b4e5fbf6ea1"
+
+[files.pixel_117_jpg]
+path = "examples/pixel-memory/photos/117.jpg"
+sha256 = "ab3dd16d4668d2af54c2f5e7a175063ad43c356ecd493b77df38cfca3b5fb631"
+
+[files.pixel_118_jpg]
+path = "examples/pixel-memory/photos/118.jpg"
+sha256 = "e9e629acaf19d4d0b1b40d3794bb6f3bff39e954091f09ece446a22fcd1ed8e9"
+
+[files.pixel_119_jpg]
+path = "examples/pixel-memory/photos/119.jpg"
+sha256 = "a2eb59830f2f4e1b38f367534b9b57b8cc34ffd427bb12ee40a9da0fbe921713"
+
+[files.pixel_12_jpg]
+path = "examples/pixel-memory/photos/12.jpg"
+sha256 = "8740c3e86170dae33f50a11213e25f015ce1648afa15cf11d20c01367601972e"
+
+[files.pixel_12_mp4]
+path = "examples/pixel-memory/photos/12.mp4"
+sha256 = "0534d35c3fbfafcefbdf75049aedf55b9fddaf32937da701a4288eabcbce7f54"
+
+[files.pixel_120_jpg]
+path = "examples/pixel-memory/photos/120.jpg"
+sha256 = "fea906cc6da0b7d287ebeaa18f8cc9aa0fae88894fb42d41138b172c8b42f5bb"
+
+[files.pixel_121_jpg]
+path = "examples/pixel-memory/photos/121.jpg"
+sha256 = "7cb0a50a2230e9f92948c6575c39d2056173829b9d2f80c8ec0e818e5b83eb40"
+
+[files.pixel_122_jpg]
+path = "examples/pixel-memory/photos/122.jpg"
+sha256 = "46ca9528e9159c456b75d211e9286578862f4f199ccbfdaba1bd512a4c4946bb"
+
+[files.pixel_123_jpg]
+path = "examples/pixel-memory/photos/123.jpg"
+sha256 = "a21ee242730be04f672d1a5bc1a632ec4db71914d816731382d104765cb157d7"
+
+[files.pixel_124_jpg]
+path = "examples/pixel-memory/photos/124.jpg"
+sha256 = "759f3a37195f754ff71443f87b0c489c5078e3e5af45513b1cecaef3f807cd50"
+
+[files.pixel_125_jpg]
+path = "examples/pixel-memory/photos/125.jpg"
+sha256 = "ed3fdbdc1ae7f85d8056badedc7e9bf36a9673c6102b32c6d624b047d732bc95"
+
+[files.pixel_126_jpg]
+path = "examples/pixel-memory/photos/126.jpg"
+sha256 = "b9916a2ace056749c36d3867a5ff7677989aac68ed0495226567734896af2e9b"
+
+[files.pixel_127_jpg]
+path = "examples/pixel-memory/photos/127.jpg"
+sha256 = "0aac83d46288d00264abe3e5a393f9e7ce5e103290666f1ee27c6bdd30f1fa10"
+
+[files.pixel_128_jpg]
+path = "examples/pixel-memory/photos/128.jpg"
+sha256 = "d7713614a49d8200e548ecfc60f9c45ccceba788764e98c53c7d20c9ce1e0914"
+
+[files.pixel_129_jpg]
+path = "examples/pixel-memory/photos/129.jpg"
+sha256 = "56b75ef5a9233e033942a423dad9a059b15691808ada466eb4aedd3df2162908"
+
+[files.pixel_13_jpg]
+path = "examples/pixel-memory/photos/13.jpg"
+sha256 = "a3f712694b742edbf77c1dc85d9bb3f447cb9dbc8c2d9660885d431e764643e1"
+
+[files.pixel_13_mp4]
+path = "examples/pixel-memory/photos/13.mp4"
+sha256 = "bcbcd0b228e89ee8e95fa2c42aa6e9e941caf389ca2b0f5e8847784ddb25dd86"
+
+[files.pixel_130_jpg]
+path = "examples/pixel-memory/photos/130.jpg"
+sha256 = "9264684205652965d5dc477b3bb5bcaf766c8486bdedfc89f8d30342673d7dda"
+
+[files.pixel_131_jpg]
+path = "examples/pixel-memory/photos/131.jpg"
+sha256 = "ff83852563cfdb489668851acac0a8276cb2549d462ca22a2a55eeb232f349ca"
+
+[files.pixel_132_jpg]
+path = "examples/pixel-memory/photos/132.jpg"
+sha256 = "76ce0e5d7f5f3b599d0724fe8200b1eccbce5cd142b5bd09d1d7b412906c1821"
+
+[files.pixel_133_jpg]
+path = "examples/pixel-memory/photos/133.jpg"
+sha256 = "01ff777c424c418e19d32d557985bb230f8151919757707e7ec526927103d3cb"
+
+[files.pixel_134_jpg]
+path = "examples/pixel-memory/photos/134.jpg"
+sha256 = "dba8b5ea8b90a9ed2b006432cebf9712e9ba386d37339192eb20b77316dbc272"
+
+[files.pixel_135_jpg]
+path = "examples/pixel-memory/photos/135.jpg"
+sha256 = "0a0c8192999d93dae58eadf1ceacd843fd5e35f722d378e551047b88bff3757a"
+
+[files.pixel_136_jpg]
+path = "examples/pixel-memory/photos/136.jpg"
+sha256 = "dbef91064d17a9bc6bd3422c9f88e8ab352312c7d1f8b3bbdc55680d10093ba1"
+
+[files.pixel_137_jpg]
+path = "examples/pixel-memory/photos/137.jpg"
+sha256 = "71e1366463f613c2a8f478b6a6a8af91434e6d0e58c83255b399a700cda0a7c9"
+
+[files.pixel_138_jpg]
+path = "examples/pixel-memory/photos/138.jpg"
+sha256 = "7bf7e5c85f298e415138f68145035f1269bbf7189927392c109ad35b4e2cae0c"
+
+[files.pixel_139_jpg]
+path = "examples/pixel-memory/photos/139.jpg"
+sha256 = "fcf87adcdf6e921ee5b0a8bf74eb5db7bf08843d261c9b3023f6be0e43b64661"
+
+[files.pixel_14_jpg]
+path = "examples/pixel-memory/photos/14.jpg"
+sha256 = "ae286108b6d7a51c74177e7cf471b7d25fe0ff2ee43905dc37c4168fa0ebbbe3"
+
+[files.pixel_14_mp4]
+path = "examples/pixel-memory/photos/14.mp4"
+sha256 = "7ab4c554f1b0b6adb5f3f33f96ec0691a826cb7803e3dc228bd36c0a5114cf62"
+
+[files.pixel_140_jpg]
+path = "examples/pixel-memory/photos/140.jpg"
+sha256 = "50fb41db907f739250b5711f17eb2e35b348ba3c10050208bcd79f2523f8ceb2"
+
+[files.pixel_141_jpg]
+path = "examples/pixel-memory/photos/141.jpg"
+sha256 = "16654772dbfc44b5ada24efc7a8c859e69fbe9ab67b61f91a4bcdfd789eaff90"
+
+[files.pixel_142_jpg]
+path = "examples/pixel-memory/photos/142.jpg"
+sha256 = "f3b2efc387ee7ed3708d6352bc35a8cf720df67b2446aef40d4743e90d5bd488"
+
+[files.pixel_143_jpg]
+path = "examples/pixel-memory/photos/143.jpg"
+sha256 = "25e2a17d30bdcee36be82db6a1a6091f0587ff055d46d60e6adc7e41a50fbf3e"
+
+[files.pixel_144_jpg]
+path = "examples/pixel-memory/photos/144.jpg"
+sha256 = "eea070dd10ade9c7d4fdcd83bd8cb9b5d5dfacea3732f6fee21f3e5207feabdb"
+
+[files.pixel_145_jpg]
+path = "examples/pixel-memory/photos/145.jpg"
+sha256 = "e90f9abc6876b7c218c44f5a66f6fc3bf9a49fc55585d996691ef043b2d731a9"
+
+[files.pixel_146_jpg]
+path = "examples/pixel-memory/photos/146.jpg"
+sha256 = "e37629a2282d9abae7c8f71c9ac5206c74c18f81c8e613cd3ce44d8a2f3cf47e"
+
+[files.pixel_147_jpg]
+path = "examples/pixel-memory/photos/147.jpg"
+sha256 = "c8ba8040573bc2699dcc1ad22c367955ad343012ede3356a11416b0d29bd4134"
+
+[files.pixel_148_jpg]
+path = "examples/pixel-memory/photos/148.jpg"
+sha256 = "5bf9756eb902adfa3e6ed3f1ce7b7de97091d52a00dcbfa565abfdf93bd439de"
+
+[files.pixel_149_jpg]
+path = "examples/pixel-memory/photos/149.jpg"
+sha256 = "e66961cbafc62548411403b67789f12969559f123a15d0259c2cca645c727580"
+
+[files.pixel_15_jpg]
+path = "examples/pixel-memory/photos/15.jpg"
+sha256 = "07d61790923f69348442faaf41527359d0e4779eb725e60b963e94cafb3b9154"
+
+[files.pixel_15_mp4]
+path = "examples/pixel-memory/photos/15.mp4"
+sha256 = "55d542bde2439675a4b33c074140ddcb3283b843eecac661878df86ae4159d4f"
+
+[files.pixel_150_jpg]
+path = "examples/pixel-memory/photos/150.jpg"
+sha256 = "c359c56166b7214f6628f5e8c117b94fc8acae519d3b07b2c56576b62ff9ec28"
+
+[files.pixel_151_jpg]
+path = "examples/pixel-memory/photos/151.jpg"
+sha256 = "c363e2b7da3d60f452bdc6dd007c8d27560076924f8ad66f2221af455613b839"
+
+[files.pixel_152_jpg]
+path = "examples/pixel-memory/photos/152.jpg"
+sha256 = "223a0c573dbf1d1912bb6a4e34e1e2c29bc71d3db6d64289aa515bcda9ef362a"
+
+[files.pixel_153_jpg]
+path = "examples/pixel-memory/photos/153.jpg"
+sha256 = "e7f9e270d114d99c51119ba442f6d7364f22c6b4d39872294d5c8398eb667672"
+
+[files.pixel_154_jpg]
+path = "examples/pixel-memory/photos/154.jpg"
+sha256 = "cedd51fc08218b4e68c8df292cf64c86f59de742da0225f764ab758bf50e7ef0"
+
+[files.pixel_155_jpg]
+path = "examples/pixel-memory/photos/155.jpg"
+sha256 = "eff0a0f5e669b256bc4516c6a445c8b3148b54298691acd358bbb90dea3e96a7"
+
+[files.pixel_156_jpg]
+path = "examples/pixel-memory/photos/156.jpg"
+sha256 = "248b435b54220bcaf0fc0186adbf4170b469a1b936ffe39f43d68f490fd57a79"
+
+[files.pixel_157_jpg]
+path = "examples/pixel-memory/photos/157.jpg"
+sha256 = "4bac933bfb3ad969d2cac993a9f6436c142f344ef0618fd84b26e02995576fa5"
+
+[files.pixel_158_jpg]
+path = "examples/pixel-memory/photos/158.jpg"
+sha256 = "5f9523e12201200071b4b3079cfbe48dba57d0bb1c038e250fa60f18857f3c5b"
+
+[files.pixel_159_jpg]
+path = "examples/pixel-memory/photos/159.jpg"
+sha256 = "d0fe9a0837c949f5c31ca11e20301addf4076289a2adc759df6c7e1b637fe48d"
+
+[files.pixel_16_jpg]
+path = "examples/pixel-memory/photos/16.jpg"
+sha256 = "f64a00a46212da64cd00e913cf78c31a0f5af338d07521d59da4c12a0bff661a"
+
+[files.pixel_16_mp4]
+path = "examples/pixel-memory/photos/16.mp4"
+sha256 = "4fbc2c751222fc17ff40ee7bfbdcf90c4d125b605f4bb33387305c66c5536348"
+
+[files.pixel_160_jpg]
+path = "examples/pixel-memory/photos/160.jpg"
+sha256 = "d8b898e6a01e4ba070b0d845c736eed47b864b36de20a0cd17a827e4a74e3e0a"
+
+[files.pixel_161_jpg]
+path = "examples/pixel-memory/photos/161.jpg"
+sha256 = "89628212810a1f1b0076478067bced229cd6a32896fe29bba8c2a453efce6aad"
+
+[files.pixel_162_jpg]
+path = "examples/pixel-memory/photos/162.jpg"
+sha256 = "b35b2ac620b38110b18cd77327ec8571b28f6cfb91d47e4a96944a2dd85f570b"
+
+[files.pixel_163_jpg]
+path = "examples/pixel-memory/photos/163.jpg"
+sha256 = "329e5d87ee635db0a44b5af9d5f969f38af80de956a28d5b3492c3f4c077332e"
+
+[files.pixel_164_jpg]
+path = "examples/pixel-memory/photos/164.jpg"
+sha256 = "3aa5f2a62246fefde5a2cf59991c21b3e5a58e9a556fb7365d4a428be8fd7834"
+
+[files.pixel_165_jpg]
+path = "examples/pixel-memory/photos/165.jpg"
+sha256 = "a85e5f1ba4d3d1b30e96f75ffb3aedb87be937a475e0a548a80924f39b387a7d"
+
+[files.pixel_166_jpg]
+path = "examples/pixel-memory/photos/166.jpg"
+sha256 = "5db843b8aa2dc79bed2fb6828e2fb1bf8c42268043d6f17fb65446205b7c9405"
+
+[files.pixel_167_jpg]
+path = "examples/pixel-memory/photos/167.jpg"
+sha256 = "cf8e5465f504251d491dd1edf8dbc4b7227a5025c9b9c3cc7dd5b0352d700e6f"
+
+[files.pixel_168_jpg]
+path = "examples/pixel-memory/photos/168.jpg"
+sha256 = "00e4d3651c31b898f27cc7ee6d41cea0b9a81bddfa1369ac8ba973428c7f1715"
+
+[files.pixel_169_jpg]
+path = "examples/pixel-memory/photos/169.jpg"
+sha256 = "8cab27ae90ee9181cd56287e10876689c5e174353966074cf472d2d0dfa58613"
+
+[files.pixel_17_jpg]
+path = "examples/pixel-memory/photos/17.jpg"
+sha256 = "de9c9ce19d9ec1da9d8e453cc53879c6ad829592d96f0938191ce42c6da6486e"
+
+[files.pixel_17_mp4]
+path = "examples/pixel-memory/photos/17.mp4"
+sha256 = "36118d24aa13ec3ab21f9f6776aeb38722d32d7acd93db3d0e45e45985820dab"
+
+[files.pixel_170_jpg]
+path = "examples/pixel-memory/photos/170.jpg"
+sha256 = "9ca96eba640341485eb8ded7c19972b25c6647c402e2866b95e9523349388d00"
+
+[files.pixel_171_jpg]
+path = "examples/pixel-memory/photos/171.jpg"
+sha256 = "7fde448d0db681fe7fbaed895b153f2866323d9cc28204d28f63cc25ca703cf1"
+
+[files.pixel_172_jpg]
+path = "examples/pixel-memory/photos/172.jpg"
+sha256 = "7b7c88ea97f1cfa62555fd181b37ca29db1885ba5c30225a3469f5e3f838f9a7"
+
+[files.pixel_173_jpg]
+path = "examples/pixel-memory/photos/173.jpg"
+sha256 = "6c25015be64c9f669ee4cef3b3516407de731ccaec0c77bcddf6d91590263143"
+
+[files.pixel_174_jpg]
+path = "examples/pixel-memory/photos/174.jpg"
+sha256 = "2edb23140f3f0f3ad59552b3b44055368e7c8fa70d96757ece14e48835a32fc0"
+
+[files.pixel_175_jpg]
+path = "examples/pixel-memory/photos/175.jpg"
+sha256 = "2906a14afc880e59b5ad6c354633e96f3a85bc42a6ce4faa692fb2ba9aa61c80"
+
+[files.pixel_176_jpg]
+path = "examples/pixel-memory/photos/176.jpg"
+sha256 = "85ccdb96c90c97a43107b2d1d910b45f7f40e02d46ef8984bbb43f96fbe7e76d"
+
+[files.pixel_177_jpg]
+path = "examples/pixel-memory/photos/177.jpg"
+sha256 = "3176880d65f52bdce7bd0d5761862adf6a0714b26ba60dcab53a8053f837ba33"
+
+[files.pixel_178_jpg]
+path = "examples/pixel-memory/photos/178.jpg"
+sha256 = "d395e91ebdbce2e270a1a6606dcfcf5f3986faf0a55f216404fd15f73755a58b"
+
+[files.pixel_179_jpg]
+path = "examples/pixel-memory/photos/179.jpg"
+sha256 = "e88ff71bae6e091e6e56b3df0c39642d23be21c7ee4472d60872d0b38f0cdc18"
+
+[files.pixel_18_jpg]
+path = "examples/pixel-memory/photos/18.jpg"
+sha256 = "da32c7413569280ffc67671ae37dc4942a0e8b48c35e892fbe49e517ef4cabe9"
+
+[files.pixel_18_mp4]
+path = "examples/pixel-memory/photos/18.mp4"
+sha256 = "0e01e746181005f3a47d4818818eacbe3b3ac617c7d74c77e7b3a707910fca4e"
+
+[files.pixel_180_jpg]
+path = "examples/pixel-memory/photos/180.jpg"
+sha256 = "883c81a64040eb140632c1b06712c86709ad0a0a703786c15dbe57c7fb9fe0d5"
+
+[files.pixel_181_jpg]
+path = "examples/pixel-memory/photos/181.jpg"
+sha256 = "51b8e1f81b50294fe7da53f0d415e569c1b84eb24b8f2e9be2bdd1edc12a97d2"
+
+[files.pixel_182_jpg]
+path = "examples/pixel-memory/photos/182.jpg"
+sha256 = "6ed81fa174ba56fa8f099b774bf23e6276e56fd44d4bfc7be2365b2d6e870647"
+
+[files.pixel_183_jpg]
+path = "examples/pixel-memory/photos/183.jpg"
+sha256 = "6618f591b3665ecb83d762a1e2213ae3be96b87cce82d812e1c363247ea2a1ea"
+
+[files.pixel_185_jpg]
+path = "examples/pixel-memory/photos/185.jpg"
+sha256 = "b68e462928ff7fdda245b45d40ee09d522e6154bac494ea5ce3d611c4e4bf8ab"
+
+[files.pixel_186_jpg]
+path = "examples/pixel-memory/photos/186.jpg"
+sha256 = "2f78db36844c033080d14445d39263596b6d083f5f72ef2f7535319b741a43b0"
+
+[files.pixel_187_jpg]
+path = "examples/pixel-memory/photos/187.jpg"
+sha256 = "306c00ec8eab79f4d904b3b4ff2ab6a7a57fb138a5bb7c79fd669d1b4fae59ed"
+
+[files.pixel_188_jpg]
+path = "examples/pixel-memory/photos/188.jpg"
+sha256 = "c8a5a84ce135210812cd1baf9f0414feefaa2d7125fdb0cf6b56cd15d67d8734"
+
+[files.pixel_189_jpg]
+path = "examples/pixel-memory/photos/189.jpg"
+sha256 = "5ff47868aff8fdfd51f7a84afbfb2f726d8f6b65377a7ce8462193eec690adf9"
+
+[files.pixel_19_jpg]
+path = "examples/pixel-memory/photos/19.jpg"
+sha256 = "f840334b91395c6efdd46e93fcd84fcacd3e371914b758b7e6fdde5fbf174afe"
+
+[files.pixel_19_mp4]
+path = "examples/pixel-memory/photos/19.mp4"
+sha256 = "03f873b18987c962cbd12eae149ab1ef939f3eaa7efa0ec7334d1f13adafe467"
+
+[files.pixel_190_jpg]
+path = "examples/pixel-memory/photos/190.jpg"
+sha256 = "e50a061b0c0f19e1b6783ef98d77f923751eab94200422bfad8f70375846f4f7"
+
+[files.pixel_191_jpg]
+path = "examples/pixel-memory/photos/191.jpg"
+sha256 = "7e797067d7bb9c23cdbea1693937e0624473472958a1704bdebd33b92addb5b4"
+
+[files.pixel_192_jpg]
+path = "examples/pixel-memory/photos/192.jpg"
+sha256 = "7a1245e6d92e87bbcf9b08001ce947ac8a9684efcface402132099cf84769f09"
+
+[files.pixel_193_jpg]
+path = "examples/pixel-memory/photos/193.jpg"
+sha256 = "b50e458e26429503771fc306c9dcaa4bdd748f78e0de7dc4c9771a47ab39ccac"
+
+[files.pixel_194_jpg]
+path = "examples/pixel-memory/photos/194.jpg"
+sha256 = "b80d4517679e3876e06fdc60bd36bc3132b6006cb6f94ec5872a0b77f8bd27cb"
+
+[files.pixel_195_jpg]
+path = "examples/pixel-memory/photos/195.jpg"
+sha256 = "ba8e1aef0ac72c2df54603b6e142e222ceba18582f2a19fd60406f0234d3a769"
+
+[files.pixel_196_jpg]
+path = "examples/pixel-memory/photos/196.jpg"
+sha256 = "6cd0a6742fe04adad3556fc6d47caf9e7b4b34a37f2d9823834136b828a33527"
+
+[files.pixel_197_jpg]
+path = "examples/pixel-memory/photos/197.jpg"
+sha256 = "427bdda8b69579e7f1a9fd804d7efc1f30b4058b69e4939d0aeee42d7e404ee1"
+
+[files.pixel_198_jpg]
+path = "examples/pixel-memory/photos/198.jpg"
+sha256 = "2663a21130610a0c745f5e8387f70dd2eade271da5f67441e29224ab27650503"
+
+[files.pixel_199_jpg]
+path = "examples/pixel-memory/photos/199.jpg"
+sha256 = "8078bc53d004231881c2e568c0d6a7548d9e9931a168799c1ae8ea2c9390c923"
+
+[files.pixel_2_jpg]
+path = "examples/pixel-memory/photos/2.jpg"
+sha256 = "3e943bf8d5bec3666d63b98b9b356a8ea64f08e6c5fe6bcab421811ff56a88a6"
+
+[files.pixel_2_mp4]
+path = "examples/pixel-memory/photos/2.mp4"
+sha256 = "de5246f4c358d4c283c561d6315117161475825a57b0ef2e3325e35e19c1c82d"
+
+[files.pixel_20_jpg]
+path = "examples/pixel-memory/photos/20.jpg"
+sha256 = "790c3865d0f94036dfb9145dc7de1877b480662366e7b6d0e7fca43d66822154"
+
+[files.pixel_20_mp4]
+path = "examples/pixel-memory/photos/20.mp4"
+sha256 = "ec5c2c27f2a8cdaef39f7cf7f114ae44c66e1d2bf7225d170c1bddee742dd3b8"
+
+[files.pixel_200_jpg]
+path = "examples/pixel-memory/photos/200.jpg"
+sha256 = "8f627f74ec5a01fefea8da2d84bb1cf473600ccc2d628dedc5ce6fbc51270ff9"
+
+[files.pixel_201_jpg]
+path = "examples/pixel-memory/photos/201.jpg"
+sha256 = "ec57a6a0c041cc34ebfc531f537830a46ca046d88cb8063b305dddda373a41cb"
+
+[files.pixel_202_jpg]
+path = "examples/pixel-memory/photos/202.jpg"
+sha256 = "81eb82fbe2e23a870897b0c88139658545454f42dfd54cdf9231f3f0a633a517"
+
+[files.pixel_203_jpg]
+path = "examples/pixel-memory/photos/203.jpg"
+sha256 = "ed381d4abbd388185513eeb6122edbb0d2c41d1ff0b5458c2defba4b63712539"
+
+[files.pixel_204_jpg]
+path = "examples/pixel-memory/photos/204.jpg"
+sha256 = "19387f57ed1622dbbb0d4a69cffa2f3f04742c01cbc930f27a12163bafb73ee4"
+
+[files.pixel_205_jpg]
+path = "examples/pixel-memory/photos/205.jpg"
+sha256 = "a630aee2e5f26def99a29f4489a011c65423a8fc3110ee5c598833c01d10d0a0"
+
+[files.pixel_206_jpg]
+path = "examples/pixel-memory/photos/206.jpg"
+sha256 = "6dfb8847a0c40965aa8ef82650266994ad6515af8536d9064b8b5f865bcc7a6f"
+
+[files.pixel_207_jpg]
+path = "examples/pixel-memory/photos/207.jpg"
+sha256 = "d82acfebe4753b89f756ad025b618f9a3dcf381fe5fb4c73dd1fdf2808a98b7f"
+
+[files.pixel_208_jpg]
+path = "examples/pixel-memory/photos/208.jpg"
+sha256 = "b7b13fc2461e9668a59866d2ca1e1cc81a0cdcee71631a057be33a949def0f6a"
+
+[files.pixel_209_jpg]
+path = "examples/pixel-memory/photos/209.jpg"
+sha256 = "ead712bab02c02f34d8242220e3fb76fa8e3d601fd3da09eff9b9ceb83e8e79b"
+
+[files.pixel_21_jpg]
+path = "examples/pixel-memory/photos/21.jpg"
+sha256 = "c30c5a4a0c5ac686a32d7bae5a4b9af73cf23ebafb177920ab44cd7193342f2c"
+
+[files.pixel_21_mp4]
+path = "examples/pixel-memory/photos/21.mp4"
+sha256 = "e796dd9ba9139901e273bf93ef9a17b4e57b62c67f168cd3b086bf778bb6a162"
+
+[files.pixel_210_jpg]
+path = "examples/pixel-memory/photos/210.jpg"
+sha256 = "0d512d573b95974f427a35f01379745693ae964834ba09b8a86efd08d7875675"
+
+[files.pixel_211_jpg]
+path = "examples/pixel-memory/photos/211.jpg"
+sha256 = "a8574c1425f08a0d60bfd8ec765418edccf194bfbfb68c05c7421fe40477e6a0"
+
+[files.pixel_212_jpg]
+path = "examples/pixel-memory/photos/212.jpg"
+sha256 = "88c9281063062de7a0ad4ebceddbd590c069621fddfcb4929a3bbeeb9eb51767"
+
+[files.pixel_213_jpg]
+path = "examples/pixel-memory/photos/213.jpg"
+sha256 = "ae37639cd4cf6d9d42c3221b0dc6aa46a36bbc8c2136fa85c69d0a7228468ba3"
+
+[files.pixel_214_jpg]
+path = "examples/pixel-memory/photos/214.jpg"
+sha256 = "e1f610dcef78ca12f760e3d2f0f28c42aa226242096f192e1b5fb964b03432d6"
+
+[files.pixel_215_jpg]
+path = "examples/pixel-memory/photos/215.jpg"
+sha256 = "95952f5153049087f08f87a88b6f94515abd7339b2877f64ffe8ef06742cd4ac"
+
+[files.pixel_216_jpg]
+path = "examples/pixel-memory/photos/216.jpg"
+sha256 = "f864a6fa497f758a64a8d69b776bf8bb2560ec309a72eb4298cd717f0e56a8c3"
+
+[files.pixel_217_jpg]
+path = "examples/pixel-memory/photos/217.jpg"
+sha256 = "6c9ed73e127c85e749499effd25fbcf443f48a0f98c57b990f0c3b195fa6327f"
+
+[files.pixel_218_jpg]
+path = "examples/pixel-memory/photos/218.jpg"
+sha256 = "7f5f0f46c8ff8ca42488fdb63fe82e305352090a4998fa86b4399def5587d4f7"
+
+[files.pixel_219_jpg]
+path = "examples/pixel-memory/photos/219.jpg"
+sha256 = "e9d5ab9a49497c2c85080550fa3c83cd6694203f4dfa62aba8dd615bdb7fc106"
+
+[files.pixel_22_jpg]
+path = "examples/pixel-memory/photos/22.jpg"
+sha256 = "fbef0ed2979d5355c04b2c0519099975f50b0d0738e2e4e9a8cb1a840c112a28"
+
+[files.pixel_22_mp4]
+path = "examples/pixel-memory/photos/22.mp4"
+sha256 = "3fb0a91c7f8c6b417a4311fbf4718b0d22a7d2753b23e6c9d06b011a25637255"
+
+[files.pixel_220_jpg]
+path = "examples/pixel-memory/photos/220.jpg"
+sha256 = "56b259631605d3de428e3117bf07e1d264865ae0a91206f583f0f8e891133614"
+
+[files.pixel_221_jpg]
+path = "examples/pixel-memory/photos/221.jpg"
+sha256 = "2312ff92f1f33d07f12c7311a6090c9e8921904bb3b25e111c5c424ae209a33c"
+
+[files.pixel_222_jpg]
+path = "examples/pixel-memory/photos/222.jpg"
+sha256 = "5a729a279e4c8a7e6fe459bdd034e8dc9eb53f19064fdde27e8f19899b0ec13b"
+
+[files.pixel_223_jpg]
+path = "examples/pixel-memory/photos/223.jpg"
+sha256 = "77e86cc436b612aea6b8a492e7228691a2e0cc1e3afd285466234963738b67b1"
+
+[files.pixel_224_jpg]
+path = "examples/pixel-memory/photos/224.jpg"
+sha256 = "a32da055d58ce17397931852d05fca5568bc230ec636201e956ef0f4dcd984bb"
+
+[files.pixel_225_jpg]
+path = "examples/pixel-memory/photos/225.jpg"
+sha256 = "8645c114cbb81be38cfab653a38377d51f86699ceb88f422304fb2878b85a113"
+
+[files.pixel_226_jpg]
+path = "examples/pixel-memory/photos/226.jpg"
+sha256 = "0e64005d4c53f2347548c5976e23dd7975d4e242a40254eb9870f5a3cf836a6a"
+
+[files.pixel_227_jpg]
+path = "examples/pixel-memory/photos/227.jpg"
+sha256 = "9a85564df5ce837adda330ab04280bc87a6bb717987a989934fcda946163d5f9"
+
+[files.pixel_228_jpg]
+path = "examples/pixel-memory/photos/228.jpg"
+sha256 = "c66f7e870b7f8f684cafaa55189556bc533d26d1d594652624afc68563ad93d7"
+
+[files.pixel_229_jpg]
+path = "examples/pixel-memory/photos/229.jpg"
+sha256 = "8ada23d0ba88dbc8172f535137863c8675fc808f8f966577b9215ed6b05dcac3"
+
+[files.pixel_23_jpg]
+path = "examples/pixel-memory/photos/23.jpg"
+sha256 = "7884bf0f217ed1e105a49dec5716429b8db54db9c8727bac61e5e30e0441f23e"
+
+[files.pixel_230_jpg]
+path = "examples/pixel-memory/photos/230.jpg"
+sha256 = "3e7d46509ea32215089d5155f00dac2725aa73510bcd52637ae4284a16964955"
+
+[files.pixel_231_jpg]
+path = "examples/pixel-memory/photos/231.jpg"
+sha256 = "02ae8f14d3dd05d7bc66271a68d46c25048281ecb96dd8c21a551e65b3b2f568"
+
+[files.pixel_232_jpg]
+path = "examples/pixel-memory/photos/232.jpg"
+sha256 = "1f9c8bd6ca1ffcb4cb4b970c39f067d6446a72f5357313902dfc3f5dcfcf3788"
+
+[files.pixel_233_jpg]
+path = "examples/pixel-memory/photos/233.jpg"
+sha256 = "08e2f62c07b1516996f0eb1942f9d32813f4a6266d808dad006eaa958b2be62d"
+
+[files.pixel_234_jpg]
+path = "examples/pixel-memory/photos/234.jpg"
+sha256 = "58b0949dc2ae77974e6a6f0a1d2867ad069bf4c10ea01a2c672453a1a5a05083"
+
+[files.pixel_235_jpg]
+path = "examples/pixel-memory/photos/235.jpg"
+sha256 = "f4615269ce2c696a398e11d53dca4bfb13522ea389d69701faef7e1bcb4c7bb8"
+
+[files.pixel_24_jpg]
+path = "examples/pixel-memory/photos/24.jpg"
+sha256 = "ebaa80ac6e17f4a0989d449bdb7e61adad49adbf034b555d0c4d133f3b00cf66"
+
+[files.pixel_25_jpg]
+path = "examples/pixel-memory/photos/25.jpg"
+sha256 = "91846d37903818ae6b3cf4781c6f2fbeb1f36014ae7e87023953015519582402"
+
+[files.pixel_26_jpg]
+path = "examples/pixel-memory/photos/26.jpg"
+sha256 = "2a609139fd60bee746b8885966fe52e38063b10147f2ea8d87b994485e37ca31"
+
+[files.pixel_27_jpg]
+path = "examples/pixel-memory/photos/27.jpg"
+sha256 = "626bf2b13a328b001fcfd71af597a41267ecb28aca09de87a38867d6493960d1"
+
+[files.pixel_28_jpg]
+path = "examples/pixel-memory/photos/28.jpg"
+sha256 = "f7f9317e5e96d120b528c41d6a58894cb6ceaef30cfda2a2dd58920dc9c1821e"
+
+[files.pixel_29_jpg]
+path = "examples/pixel-memory/photos/29.jpg"
+sha256 = "9213f6d6e8a0137e7d7b7d98561d7b7eb6dde361c481d63fbfa98a256ea22ebe"
+
+[files.pixel_3_jpg]
+path = "examples/pixel-memory/photos/3.jpg"
+sha256 = "7969d7eff396ac6526e5fb550ec593a9b4f11c7e8fe5e1e13f275f47915d0a23"
+
+[files.pixel_3_mp4]
+path = "examples/pixel-memory/photos/3.mp4"
+sha256 = "3afcb77ca6bd16d8040a7ec0365836af9a815a06f4c0e09f4d3cb5d9c1c25a25"
+
+[files.pixel_30_jpg]
+path = "examples/pixel-memory/photos/30.jpg"
+sha256 = "db349a0ccef61e0efce5dce72f745b34c4882cd359c45c2d04550c7f9cdb47ca"
+
+[files.pixel_31_jpg]
+path = "examples/pixel-memory/photos/31.jpg"
+sha256 = "2d1b4a3209539163b18ed5e261cb01ad06557b401948353f5e27b4e216698137"
+
+[files.pixel_32_jpg]
+path = "examples/pixel-memory/photos/32.jpg"
+sha256 = "7c9c13ffa24311610ec303163cd074b3a7fb4c651e42f52b606f2cdc787ba2d8"
+
+[files.pixel_33_jpg]
+path = "examples/pixel-memory/photos/33.jpg"
+sha256 = "351ad7287bd2d6daeaf7d98d2829c22a27b6401865137eb3c1ef06c5c1dc7982"
+
+[files.pixel_34_jpg]
+path = "examples/pixel-memory/photos/34.jpg"
+sha256 = "e9df37cee91fdbd99f1af093b4c0ed574e8545b8b221f66d9dfcb1d18608e478"
+
+[files.pixel_35_jpg]
+path = "examples/pixel-memory/photos/35.jpg"
+sha256 = "e43e50c1a3e4b80f2c92b305e93633dfbde6842c548b76a7383ce7f4da8fe401"
+
+[files.pixel_36_jpg]
+path = "examples/pixel-memory/photos/36.jpg"
+sha256 = "cf920637c48c4e8ea94b5879f5e6479cd1102f5e274e7be9e54e57f8caa85397"
+
+[files.pixel_37_jpg]
+path = "examples/pixel-memory/photos/37.jpg"
+sha256 = "1550e2069ed1ad4e22208e8783f1e6f71827f3a4b111c556c713da9080352d04"
+
+[files.pixel_38_jpg]
+path = "examples/pixel-memory/photos/38.jpg"
+sha256 = "06607e97739d1e16cc0f653f6dc8219d2f1e74e9b8305617ea8cd222cb274a5e"
+
+[files.pixel_39_jpg]
+path = "examples/pixel-memory/photos/39.jpg"
+sha256 = "8c97e9a43366111acbc946f9c57efd2c5c4eb93119d770936266e7ef8d455a78"
+
+[files.pixel_4_jpg]
+path = "examples/pixel-memory/photos/4.jpg"
+sha256 = "d3aa6e47ff6fd3b7440ef42852b40d8229a330a7fa2e562b983c50f22fca7df1"
+
+[files.pixel_4_mp4]
+path = "examples/pixel-memory/photos/4.mp4"
+sha256 = "ff22a4ffcdda68905525557fd1fbec08149ea2b07950b78a0fd34f3b137b2e14"
+
+[files.pixel_40_jpg]
+path = "examples/pixel-memory/photos/40.jpg"
+sha256 = "e636791af6c1c459fc71d2b202a1e8171daf32bacc40f41d038350be262a9a81"
+
+[files.pixel_41_jpg]
+path = "examples/pixel-memory/photos/41.jpg"
+sha256 = "9632c3caaa355e683e936e66fa845f16c3740227324f2f513400e9ff399b8017"
+
+[files.pixel_42_jpg]
+path = "examples/pixel-memory/photos/42.jpg"
+sha256 = "ff1f997f3ed509e2bde2c0345fa44d6e9fa262db72c65182be5a43333afc9e43"
+
+[files.pixel_43_jpg]
+path = "examples/pixel-memory/photos/43.jpg"
+sha256 = "8b254472631e812cecbb4b3eddab4a653fb4c9b30b9197f8a56495b44ded7674"
+
+[files.pixel_44_jpg]
+path = "examples/pixel-memory/photos/44.jpg"
+sha256 = "85f48f5a5c464cf99c9e37f9b841b451152aabe053505962bb031f97e28d35be"
+
+[files.pixel_45_jpg]
+path = "examples/pixel-memory/photos/45.jpg"
+sha256 = "5d089f1d58b41f596a84a16221e5236d46d7303269162a9f07eafd9a94c5225e"
+
+[files.pixel_46_jpg]
+path = "examples/pixel-memory/photos/46.jpg"
+sha256 = "c0c2beaa09b97d612e25d5b0d60275bbe0c20b5e771f0169b391239d078684ca"
+
+[files.pixel_47_jpg]
+path = "examples/pixel-memory/photos/47.jpg"
+sha256 = "f496bf4a0e17594ade6facee9ad3ceea0f1cf486c91864b43398c9cf127f4259"
+
+[files.pixel_48_jpg]
+path = "examples/pixel-memory/photos/48.jpg"
+sha256 = "739f15678ebe9d39da130e5f1b812bb0498648d7712b4637c2c5f5fcdf5a967f"
+
+[files.pixel_49_jpg]
+path = "examples/pixel-memory/photos/49.jpg"
+sha256 = "6ece2574a8c761728ef00d4a1187740c3f68bb8511c38ce8fd2e5e9990d54884"
+
+[files.pixel_5_jpg]
+path = "examples/pixel-memory/photos/5.jpg"
+sha256 = "40b829cdd3ddfe26ecbc7b068fbb817ecbc67e5130eb6f559c16379c7650e49a"
+
+[files.pixel_5_mp4]
+path = "examples/pixel-memory/photos/5.mp4"
+sha256 = "7479c1b7b59d73b61c0598570d58315d8ad8040851bca2ae4e9570647fd44bc7"
+
+[files.pixel_50_jpg]
+path = "examples/pixel-memory/photos/50.jpg"
+sha256 = "acbfa23f802d9d1790c004a88ddd47785c5dc1bb9e505bf6ea807fba55156232"
+
+[files.pixel_51_jpg]
+path = "examples/pixel-memory/photos/51.jpg"
+sha256 = "40a2aefb1714be148e0f4ca07471cdc517ef7814b13cb877b9733c4f1048459c"
+
+[files.pixel_52_jpg]
+path = "examples/pixel-memory/photos/52.jpg"
+sha256 = "e57e58e3b5fa4f6c576bc4f1232177ea81911635abd79b7d9b8a0275178a8a2b"
+
+[files.pixel_53_jpg]
+path = "examples/pixel-memory/photos/53.jpg"
+sha256 = "d39371c5700a5c3f3a78517e55e42b084b4e65d5be762c9a484c53230fc707d6"
+
+[files.pixel_54_jpg]
+path = "examples/pixel-memory/photos/54.jpg"
+sha256 = "ddc7f819dcc3ee495b9cc8ffc907f32e94ec9301946219a092279c5bf7c3758d"
+
+[files.pixel_55_jpg]
+path = "examples/pixel-memory/photos/55.jpg"
+sha256 = "4fb148be36926e7a76bb19d72321e060ba43f8610a5ee45ed19819848309b6fd"
+
+[files.pixel_56_jpg]
+path = "examples/pixel-memory/photos/56.jpg"
+sha256 = "ff117fa0a33440ddf74787b35837196632195db274d4e8a35bce63c841b6c0c6"
+
+[files.pixel_57_jpg]
+path = "examples/pixel-memory/photos/57.jpg"
+sha256 = "a62c49c9f1d28fcb3cfe6ad43870a0dca4face3c9935f183c2ffb0cd4864d125"
+
+[files.pixel_58_jpg]
+path = "examples/pixel-memory/photos/58.jpg"
+sha256 = "c5851cb7b392da9abb5f3f8c0f4ebe331379afc4e63175eef0bfa7499d82bb45"
+
+[files.pixel_59_jpg]
+path = "examples/pixel-memory/photos/59.jpg"
+sha256 = "2b7319d2543bbd839ac5dad8d0bd8691be9bf61d90af174feb95708e411c244d"
+
+[files.pixel_6_jpg]
+path = "examples/pixel-memory/photos/6.jpg"
+sha256 = "7e9e21ff1154d7860f3e8a3832a887c025d3c3211f3c08d11a4babbc0f89578c"
+
+[files.pixel_6_mp4]
+path = "examples/pixel-memory/photos/6.mp4"
+sha256 = "73161a4645e126baf96b553a727b6407d1c50d7a291a356578cf6f901eee345f"
+
+[files.pixel_60_jpg]
+path = "examples/pixel-memory/photos/60.jpg"
+sha256 = "b9bba2edad7d2ee3795459de0c96f0103dd41f22b95d79396e68bbd125c33f69"
+
+[files.pixel_61_jpg]
+path = "examples/pixel-memory/photos/61.jpg"
+sha256 = "62333d5aeb5e5f895bf083044f1d9ef6362dcafc6bd81841bc159b7db1578bdf"
+
+[files.pixel_62_jpg]
+path = "examples/pixel-memory/photos/62.jpg"
+sha256 = "bdf73acbf803e252adb35030abcfee1a01e7bbe5d0c343952f170c8a7e3c8a4d"
+
+[files.pixel_63_jpg]
+path = "examples/pixel-memory/photos/63.jpg"
+sha256 = "54812bca6cb5847c6f609246618184965a9dabe7d402e759291ec377b01d046a"
+
+[files.pixel_64_jpg]
+path = "examples/pixel-memory/photos/64.jpg"
+sha256 = "fde8d7ddc01800619014fff82486f941631be9b4d5e6fe43af3e216d4a97905b"
+
+[files.pixel_65_jpg]
+path = "examples/pixel-memory/photos/65.jpg"
+sha256 = "830a0d2533d9567e1ab4e1eff38a7a30ba278e3d362eec1d16f30331e4c6fbbd"
+
+[files.pixel_66_jpg]
+path = "examples/pixel-memory/photos/66.jpg"
+sha256 = "53d857b700602d7c1e45bf7c48d83f2eecde9c2d0033658d3f3c92f590b42804"
+
+[files.pixel_67_jpg]
+path = "examples/pixel-memory/photos/67.jpg"
+sha256 = "b8b08938c9e741c748cdc3b03fd066b5cf86ec1c0af0f4bcfa947fd852ffef66"
+
+[files.pixel_68_jpg]
+path = "examples/pixel-memory/photos/68.jpg"
+sha256 = "7bbacecb1e9868ee423a321913bbe1e55a79fab2fd8ed820e23581124a7ebf0c"
+
+[files.pixel_69_jpg]
+path = "examples/pixel-memory/photos/69.jpg"
+sha256 = "6f91b714a62a1db7154ba8ab15edb343db294c73aa3a133994c159a53a9aa754"
+
+[files.pixel_7_jpg]
+path = "examples/pixel-memory/photos/7.jpg"
+sha256 = "6cb5514e822674bce111941de20884012566072bb7f61aff5974f634538b8ca1"
+
+[files.pixel_7_mp4]
+path = "examples/pixel-memory/photos/7.mp4"
+sha256 = "8693edaeb60ba252f1d99b97b0241caeddc6671a94cb3c8f54c87cb229ca0d99"
+
+[files.pixel_70_jpg]
+path = "examples/pixel-memory/photos/70.jpg"
+sha256 = "79c90e31add3b4d58c70c6dacab70d29d74c5cfb690c175722705529e924094a"
+
+[files.pixel_71_jpg]
+path = "examples/pixel-memory/photos/71.jpg"
+sha256 = "4ba3b7cbe0330704f38d96b4b5520430e40dc1c6a987e86a1ecf54624ace1927"
+
+[files.pixel_72_jpg]
+path = "examples/pixel-memory/photos/72.jpg"
+sha256 = "c17040162ea595d5849897a284206b40f40bc9e354af3ca6160d8b0a13120593"
+
+[files.pixel_73_jpg]
+path = "examples/pixel-memory/photos/73.jpg"
+sha256 = "21a18bc839f36583c1502fbb2471c2464e8a2386d4732984044094ada8179aea"
+
+[files.pixel_74_jpg]
+path = "examples/pixel-memory/photos/74.jpg"
+sha256 = "b2beb248a069736a594cd767ab393aaf19a7d2afd19c3243dac84b3b7cb8651a"
+
+[files.pixel_75_jpg]
+path = "examples/pixel-memory/photos/75.jpg"
+sha256 = "1d894ed264685d461b9ff4567355630ac65082f7310dfd8b7ec76cebbd2b0b20"
+
+[files.pixel_76_jpg]
+path = "examples/pixel-memory/photos/76.jpg"
+sha256 = "330fb3f3834d0cf07c4f2a54e36728e025b3cbb8ca8696e7e0601b72c09a4c70"
+
+[files.pixel_77_jpg]
+path = "examples/pixel-memory/photos/77.jpg"
+sha256 = "bfd9ccb97805e2a70dd7096ff7a9fb9aa870160c9b5f5534618ef99a6eb358f5"
+
+[files.pixel_78_jpg]
+path = "examples/pixel-memory/photos/78.jpg"
+sha256 = "f623f0032cac914dca0536b244aa00d6c0b2e34fd5c60079508953bddf314b7d"
+
+[files.pixel_79_jpg]
+path = "examples/pixel-memory/photos/79.jpg"
+sha256 = "a59457475ea5834039fcd98a76ca7c71c3f5f9586151cb5d43b9029823ead374"
+
+[files.pixel_8_jpg]
+path = "examples/pixel-memory/photos/8.jpg"
+sha256 = "2ef44a4ef7215eb372b1b1fb66aa641f76e545269bac811bb3cfe72dfd9571e5"
+
+[files.pixel_8_mp4]
+path = "examples/pixel-memory/photos/8.mp4"
+sha256 = "2faa9e4fa482bcaa4d2597ced16c2564d2f29c1d20e39820c2f5aebd5f2f0066"
+
+[files.pixel_80_jpg]
+path = "examples/pixel-memory/photos/80.jpg"
+sha256 = "471d61a88d3ed20d5a3ccfbee42fcc49063ee59860102decab4de8f2c611ea95"
+
+[files.pixel_81_jpg]
+path = "examples/pixel-memory/photos/81.jpg"
+sha256 = "b7ac424082c2770a2b26484e335dd091373bbb6365346b9ed8e0b9ccbaaf1af1"
+
+[files.pixel_82_jpg]
+path = "examples/pixel-memory/photos/82.jpg"
+sha256 = "aa6963c36faae32e90002d2c221bc4559ed4208d64ca579645b05c0e45f7690d"
+
+[files.pixel_83_jpg]
+path = "examples/pixel-memory/photos/83.jpg"
+sha256 = "cf64847a91bb68d6716809e26bd97b79945f5fe1b3c5f26e09d558ca6b2c6178"
+
+[files.pixel_84_jpg]
+path = "examples/pixel-memory/photos/84.jpg"
+sha256 = "edc80fa42de8108181ad77400950dfac7922bb724edb64b1d7e5fef516bae7a1"
+
+[files.pixel_85_jpg]
+path = "examples/pixel-memory/photos/85.jpg"
+sha256 = "d2ab17d46410e7c7ce85a9d27a5710795a8753726d30fab032bf65bf3bb801ef"
+
+[files.pixel_86_jpg]
+path = "examples/pixel-memory/photos/86.jpg"
+sha256 = "2479ef5663f7c04b7f286490ebaed09709182ab4f5e00682589fe17e0e5ab2d7"
+
+[files.pixel_87_jpg]
+path = "examples/pixel-memory/photos/87.jpg"
+sha256 = "c19b6d932bac6654fe9904bac773404c9bd9c8e84c65f57b5fed3836d6e6f2de"
+
+[files.pixel_88_jpg]
+path = "examples/pixel-memory/photos/88.jpg"
+sha256 = "c682c112a526dadc520065319623e7a4e5c65429107720eae858e5c608e0e4dc"
+
+[files.pixel_89_jpg]
+path = "examples/pixel-memory/photos/89.jpg"
+sha256 = "c33b449d0dc7308166aeeb7b641ea0e1921c095dd54fdaf76281da10449bccba"
+
+[files.pixel_9_jpg]
+path = "examples/pixel-memory/photos/9.jpg"
+sha256 = "25a6520d2a841d1fbd9e7569d853a923a84588cd69d181853ea38d4d75b6f879"
+
+[files.pixel_9_mp4]
+path = "examples/pixel-memory/photos/9.mp4"
+sha256 = "9c5f0afdebc5f09684fbf40fa47151c78541d601f01b5656d87f4aee9cee1518"
+
+[files.pixel_90_jpg]
+path = "examples/pixel-memory/photos/90.jpg"
+sha256 = "5790cb02ec2a650a48cf7ef010f2214032d56b119e89c339adf7507765635aea"
+
+[files.pixel_91_jpg]
+path = "examples/pixel-memory/photos/91.jpg"
+sha256 = "dff4ec565b93806e2c4f087bb23136071f324c1beef37e0eb96cbb7c962c73d4"
+
+[files.pixel_92_jpg]
+path = "examples/pixel-memory/photos/92.jpg"
+sha256 = "0bbe81da92fe2c3fd41edc28c9432363611c69d3d9e0b32197b2b9b71f7c3040"
+
+[files.pixel_93_jpg]
+path = "examples/pixel-memory/photos/93.jpg"
+sha256 = "f77506be5324819bb79fc88765554c32f84c57e4c447cbac7b3825b0324eb11c"
+
+[files.pixel_94_jpg]
+path = "examples/pixel-memory/photos/94.jpg"
+sha256 = "8eef978072682faa4c39668a1c6c7afbf730820fc89d539508ceaeb4b20d9659"
+
+[files.pixel_95_jpg]
+path = "examples/pixel-memory/photos/95.jpg"
+sha256 = "3d48101e1ce59cc19d01c8e18f0481a88d6157ccd282124201977c391a512c23"
+
+[files.pixel_96_jpg]
+path = "examples/pixel-memory/photos/96.jpg"
+sha256 = "b1958eacc5414be25f20de754529c9318ce31c72f2e28f2ab97fddd3cfab7019"
+
+[files.pixel_97_jpg]
+path = "examples/pixel-memory/photos/97.jpg"
+sha256 = "934bfe5fbe8c05bd90862cca9cb7a694e3467d4032023ab879c75adce83d9ab6"
+
+[files.pixel_98_jpg]
+path = "examples/pixel-memory/photos/98.jpg"
+sha256 = "88d36ea424bcaa4e2d84c1fe63854bea822399dfc9a0ee2c21b23f746a05fba1"
+
+[files.pixel_99_jpg]
+path = "examples/pixel-memory/photos/99.jpg"
+sha256 = "d355be48e95ad7065b04a335cec7f6cc4bd99eb6478d18651b0912f694c3a145"
+
+[files.pixel_final_scene_rs]
+path = "examples/pixel-memory/src/scenes/final_scene.rs"
+sha256 = "523c39188f09a6e4bf7a368d5b74812f4bd0bd53f8bfb34376ac964560918a29"

@@ -10,6 +10,13 @@ def build(
     goose: Path | None = None, guest: Path | None = None, duck: Path | None = None
 ) -> fframes.SvgVideo:
     """Use the original mixed track; optional voice stems only animate their bars."""
+    return video(goose, guest, duck).native
+
+
+def video(
+    goose: Path | None = None, guest: Path | None = None, duck: Path | None = None
+) -> fframes.Video:
+    """Keep frames and bindings reusable in the beta demonstration."""
     data = prepare((goose, guest, duck))
     defs = (
         '<clipPath id="right-section-mask"><rect x="970.797" y="-143.12" '
@@ -55,9 +62,9 @@ def build(
         if data.heights
         else (background + "</svg>",) * (DURATION * FPS)
     )
-    return fframes.compile_video(
-        fframes.VideoConfig(width=WIDTH, height=HEIGHT, fps=FPS),
-        frames,
+    return fframes.Video(
+        config=fframes.VideoConfig(width=WIDTH, height=HEIGHT, fps=FPS),
+        frames=frames,
         images=tuple(
             fframes.ImageBinding(name=s, source=data.assets[f"podcast_{s}"]) for s in SPEAKERS
         ),
