@@ -5,9 +5,10 @@ edition = "2024"
 rust-version = "1.99"
 publish = false
 description = "Typed Python bindings for fframes animation and video rendering"
+license = "MIT"
 include = [
     "/rust/**", "/src/**", "/tests/**", "/examples/**", "/scripts/**", "/docs/**",
-    "/Cargo.lock", "/pyproject.toml", "/uv.lock", "/rust-toolchain.toml", "/.python-version", "/README.md",
+    "/Cargo.lock", "/pyproject.toml", "/uv.lock", "/rust-toolchain.toml", "/.python-version", "/README.md", "/LICENSE",
 ]
 
 [lib]

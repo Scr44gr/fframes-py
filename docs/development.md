@@ -41,6 +41,7 @@ Use explicit test fonts for reproducible text checks.
 | `.python-version`, `rust-toolchain.toml` | Development interpreter line and Rust toolchain. |
 | `.github/actions/native/action.yml` | Shared OS dependency installation. |
 | `.github/workflows/ci.yml` | Platform builds and installed-wheel tests on Python 3.11–3.14. |
+| `.github/workflows/release.yml` | Version-tag validation and PyPI publishing after the shared CI passes. |
 
 Ruff targets Python 3.11, including annotations, imports, readability and docstrings;
 mypy runs in strict mode with the Pydantic plugin. Keep concrete types through the
@@ -51,19 +52,37 @@ upgrades; update lockfiles rather than embedding versions throughout the docs.
 ## Distribution and CI
 
 ```sh
-uv build --wheel --out-dir dist
-uv build --sdist --out-dir dist
+uv build --no-sources --wheel --out-dir dist
+uv build --no-sources --sdist --out-dir dist
 ```
 
 PyO3 uses `abi3-py311`: one wheel per OS/architecture can serve the supported
 CPython versions. CI builds once on each of Linux, macOS and Windows, then installs
 those wheels for Python 3.11–3.14. Preserve this shared matrix rather than duplicating
 workflow configuration. Check actual CI results before claiming platform success.
+See [releases](releases.md) for versioning and the one-time PyPI configuration.
+
+On Linux, Rust test executables link to Python's shared library. If `cargo test`
+cannot find `libpython`, expose the selected interpreter's library directory:
+
+```sh
+export PYO3_PYTHON="$(uv python find)"
+python_lib=$(uv run --no-sync python -c 'import sysconfig; print(sysconfig.get_config_var("LIBDIR"))')
+export LD_LIBRARY_PATH="$python_lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+```
 
 Maturin's [repair setting](https://www.maturin.rs/config) bundles external native
 libraries, including FFmpeg DLLs on Windows. CI tests the installed wheel without
 running the native setup action in test jobs, so an accidental build-machine
 dependency fails during import or rendering.
+
+Connect the repository in Codecov to enable the coverage badge. CI uploads the
+Linux/Python 3.14 report using [OIDC](https://github.com/codecov/codecov-action#using-oidc)
+(`id-token: write`); no `CODECOV_TOKEN` secret is needed. `codecov.yml` maps installed
+package paths to `src/fframes/`. Windows wheels contain a generated DLL loader that
+shifts source lines, so their reports stay in CI artifacts. Every OS/Python pair
+still runs the full tests and enforces 95% coverage. Upload errors do not fail CI
+while Codecov is being configured.
 
 To test a wheel locally, create a separate uv environment, install pytest,
 pytest-cov and NumPy plus the exact wheel path, and run that environment's Python with

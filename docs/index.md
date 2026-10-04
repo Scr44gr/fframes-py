@@ -30,6 +30,7 @@ the namespace you intend to use. `fframes._native` and `compose.compiler` are in
 | [Low level](lowlevel.md) | SVG rendering and scalar animation signatures. |
 | [Upstream examples](examples.md) | Paired ports, asset cache and feature parity status. |
 | [Development](development.md) | Rebuild, check and package the bindings. |
+| [Releases](releases.md) | Versioning, PyPI setup and publishing tested distributions. |
 
 Current scope: finite, in-memory scenes rendered with CPU or Skia backends.
 Both APIs support synchronized video files. HTML/CSS layout and streaming

@@ -1,14 +1,16 @@
 name: CI
 on:
   push:
+    branches: ['**']
   pull_request:
   workflow_dispatch:
+  workflow_call:
 
 permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.workflow }}-${{ github.ref }}
+  group: ci-${{ github.ref }}
   cancel-in-progress: true
 
 env:
@@ -40,13 +42,17 @@ jobs:
         run: |
           cargo fmt --check
           cargo clippy --locked --all-targets --all-features -- -D warnings
+          if [ "$RUNNER_OS" = Linux ]; then
+            python_lib=$(uv run --no-sync python -c 'import sysconfig; print(sysconfig.get_config_var("LIBDIR"))')
+            export LD_LIBRARY_PATH="$python_lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+          fi
           cargo test --locked
       - name: Build one stable-ABI wheel per platform
         shell: bash
-        run: uv build --wheel --out-dir dist
+        run: uv build --no-sources --wheel --out-dir dist
       - name: Build source distribution
         if: runner.os == 'Linux'
-        run: uv build --sdist --out-dir dist
+        run: uv build --no-sources --sdist --out-dir dist
       - uses: actions/upload-artifact@v7.0.1
         with:
           name: wheels-${{ matrix.os }}
@@ -57,6 +63,9 @@ jobs:
     name: Test / ${{ matrix.os }} / Python ${{ matrix.python }}
     needs: build
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+      id-token: write
     strategy:
       fail-fast: false
       matrix:
@@ -86,6 +95,13 @@ jobs:
           uv run --no-sync mypy
       - name: Test installed wheel
         run: uv run --no-sync pytest
+      - name: Upload coverage to Codecov
+        if: runner.os == 'Linux' && matrix.python == '3.14'
+        uses: codecov/codecov-action@v7.1.1
+        with:
+          files: coverage.xml
+          disable_search: true
+          use_oidc: true
       - uses: actions/upload-artifact@v7.0.1
         if: always()
         with:
