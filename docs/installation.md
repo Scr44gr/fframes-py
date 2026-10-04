@@ -2,7 +2,20 @@
 
 [Index](index.md)
 
-The commands below run from a checkout of this repository. Install
+## Use a wheel
+
+Install a wheel matching your OS and architecture with `uv add /path/to/package.whl`
+or `python -m pip install /path/to/package.whl`, replacing the path with its actual
+filename. This guide does not assume a published PyPI release. Once published,
+use `uv add fframes-py` or `python -m pip install fframes-py`.
+
+A wheel needs no Rust compiler. Repaired Windows wheels include the FFmpeg DLLs;
+neither `FFMPEG_DIR` nor a separate FFmpeg executable is required for rendering.
+The `cp311-abi3` wheel supports Python 3.11–3.14 on its platform.
+
+## Build from source
+
+The remaining commands run from a checkout of this repository. Install
 [uv](https://docs.astral.sh/uv/getting-started/installation/) and
 [Rust through rustup](https://www.rust-lang.org/tools/install), then prepare the
 native dependencies **before** building the Python extension.
@@ -25,15 +38,16 @@ The script downloads the FFmpeg 9 LGPL shared build into `.native/`, sets
 `C:\Program Files\LLVM\bin`. Override the latter after sourcing the script if
 LLVM is installed elsewhere. The script does not install the compiler or LLVM.
 
-Keep `FFMPEG_DIR` set at runtime too: importing fframes registers
-`$env:FFMPEG_DIR\bin` as a DLL search directory. This directory must exist.
-The Windows wheels built here currently depend on these external FFmpeg DLLs.
+For an editable installation or an unrepaired wheel, keep `FFMPEG_DIR` set at
+runtime too: importing fframes registers `$env:FFMPEG_DIR\bin` as a DLL search
+directory. This directory must exist. Distributed wheels bundle these DLLs
+through Maturin's configured repair step.
 
 ### Linux (Debian/Ubuntu)
 
 ```sh
 sudo apt-get update
-sudo apt-get install -y build-essential clang libclang-dev libfontconfig1-dev nasm pkg-config
+sudo apt-get install -y build-essential clang libclang-dev libfontconfig1-dev nasm patchelf pkg-config
 ```
 
 ### macOS
@@ -74,16 +88,13 @@ uv add --editable /absolute/path/to/fframes-py
 ```
 
 Use your actual checkout path, quoted if it contains spaces. This builds the
-extension from source. Alternatively, use `uv add /absolute/path/to/package.whl`
-with a wheel built for your OS and architecture. This guide does not assume a
-published PyPI release. A wheel install does not require the Rust compiler;
-Windows still needs the runtime DLL configuration above.
+extension from source and needs the native environment described above.
 
 ## If setup fails
 
 | Symptom | Check |
 | --- | --- |
-| `DLL load failed` importing `_native` | Set `FFMPEG_DIR` before starting Python; check its `bin` and architecture. |
+| `DLL load failed` importing `_native` | Check wheel/interpreter architecture. For an editable install or externally linked wheel, check `FFMPEG_DIR` and its `bin`. |
 | libclang cannot be found | Point `LIBCLANG_PATH` at the directory containing the libclang library. |
 | Unresolved `__std_*` symbols linking Skia | Update the C++ toolset and use its developer shell; old 2019 STL libraries cannot link current Skia binaries. |
 | Missing linker or C headers | Install the platform's compiler/SDK listed above. |

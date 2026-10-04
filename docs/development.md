@@ -60,10 +60,15 @@ CPython versions. CI builds once on each of Linux, macOS and Windows, then insta
 those wheels for Python 3.11–3.14. Preserve this shared matrix rather than duplicating
 workflow configuration. Check actual CI results before claiming platform success.
 
-To test a wheel locally, create a separate uv environment, install pytest and
-pytest-cov plus the exact wheel path, and run that environment's Python with
+Maturin's [repair setting](https://www.maturin.rs/config) bundles external native
+libraries, including FFmpeg DLLs on Windows. CI tests the installed wheel without
+running the native setup action in test jobs, so an accidental build-machine
+dependency fails during import or rendering.
+
+To test a wheel locally, create a separate uv environment, install pytest,
+pytest-cov and NumPy plus the exact wheel path, and run that environment's Python with
 `-m pytest`. Check `fframes.__file__` points into that environment's `site-packages`,
-not the editable checkout. Keep native runtime dependencies available.
+not the editable checkout. Test with build-machine library paths removed.
 
 The Cargo include list packages `docs/` in the source distribution. The project
 skill lives separately in `skills/fframes-py`; neither it nor personal installed

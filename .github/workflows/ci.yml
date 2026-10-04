@@ -68,10 +68,6 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           enable-cache: true
-      - name: Install runtime DLLs
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: ./scripts/setup-native.ps1
       - uses: actions/download-artifact@v8.0.1
         with:
           name: wheels-${{ matrix.os }}

@@ -32,6 +32,7 @@ dev = [
 [tool.maturin]
 python-source = "src"
 module-name = "fframes._native"
+auditwheel = "repair"
 exclude = ["**/*.pdb"]
 
 [tool.uv]
