@@ -451,7 +451,7 @@ pub(super) fn prepare(
     }
     length(size[0])?;
     length(size[1])?;
-    if let Some(node) = node.as_mut().filter(|_| {
+    if let Some(node) = node.as_mut().filter(|candidate| {
         paints.is_empty()
             && template.is_none()
             && text_frames.is_empty()
@@ -460,6 +460,9 @@ pub(super) fn prepare(
             && clip.is_none()
             && path_animation.is_empty()
             && animated_radius.is_none()
+            // Upstream raster caches can reuse a viewport-clipped text group at
+            // another placement. Keep text shaping cached, but not that group.
+            && !matches!(candidate.kind, NestedNodeKind::Element { tag_name: EId::Text })
     }) {
         // Include the element tag, which compute_runtime_hash expects in its seed.
         node.static_hash = Some(node.compute_runtime_hash(match node.kind {
