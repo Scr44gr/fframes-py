@@ -23,6 +23,7 @@ classifiers = [
 dev = [
   "maturin>=1.15.0,<2",
   "mypy>=2.4.0,<3",
+  "numpy>=2.4.6,<3",
   "pytest>=9.1.1,<10",
   "pytest-cov>=7.1.0,<8",
   "ruff>=0.16.10,<0.17",

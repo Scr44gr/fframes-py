@@ -53,6 +53,8 @@ class Filter(Model):
 
     steps: Annotated[tuple[Step, ...], Field(min_length=1)]
     region: tuple[FiniteFloat, FiniteFloat, FiniteFloat, FiniteFloat] = (-0.1, -0.1, 1.2, 1.2)
+    units: Literal["bounds", "user"] = "bounds"
+    color_space: Literal["linear", "srgb"] = "linear"
 
     @model_validator(mode="after")
     def check_graph(self) -> Self:

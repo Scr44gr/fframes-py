@@ -64,3 +64,48 @@ def test_filter_graph_rejects_forward_and_duplicate_references() -> None:
         compose.Filter(
             steps=(compose.Merge(result="a", sources=("SourceGraphic",)),), region=(0, 0, 0, 1)
         )
+
+
+@pytest.mark.parametrize("backend", ["cpu", "skia"])
+def test_affine_ellipse_and_absolute_srgb_filter_match_svg(backend: Backend) -> None:
+    composed = compose.Video(
+        resolution=(48, 48),
+        backend=backend,
+        load_system_fonts=False,
+        composition=compose.Composition(
+            duration=1,
+            matrix=(1, 0, 0, 1, 3, 2),
+            children=(
+                compose.Composition(
+                    filter=compose.Filter(
+                        units="user",
+                        color_space="srgb",
+                        region=(0, 0, 40, 40),
+                        steps=(compose.Blur(result="blur", sigma=(2, 2)),),
+                    ),
+                    children=(
+                        compose.Ellipse(
+                            size=(20, 10),
+                            fill="#ff4000",
+                            position=compose.Position(x=-10, y=-5),
+                            matrix=(0.8, 0.6, -0.6, 0.8, 20, 20),
+                        ),
+                    ),
+                ),
+            ),
+        ),
+    ).compile()
+    raw = fframes.compile_video(
+        fframes.VideoConfig(width=48, height=48, backend=backend),
+        (
+            '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48">'
+            '<defs><filter id="f" filterUnits="userSpaceOnUse" x="0" y="0" width="40" height="40" '
+            'color-interpolation-filters="sRGB"><feGaussianBlur stdDeviation="2"/></filter></defs>'
+            '<g transform="translate(3 2)"><g filter="url(#f)"><ellipse rx="10" ry="5" '
+            'transform="matrix(.8 .6 -.6 .8 20 20)" fill="#ff4000"/></g></g></svg>',
+        ),
+    )
+    a, b = raw.rgba(0), composed.rgba(0)
+    assert a == b
+    assert a[(22 * 48 + 23) * 4 + 3] > 240
+    assert not any(a[: 48 * 4])

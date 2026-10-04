@@ -34,6 +34,7 @@ pub(super) struct Graphic {
     pub rotation: Scalar,
     pub scale: Scalar,
     pub origin: Option<[f64; 2]>,
+    pub matrix: Option<[f64; 6]>,
     pub mask: Option<Mask>,
     pub filter: Option<super::filters::Filter>,
     #[serde(flatten)]
@@ -103,6 +104,8 @@ pub(super) enum Shape {
         offset: f64,
         r#loop: bool,
         size: [f64; 2],
+        #[serde(default)]
+        fit: Fit,
     },
     Shader {
         shader: crate::shader::Input,
@@ -119,6 +122,11 @@ pub(super) enum Shape {
     },
     Circle {
         radius: f64,
+        fill: Option<Paint>,
+        stroke: Option<Stroke>,
+    },
+    Ellipse {
+        size: [f64; 2],
         fill: Option<Paint>,
         stroke: Option<Stroke>,
     },
@@ -148,7 +156,28 @@ pub(super) enum Shape {
     Image {
         source: PathBuf,
         size: [f64; 2],
+        #[serde(default)]
+        fit: Fit,
     },
+}
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub(super) enum Fit {
+    #[default]
+    Fill,
+    Contain,
+    Cover,
+}
+
+impl Fit {
+    pub fn as_svg(&self) -> &'static str {
+        match self {
+            Self::Fill => "none",
+            Self::Contain => "xMidYMid meet",
+            Self::Cover => "xMidYMid slice",
+        }
+    }
 }
 
 fn text_anchor() -> String {

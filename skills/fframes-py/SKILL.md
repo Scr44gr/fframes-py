@@ -20,6 +20,7 @@ for paired ports and gaps. Fetch pinned assets explicitly with
 | Author components, arrange layers, or animate a scene | [Composition](references/composition.md) |
 | Add shader layers, masks or filters | [Shaders and effects](references/shaders.md) |
 | Configure images, fonts, sound and exported video | [Media and rendering](references/media.md) |
+| Analyze audio or place captions | [Analysis](references/analysis.md) |
 | Render existing SVG or sample numeric keyframes | [Low level](references/lowlevel.md) |
 | Check correctness, performance, or reported failures | [Verification](references/verification.md) |
 

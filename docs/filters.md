@@ -38,5 +38,6 @@ panel = Rectangle(size=(200, 100), fill="#FFFFFF", filter=glow)
 
 `region=(x, y, width, height)` is relative to the source object's bounding box.
 It defaults to `(-0.1, -0.1, 1.2, 1.2)`; expand it for large blurs or their halo
-will be clipped. Filtering uses the native SVG filter color-space rules and may
-differ slightly between CPU and Skia. Reuse a `Filter` description across items.
+will be clipped. Set `units="user"` for a region in local pixels instead.
+`color_space="linear"` is the SVG default; `"srgb"` selects sRGB processing.
+Results may differ slightly between CPU and Skia. Reuse a `Filter` across items.

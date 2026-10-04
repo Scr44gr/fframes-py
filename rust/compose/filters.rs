@@ -13,6 +13,26 @@ use super::graphics::{attribute, element};
 pub(super) struct Filter {
     steps: Vec<Step>,
     region: [f64; 4],
+    #[serde(default)]
+    units: Units,
+    #[serde(default)]
+    color_space: ColorSpace,
+}
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "lowercase")]
+enum Units {
+    #[default]
+    Bounds,
+    User,
+}
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "lowercase")]
+enum ColorSpace {
+    #[default]
+    Linear,
+    Srgb,
 }
 
 #[derive(Deserialize)]
@@ -145,8 +165,27 @@ pub(super) fn compile(filter: Filter, index: usize) -> PyResult<NestedNodeData<'
     let attrs = [AId::X, AId::Y, AId::Width, AId::Height]
         .into_iter()
         .zip(filter.region)
-        .map(|(id, value)| attribute(id, format!("{}%", value * 100.)))
-        .chain([attribute(AId::Id, format!("filter-{index}"))])
+        .map(|(id, value)| match filter.units {
+            Units::Bounds => attribute(id, format!("{}%", value * 100.)),
+            Units::User => attribute(id, value),
+        })
+        .chain([
+            attribute(AId::Id, format!("filter-{index}")),
+            attribute(
+                AId::FilterUnits,
+                match filter.units {
+                    Units::Bounds => "objectBoundingBox",
+                    Units::User => "userSpaceOnUse",
+                },
+            ),
+            attribute(
+                AId::ColorInterpolationFilters,
+                match filter.color_space {
+                    ColorSpace::Linear => "linearRGB",
+                    ColorSpace::Srgb => "sRGB",
+                },
+            ),
+        ])
         .collect();
     Ok(element(
         EId::Defs,

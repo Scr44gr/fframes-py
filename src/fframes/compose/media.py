@@ -8,12 +8,18 @@ from fframes.media import ClipSource
 from fframes.models import Source
 
 
-class Image(Visual):
-    """A raster image stretched to the explicit local size."""
+class MediaVisual(Visual):
+    """Size a media viewport by stretching, letterboxing or cropping its source."""
+
+    size: Size
+    fit: Literal["fill", "contain", "cover"] = "fill"
+
+
+class Image(MediaVisual):
+    """A raster image loaded once, with explicit size and fitting."""
 
     kind: Literal["image"] = "image"
     source: Source
-    size: Size
 
 
 class Audio(AudioSettings, Item):
@@ -24,8 +30,7 @@ class Audio(AudioSettings, Item):
     """
 
 
-class VideoClip(ClipSource, Visual):
+class VideoClip(ClipSource, MediaVisual):
     """Play a local video on the clip's local clock; add Audio separately to mix sound."""
 
     kind: Literal["video"] = "video"
-    size: Size

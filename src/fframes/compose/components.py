@@ -61,6 +61,9 @@ class Visual(Item):
     rotation: Scalar = 0.0
     scale: Scalar = 1.0
     origin: tuple[FiniteFloat, FiniteFloat] | None = None
+    matrix: (
+        tuple[FiniteFloat, FiniteFloat, FiniteFloat, FiniteFloat, FiniteFloat, FiniteFloat] | None
+    ) = None
     mask: Mask | None = None
     filter: Filter | None = None
 
@@ -127,6 +130,13 @@ class Circle(Shape):
 
     kind: Literal["circle"] = "circle"
     radius: Length
+
+
+class Ellipse(Shape):
+    """An ellipse inscribed in local bounds beginning at (0, 0)."""
+
+    kind: Literal["ellipse"] = "ellipse"
+    size: Size
 
 
 class ShaderLayer(Visual):

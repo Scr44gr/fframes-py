@@ -29,6 +29,10 @@ use the item's layout center unless `origin=(x, y)` supplies a local pivot.
 For example, `origin=(0, 0)` rotates about the top-left. Group opacity applies to the composited children,
 so it differs from lowering each child's opacity separately.
 
+For imported vector geometry, `matrix=(a, b, c, d, e, f)` applies an SVG affine
+transform after the item's position, rotation and scale. It maps `(x, y)` to
+`(a*x + c*y + e, b*x + d*y + f)` and supports skew and reflection.
+
 ## Clips and local time
 
 `item.at(start_at, duration=...)` creates `Clip(content=item, ...)` without copying

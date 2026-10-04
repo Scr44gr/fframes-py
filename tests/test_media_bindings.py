@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Literal
 
 import pytest
 
@@ -17,6 +18,33 @@ def colored_clip(path: Path, colors: tuple[str, ...], fps: int = 4) -> Path:
         ),
     )
     return video.render(path, options=fframes.RenderOptions(concurrency=2))
+
+
+@pytest.mark.parametrize("fit", ["contain", "cover"])
+def test_media_fitting_preserves_aspect_ratio_for_images_and_clips(
+    tmp_path: Path,
+    fit: Literal["contain", "cover"],
+) -> None:
+    clip = colored_clip(tmp_path / "source.mp4", ("red", "blue"))
+    image = compose.Video(
+        resolution=(16, 16),
+        load_system_fonts=False,
+        composition=compose.Composition(
+            duration=1, children=(compose.Rectangle(size=(16, 16), fill="#ff0000"),)
+        ),
+    ).save_png(tmp_path / "source.png")
+    for visual in (
+        compose.Image(source=image, size=(32, 16), fit=fit),
+        compose.VideoClip(source=clip, size=(32, 16), fit=fit),
+    ):
+        scene = compose.Video(
+            resolution=(32, 16),
+            load_system_fonts=False,
+            composition=compose.Composition(duration=1, children=(visual,)),
+        ).compile()
+        pixels = scene.rgba(0)
+        assert pixels[(8 * 32 + 16) * 4] >= 250
+        assert pixels[(8 * 32) * 4 + 3] == (0 if fit == "contain" else 255)
 
 
 def test_video_clips_keep_local_time_loop_offset_and_seek_order(tmp_path: Path) -> None:

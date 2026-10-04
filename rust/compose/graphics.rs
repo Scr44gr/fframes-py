@@ -212,6 +212,7 @@ pub(super) fn prepare(
             offset,
             r#loop,
             size,
+            fit,
         } => {
             clip = Some(crate::clips::Source::open(
                 crate::clips::Input {
@@ -228,7 +229,7 @@ pub(super) fn prepare(
                         attribute(AId::Href, ""),
                         attribute(AId::Width, size[0]),
                         attribute(AId::Height, size[1]),
-                        attribute(AId::PreserveAspectRatio, "none"),
+                        attribute(AId::PreserveAspectRatio, fit.as_svg()),
                     ],
                     vec![],
                 )),
@@ -298,6 +299,17 @@ pub(super) fn prepare(
                 Some(element(EId::Circle, attrs, vec![])),
                 [radius * 2., radius * 2.],
             )
+        }
+        Shape::Ellipse { size, fill, stroke } => {
+            let [rx, ry] = size.map(|v| v / 2.);
+            let mut attrs = vec![
+                attribute(AId::Cx, rx),
+                attribute(AId::Cy, ry),
+                attribute(AId::Rx, rx),
+                attribute(AId::Ry, ry),
+            ];
+            paint(&mut attrs, fill, stroke, &mut colors)?;
+            (Some(element(EId::Ellipse, attrs, vec![])), size)
         }
         Shape::Path {
             size,
@@ -411,7 +423,7 @@ pub(super) fn prepare(
             ];
             (Some(node), size)
         }
-        Shape::Image { source, size } => {
+        Shape::Image { source, size, fit } => {
             let source = source.canonicalize()?;
             let image = if let Some(image) = images.get(&source) {
                 Arc::clone(image)
@@ -430,7 +442,7 @@ pub(super) fn prepare(
                         attribute(AId::Href, image),
                         attribute(AId::Width, size[0]),
                         attribute(AId::Height, size[1]),
-                        attribute(AId::PreserveAspectRatio, "none"),
+                        attribute(AId::PreserveAspectRatio, fit.as_svg()),
                     ],
                     vec![],
                 )),

@@ -8,6 +8,7 @@ from fframes.compose.components import (
     Component,
     Composition,
     CubicTo,
+    Ellipse,
     LineTo,
     Mask,
     MoveTo,
@@ -24,11 +25,14 @@ from fframes.compose.filters import Blur, Composite, Filter, Flood, Merge
 from fframes.compose.media import Audio, Image, VideoClip
 from fframes.compose.video import CompiledVideo, RenderOptions, Video
 from fframes.models import CubicBezier, Spring
+from fframes.spectrum import AudioData, Spectrum
+from fframes.subtitles import Cue, CueSettings, Subtitles
 from fframes.text import Font, TextLayout
 from fframes.values import Samples
 
 __all__ = [
     "Audio",
+    "AudioData",
     "Blur",
     "Circle",
     "Clip",
@@ -40,6 +44,9 @@ __all__ = [
     "Composition",
     "CubicBezier",
     "CubicTo",
+    "Cue",
+    "CueSettings",
+    "Ellipse",
     "Filter",
     "Flood",
     "Font",
@@ -53,8 +60,10 @@ __all__ = [
     "RenderOptions",
     "Samples",
     "ShaderLayer",
+    "Spectrum",
     "Spring",
     "Stroke",
+    "Subtitles",
     "Text",
     "TextFrames",
     "TextLayout",

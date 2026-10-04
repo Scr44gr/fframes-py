@@ -25,6 +25,7 @@ the namespace you intend to use. `fframes._native` and `compose.compiler` are in
 | [Shaders](shaders.md) | SkSL, Shadertoy and typed uniforms in both APIs. |
 | [Masks and filters](filters.md) | Clip layers and build reusable filter graphs. |
 | [Audio](audio.md) | Place, trim, loop and mix sound. |
+| [Analysis and subtitles](analysis.md) | Batch FFT, NumPy views and WebVTT cues. |
 | [Rendering](rendering.md) | Resolution, fonts, compilation, previews and encoder settings. |
 | [Low level](lowlevel.md) | SVG rendering and scalar animation signatures. |
 | [Upstream examples](examples.md) | Paired ports, asset cache and feature parity status. |

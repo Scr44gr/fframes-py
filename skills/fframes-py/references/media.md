@@ -4,8 +4,8 @@
 
 Use real local paths; resolve them relative to the script or a known project root
 when the working directory may vary. HTTP(S) source URLs are not supported.
-`Image` requires an explicit size and stretches to fit. Choose proportional
-dimensions to preserve aspect ratio.
+`Image` and `VideoClip` require an explicit size. Choose `fit="contain"` for
+proportional margins, `"cover"` for proportional cropping, or `"fill"` to stretch.
 
 For reproducible labels, pass `Video(fonts=(font_path,), load_system_fonts=False, ...)`
 and set `Text.font_family` to the font's internal family name. System fonts default

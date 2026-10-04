@@ -15,18 +15,23 @@ from fframes.shaders import (
     ShaderBinding,
     VectorUniform,
 )
+from fframes.spectrum import AudioData, Spectrum
+from fframes.subtitles import Cue, CueSettings, Subtitles
 from fframes.text import Font, TextLayout
 from fframes.values import ColorTween, Samples, Tween
 from fframes.video import Video, compile_video, render
 
 __all__ = [
     "Animation",
+    "AudioData",
     "AudioTrack",
     "ColorAnimation",
     "ColorKeyframe",
     "ColorTween",
     "ColorUniform",
     "CubicBezier",
+    "Cue",
+    "CueSettings",
     "FloatUniform",
     "Font",
     "ImageBinding",
@@ -37,7 +42,9 @@ __all__ = [
     "Samples",
     "Shader",
     "ShaderBinding",
+    "Spectrum",
     "Spring",
+    "Subtitles",
     "SvgVideo",
     "TextLayout",
     "Timeline",

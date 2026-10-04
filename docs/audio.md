@@ -2,6 +2,8 @@
 
 [Index](index.md)
 
+For waveform frequency data and timed captions, see [Analysis and subtitles](analysis.md).
+
 Add `Audio` items to the same `Composition.children` tuple as visuals.
 Overlapping tracks mix; child order does not create audio priority. Paths identify
 local files decoded during compilation. The mixer uses stereo at 48,000 Hz;

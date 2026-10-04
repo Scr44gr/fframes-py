@@ -9,6 +9,7 @@ from fframes.compose.components import (
     Clip,
     Component,
     Composition,
+    Ellipse,
     Item,
     Rectangle,
     ShaderLayer,
@@ -29,7 +30,7 @@ class Group(Visual):
 
 
 Graphic: TypeAlias = Annotated[
-    Group | Rectangle | Circle | Text | VectorPath | Image | ShaderLayer | VideoClip,
+    Group | Rectangle | Circle | Ellipse | Text | VectorPath | Image | ShaderLayer | VideoClip,
     Field(discriminator="kind"),
 ]
 
@@ -118,6 +119,7 @@ class Compiler:
                             rotation=item.rotation,
                             scale=item.scale,
                             origin=item.origin,
+                            matrix=item.matrix,
                             mask=item.mask,
                             filter=item.filter,
                         ),
@@ -128,7 +130,7 @@ class Compiler:
             elif isinstance(item, Audio):
                 self.sounds.append(Sound(start=start, end=end, audio=item))
             elif isinstance(
-                item, (Rectangle, Circle, Text, VectorPath, Image, ShaderLayer, VideoClip)
+                item, (Rectangle, Circle, Ellipse, Text, VectorPath, Image, ShaderLayer, VideoClip)
             ):
                 self.layers.append(Layer(parent=parent, start=start, end=end, graphic=item))
             else:

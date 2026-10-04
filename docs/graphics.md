@@ -104,8 +104,10 @@ leaf = VectorPath(
 `Image(source=Path("assets/logo.png"), size=(160, 90))` requires a local file;
 paths are relative to the process working directory. PNG is a useful choice for
 transparency. The decoder determines which other raster formats are available.
-Images are loaded at compilation, not at model construction. There is no automatic
-contain/cover mode: compute a size with the source's aspect ratio to avoid stretching.
+Images are loaded at compilation, not at model construction. Images and video clips
+accept `fit="fill"` (stretch, the default), `"contain"` (preserve aspect ratio with
+transparent margins), or `"cover"` (preserve aspect ratio and crop). Both aspect
+ratio modes center the source in `size`.
 
 ## Video clips
 

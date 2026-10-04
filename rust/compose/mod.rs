@@ -36,6 +36,7 @@ struct Layer {
     rotation: Value,
     scale: Value,
     origin: [f64; 2],
+    matrix: Option<[f64; 6]>,
     mask: Option<NestedNodeData<'static>>,
     filter: Option<NestedNodeData<'static>>,
     asset: Asset,
@@ -127,6 +128,12 @@ impl SceneVideo {
             if origin.iter().any(|v| !v.is_finite() || v.abs() > 1e7) {
                 return Err(PyValueError::new_err("invalid transform origin"));
             }
+            if graphic
+                .matrix
+                .is_some_and(|m| m.iter().any(|v| !v.is_finite()))
+            {
+                return Err(PyValueError::new_err("affine matrix must be finite"));
+            }
             let x = graphic
                 .position
                 .x
@@ -146,6 +153,7 @@ impl SceneVideo {
                 rotation: graphic.rotation.compile(),
                 scale: graphic.scale.compile(),
                 origin,
+                matrix: graphic.matrix,
                 mask,
                 filter,
                 asset,
@@ -199,6 +207,18 @@ impl SceneVideo {
             d,
             e: layer.x.value(time) + cx + a * (ox - cx) + c * (oy - cy),
             f: layer.y.value(time) + cy + b * (ox - cx) + d * (oy - cy),
+        };
+        let transform = if let Some([a, b, c, d, e, f]) = layer.matrix {
+            Transform {
+                a: a * transform.a + c * transform.b,
+                b: b * transform.a + d * transform.b,
+                c: a * transform.c + c * transform.d,
+                d: b * transform.c + d * transform.d,
+                e: a * transform.e + c * transform.f + e,
+                f: b * transform.e + d * transform.f + f,
+            }
+        } else {
+            transform
         };
         let mut children = if layer.asset.node.is_some() {
             vec![
