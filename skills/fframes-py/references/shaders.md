@@ -17,8 +17,9 @@ Do not infer that arbitrary GLSL or every SVG feature is supported.
 | `ImageUniform(name=..., source=path)` | Local raster; binds `uniform shader`. |
 | `VideoUniform(name=..., source=path, offset=0, loop=False)` | Local clip on the shader clock; no implicit audio. |
 
-Names must match declarations. Built-ins `iTime`, `iTimeDelta`, `iFrame` and
-`iResolution` are managed by the renderer; do not bind them. Missing values follow
+Names must match declarations. Declare any built-ins used by SkSL (`iTime`,
+`iTimeDelta`, `iFrame`, `iResolution`) in the source; the renderer supplies their
+values, so do not add uniform bindings for them. Missing values follow
 upstream zero/transparent defaults. Source files are read at authoring time;
 image uniforms are decoded once when compiling the video.
 
@@ -46,5 +47,27 @@ Compose effects attach to any visual or group:
   `ColorMatrix(result=..., source=..., values=(row1, row2, row3, row4))` transforms
   RGBA; each row has five coefficients, including the offset column.
 
-In the checkout, `docs/shaders.md` and `docs/filters.md` contain runnable patterns;
-the paired `shaders` and `neon_triangle` examples retain the upstream compositions.
+Minimal animated shader:
+
+```python
+from fframes import Shader
+from fframes.compose import Composition, ShaderLayer, Video
+
+program = Shader(
+    source="""
+    uniform float iTime;
+    half4 main(float2 position) {
+        return half4(0.5 + 0.5 * sin(iTime), 0.3, 0.7, 1.0);
+    }
+"""
+)
+scene = Video(
+    backend="skia",
+    resolution=(320, 180),
+    composition=Composition(
+        duration=2,
+        children=(ShaderLayer(shader=program, size=(320, 180)),),
+    ),
+).compile()
+scene.save_png("shader.png", index=30)
+```

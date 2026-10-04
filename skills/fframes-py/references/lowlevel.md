@@ -6,6 +6,22 @@ Keep it separate from compose; neither API's native video is an item in the othe
 
 ## SVG frames
 
+```python
+import fframes
+
+svg = (
+    '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64">'
+    '<rect width="64" height="64" fill="#ffd43b"/></svg>'
+)
+video = fframes.Video(
+    config=fframes.VideoConfig(width=64, height=64, fps=30),
+    frames=(svg,) * 30,
+)
+video.save_png("raw.png", index=15)
+```
+
+The cached `Video` above is convenient for repeated outputs. To compile directly:
+
 1. Build a nonempty **tuple** of complete SVG strings, one string per frame.
    Match SVG and output dimensions. Escape dynamic text/attributes when authoring
    XML, or choose compose when no SVG input exists.
@@ -28,9 +44,8 @@ bindings support `start_at`, optional `duration`, source `offset` and `loop`.
 Video bindings are silent unless accompanied by an audio track; timing and mixing
 match compose. `native.audio_samples()` returns stereo float32 little-endian PCM.
 No Python callback runs during rendering. All SVG strings
-are held in memory. `len(native) / config.fps` gives duration. Do not call
-`native.render` directly unless deliberately managing its extra temporary-directory
-argument. Even dimensions and codec/container rules from the media reference apply.
+are held in memory. `len(native) / config.fps` gives duration.
+Even dimensions and codec/container rules from the media reference apply.
 `RenderOptions` is shared with compose, including its bitrate setting.
 
 ## Scalar keyframes

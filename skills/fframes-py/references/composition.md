@@ -92,10 +92,4 @@ shader layers, clipping masks and filter graphs.
 
 ## Reuse components
 
-Subclass `Component` with typed Pydantic fields and `compose() -> Composition`.
-Compose existing items there; it has no frame argument. An instance expands once
-per compilation, so reuse the instance when its inputs match. Wrap each placement
-in a composition for independent transforms; the component itself only supplies
-content and `.at()`. Keep expansion deterministic and acyclic. Persist application
-inputs, not custom components or private compiler JSON. For a full class example,
-see `docs/components.md` when working in the repository.
+See [components](components.md) for a complete class and repeated placements.

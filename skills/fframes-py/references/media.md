@@ -6,6 +6,8 @@ Use real local paths; resolve them relative to the script or a known project roo
 when the working directory may vary. HTTP(S) source URLs are not supported.
 `Image` and `VideoClip` require an explicit size. Choose `fit="contain"` for
 proportional margins, `"cover"` for proportional cropping, or `"fill"` to stretch.
+`fframes.probe_image(path)` returns decoded dimensions and EXIF fields; EXIF can
+be absent. Use the dimensions to choose a layout size before constructing `Image`.
 
 For reproducible labels, pass `Video(fonts=(font_path,), load_system_fonts=False, ...)`
 and set `Text.font_family` to the font's internal family name. System fonts default
