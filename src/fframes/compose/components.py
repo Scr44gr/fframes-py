@@ -23,9 +23,20 @@ class Position(Model):
 class Mask(Model):
     """Clip a visual or group to a local rectangle with optional rounded corners."""
 
-    size: Size
-    radius: Annotated[float, Field(ge=0, le=1e7, allow_inf_nan=False)] = 0.0
-    position: tuple[FiniteFloat, FiniteFloat] = (0.0, 0.0)
+    size: tuple[Scalar, Scalar]
+    radius: Scalar = 0.0
+    position: tuple[Scalar, Scalar] = (0.0, 0.0)
+
+    @model_validator(mode="after")
+    def check_geometry(self) -> Self:
+        """Validate every sampled boundary before creating native clipping paths."""
+        if any(not 0 < n <= 1e7 for axis in self.size for n in endpoints(axis)):
+            raise ValueError("mask size must stay positive and at most 10000000")
+        if any(not 0 <= n <= 1e7 for n in endpoints(self.radius)):
+            raise ValueError("mask radius must stay between 0 and 10000000")
+        if any(abs(n) > 1e7 for axis in self.position for n in endpoints(axis)):
+            raise ValueError("mask coordinates must stay between -10000000 and 10000000")
+        return self
 
 
 class Item(Model):
@@ -57,12 +68,31 @@ class Visual(Item):
 
     position: Position = Position()
     opacity: Scalar = 1.0
+    z_index: Scalar = 0.0
     rotation: Scalar = 0.0
     scale: Scalar = 1.0
     origin: tuple[FiniteFloat, FiniteFloat] | None = None
     matrix: Matrix | None = None
     mask: Mask | None = None
     filter: Filter | None = None
+    blend_mode: Literal[
+        "normal",
+        "multiply",
+        "screen",
+        "overlay",
+        "darken",
+        "lighten",
+        "color-dodge",
+        "color-burn",
+        "hard-light",
+        "soft-light",
+        "difference",
+        "exclusion",
+        "hue",
+        "saturation",
+        "color",
+        "luminosity",
+    ] = "normal"
 
     @model_validator(mode="after")
     def check_transform(self) -> Self:
@@ -163,7 +193,14 @@ class ShaderLayer(Visual):
 
     kind: Literal["shader"] = "shader"
     shader: Shader
-    size: Size
+    size: tuple[Scalar, Scalar]
+
+    @model_validator(mode="after")
+    def check_size(self) -> Self:
+        """Keep the shader's animated resolution positive."""
+        if any(not 0 < n <= 1e7 for axis in self.size for n in endpoints(axis)):
+            raise ValueError("shader size must stay positive and at most 10000000")
+        return self
 
 
 class TextTemplate(Model):

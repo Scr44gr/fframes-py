@@ -88,6 +88,9 @@ Fill and stroke colors also accept
 It uses the same local clock and easing options as `Tween`, interpolates all four
 RGBA channels in Rust, and holds its final color after the duration.
 
+`ColorSamples(values=("#ff0000", "#0000ff"), fps=2)` holds discrete colors on
+the local clock; use it anywhere a fill, stroke or shader color is accepted.
+
 Fills and strokes also accept paint objects:
 
 ```python

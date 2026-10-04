@@ -6,6 +6,7 @@ from pydantic import ValidationError
 import fframes
 from fframes import compose
 from fframes.models import Backend
+from tests.test_media_bindings import colored_clip
 
 
 def native(shader: fframes.Shader, *, backend: Backend = "skia") -> fframes.SvgVideo:
@@ -192,3 +193,98 @@ def test_skia_encode_uses_real_shader_frames(tmp_path: Path) -> None:
     composed(shader).render(path, options=fframes.RenderOptions(concurrency=2))
     assert path.stat().st_size > 1000
     assert not list(tmp_path.glob("fframes-py-*"))
+
+
+def test_video_uniforms_follow_binding_time_loop_offset_and_eof(tmp_path: Path) -> None:
+    source = colored_clip(tmp_path / "source.mp4", ("red", "lime", "blue", "yellow"))
+    for looping in (False, True):
+        shader = fframes.Shader(
+            source="uniform shader image; half4 main(float2 p) { return image.eval(p); }",
+            uniforms=(
+                fframes.VideoUniform(name="image", source=source, offset=0.25, loop=looping),
+            ),
+        )
+        raw = fframes.Video(
+            config=fframes.VideoConfig(width=16, height=16, fps=4, backend="skia"),
+            frames=(
+                '<svg width="16" height="16"><image href="shader:s" width="16" height="16"/></svg>',
+            )
+            * 8,
+            shaders=(fframes.ShaderBinding(name="s", shader=shader, start_at=0.25, duration=1.5),),
+        )
+        component = compose.Video(
+            resolution=(16, 16),
+            fps=4,
+            backend="skia",
+            load_system_fonts=False,
+            composition=compose.Composition(
+                duration=2,
+                children=(
+                    compose.ShaderLayer(shader=shader, size=(16, 16)).at(0.25, duration=1.5),
+                ),
+            ),
+        ).compile()
+        for i in (0, 3, 1, 4, 6, 7):
+            a, b = raw.rgba(i), component.rgba(i)
+            assert a == b
+            if i in (0, 7) or (not looping and i >= 4):
+                assert not any(a)
+            else:
+                expected = (255, 255, 0) if i in (3, 6) else (0, 255, 0)
+                assert a[:3] == pytest.approx(expected, abs=3)
+        component.render(
+            tmp_path / f"shader-{looping}.mp4", options=fframes.RenderOptions(concurrency=2)
+        )
+
+
+def test_vector_uniforms_animate_each_coordinate_without_cross_frame_state() -> None:
+    shader = fframes.Shader(
+        source="uniform float3 rgb; half4 main(float2 p) { return half4(rgb, 1); }",
+        uniforms=(
+            fframes.VectorUniform(
+                name="rgb",
+                value=(
+                    fframes.Tween(from_value=0, to_value=1, duration=1),
+                    fframes.Samples(values=(0, 0.5, 1), fps=2),
+                    0.25,
+                ),
+            ),
+        ),
+    )
+    a, b = native(shader), composed(shader)
+    for index, expected in ((19, (255, 255, 64)), (0, (0, 0, 64)), (5, (128, 128, 64))):
+        assert a.rgba(index) == b.rgba(index)
+        assert a.rgba(index)[:3] == pytest.approx(expected, abs=1)
+
+
+def test_shader_resolution_animates_and_time_offset_applies_to_uniforms() -> None:
+    program = fframes.Shader(
+        source="uniform float3 iResolution; uniform float iTime; uniform float level; "
+        "half4 main(float2 p) { "
+        "return half4(iResolution.x/32, iTime, level, 1); }",
+        time_offset=0.5,
+        uniforms=(
+            fframes.FloatUniform(
+                name="level", value=fframes.Tween(from_value=0, to_value=1, duration=1)
+            ),
+        ),
+    )
+    video = compose.Video(
+        resolution=(32, 16),
+        fps=2,
+        backend="skia",
+        load_system_fonts=False,
+        composition=compose.Composition(
+            duration=1,
+            children=(
+                compose.ShaderLayer(
+                    shader=program, size=(fframes.Samples(values=(16, 32), fps=2), 16)
+                ),
+            ),
+        ),
+    ).compile()
+    for i, expected in ((1, (255, 255, 255, 255)), (0, (128, 128, 128, 255))):
+        assert video.rgba(i)[:4] == pytest.approx(expected, abs=1)
+        assert video.rgba(i)[31 * 4 + 3] == (255 if i else 0)
+    with pytest.raises(ValidationError, match="size"):
+        compose.ShaderLayer(shader=program, size=(0, 16))

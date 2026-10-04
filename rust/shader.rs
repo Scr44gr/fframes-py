@@ -16,31 +16,61 @@ pub(crate) struct Input {
     pub source: String,
     pub language: String,
     pub uniforms: Vec<Uniform>,
+    #[serde(default)]
+    pub time_offset: f64,
 }
 
 #[derive(Deserialize)]
 #[serde(tag = "kind", rename_all = "lowercase", deny_unknown_fields)]
 pub(crate) enum Uniform {
-    Float { name: String, value: Scalar },
-    Color { name: String, value: Paint },
-    Vector { name: String, value: Vec<f32> },
-    Int { name: String, value: i32 },
-    Image { name: String, source: PathBuf },
+    Float {
+        name: String,
+        value: Scalar,
+    },
+    Color {
+        name: String,
+        value: Paint,
+    },
+    Vector {
+        name: String,
+        value: Vec<Scalar>,
+    },
+    Int {
+        name: String,
+        value: i32,
+    },
+    Image {
+        name: String,
+        source: PathBuf,
+    },
+    Video {
+        name: String,
+        source: PathBuf,
+        offset: f64,
+        r#loop: bool,
+    },
 }
 
 enum Binding {
     Float(Value),
     Color(ColorValue),
+    Vector(Vec<Value>),
+    Video(crate::clips::Source),
     Constant(ShaderUniformValue),
 }
 
 pub(crate) struct Program {
     shader: Shader,
     uniforms: Vec<(String, Binding)>,
+    first: usize,
 }
 
 impl Program {
-    pub fn compile(input: Input) -> PyResult<Self> {
+    pub fn compile(input: Input, fps: usize) -> PyResult<Self> {
+        if !input.time_offset.is_finite() || !(0. ..=86400.).contains(&input.time_offset) {
+            return Err(PyValueError::new_err("invalid shader time offset"));
+        }
+        let first = (input.time_offset * fps as f64 + 1e-9).floor() as usize;
         let shader = match input.language.as_str() {
             "sksl" => Shader::sksl(input.source),
             "shadertoy" => Shader::shadertoy(input.source),
@@ -64,18 +94,20 @@ impl Program {
                     Some(Type::Float4),
                 ),
                 Uniform::Vector { name, value } => {
-                    if value.iter().any(|v| !v.is_finite()) {
-                        return Err(PyValueError::new_err("uniform vector must be finite"));
+                    for coordinate in &value {
+                        coordinate.check(-f64::from(f32::MAX), f64::from(f32::MAX))?;
                     }
-                    let (value, ty) = match value.as_slice() {
-                        [a, b] => (ShaderUniformValue::Float2([*a, *b]), Type::Float2),
-                        [a, b, c] => (ShaderUniformValue::Float3([*a, *b, *c]), Type::Float3),
-                        [a, b, c, d] => {
-                            (ShaderUniformValue::Float4([*a, *b, *c, *d]), Type::Float4)
-                        }
+                    let ty = match value.len() {
+                        2 => Type::Float2,
+                        3 => Type::Float3,
+                        4 => Type::Float4,
                         _ => return Err(PyValueError::new_err("uniform vectors need 2–4 values")),
                     };
-                    (name, Binding::Constant(value), Some(ty))
+                    (
+                        name,
+                        Binding::Vector(value.into_iter().map(Scalar::compile).collect()),
+                        Some(ty),
+                    )
                 }
                 Uniform::Int { name, value } => (
                     name,
@@ -92,6 +124,23 @@ impl Program {
                         None,
                     )
                 }
+                Uniform::Video {
+                    name,
+                    source,
+                    offset,
+                    r#loop,
+                } => (
+                    name,
+                    Binding::Video(crate::clips::Source::open(
+                        crate::clips::Input {
+                            source,
+                            offset,
+                            r#loop,
+                        },
+                        fps,
+                    )?),
+                    None,
+                ),
             };
             if !names.insert(name.clone())
                 || matches!(
@@ -120,20 +169,63 @@ impl Program {
             }
             uniforms.push((name, binding));
         }
-        Ok(Self { shader, uniforms })
+        Ok(Self {
+            shader,
+            uniforms,
+            first,
+        })
     }
 
-    pub fn draw(&self, index: usize, fps: usize) -> Arc<usvgr::PreloadedImageData> {
-        let frame = Frame::new(index, index, fps);
+    pub fn draw(
+        &self,
+        index: usize,
+        fps: usize,
+        cache: &mut crate::clips::Decoders,
+    ) -> PyResult<Arc<usvgr::PreloadedImageData>> {
+        let frame = Frame::new(index + self.first, index + self.first, fps);
         let time = f64::from(frame.seconds());
         let mut uniforms = ShaderUniforms::new();
         for (name, binding) in &self.uniforms {
             uniforms = match binding {
                 Binding::Float(value) => uniforms.float(name.clone(), value.value(time) as f32),
                 Binding::Color(value) => uniforms.color(name.clone(), value.value(time)),
+                Binding::Vector(values) => {
+                    let coordinate = |i: usize| values[i].value(time) as f32;
+                    let value = match values.len() {
+                        2 => ShaderUniformValue::Float2([coordinate(0), coordinate(1)]),
+                        3 => ShaderUniformValue::Float3([
+                            coordinate(0),
+                            coordinate(1),
+                            coordinate(2),
+                        ]),
+                        _ => ShaderUniformValue::Float4([
+                            coordinate(0),
+                            coordinate(1),
+                            coordinate(2),
+                            coordinate(3),
+                        ]),
+                    };
+                    uniforms.set(name.clone(), value)
+                }
+                Binding::Video(source) => {
+                    let image = source.image(time, fps, cache)?.unwrap_or_else(transparent);
+                    uniforms.set(name.clone(), ShaderUniformValue::Image(image))
+                }
                 Binding::Constant(value) => uniforms.set(name.clone(), value.clone()),
             };
         }
-        self.shader.draw(&frame, uniforms).href()
+        Ok(self.shader.draw(&frame, uniforms).href())
     }
+}
+
+fn transparent() -> Arc<usvgr::PreloadedImageData> {
+    static PIXEL: std::sync::OnceLock<Arc<usvgr::PreloadedImageData>> = std::sync::OnceLock::new();
+    Arc::clone(PIXEL.get_or_init(|| {
+        Arc::new(usvgr::PreloadedImageData::new_blended(
+            "fframes-py:transparent".into(),
+            1,
+            1,
+            &[0; 4],
+        ))
+    }))
 }

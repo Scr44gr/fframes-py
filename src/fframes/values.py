@@ -46,8 +46,15 @@ class Samples(Model):
     fps: PositiveInt
 
 
+class ColorSamples(Model):
+    """Hold sampled RGBA colors on the local clock without interpolating between them."""
+
+    values: Annotated[tuple[Color, ...], Field(min_length=1)]
+    fps: PositiveInt
+
+
 Scalar: TypeAlias = FiniteFloat | Tween | Samples
-Paint: TypeAlias = Color | ColorTween
+Paint: TypeAlias = Color | ColorTween | ColorSamples
 
 
 def endpoints(value: Scalar) -> tuple[float, float]:

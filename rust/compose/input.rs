@@ -32,6 +32,8 @@ pub(super) struct Layer {
 pub(super) struct Graphic {
     pub position: Position,
     pub opacity: Scalar,
+    #[serde(default = "zero")]
+    pub z_index: Scalar,
     pub rotation: Scalar,
     pub scale: Scalar,
     pub origin: Option<[f64; 2]>,
@@ -40,15 +42,62 @@ pub(super) struct Graphic {
     pub rendering: String,
     pub mask: Option<Mask>,
     pub filter: Option<super::filters::Filter>,
+    #[serde(default)]
+    pub blend_mode: BlendMode,
     #[serde(flatten)]
     pub shape: Shape,
 }
 
 #[derive(Deserialize)]
 pub(super) struct Mask {
-    pub size: [f64; 2],
-    pub radius: f64,
-    pub position: [f64; 2],
+    pub size: [Scalar; 2],
+    pub radius: Scalar,
+    pub position: [Scalar; 2],
+}
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub(super) enum BlendMode {
+    #[default]
+    Normal,
+    Multiply,
+    Screen,
+    Overlay,
+    Darken,
+    Lighten,
+    ColorDodge,
+    ColorBurn,
+    HardLight,
+    SoftLight,
+    Difference,
+    Exclusion,
+    Hue,
+    Saturation,
+    Color,
+    Luminosity,
+}
+
+impl BlendMode {
+    pub fn as_svg(&self) -> &'static str {
+        match self {
+            Self::Normal => "normal",
+            Self::Multiply => "multiply",
+            Self::Screen => "screen",
+            Self::Overlay => "overlay",
+            Self::Darken => "darken",
+            Self::Lighten => "lighten",
+            Self::ColorDodge => "color-dodge",
+            Self::ColorBurn => "color-burn",
+            Self::HardLight => "hard-light",
+            Self::SoftLight => "soft-light",
+            Self::Difference => "difference",
+            Self::Exclusion => "exclusion",
+            Self::Hue => "hue",
+            Self::Saturation => "saturation",
+            Self::Color => "color",
+            Self::Luminosity => "luminosity",
+        }
+    }
 }
 
 #[derive(Deserialize)]
@@ -126,7 +175,7 @@ pub(super) enum Shape {
     },
     Shader {
         shader: crate::shader::Input,
-        size: [f64; 2],
+        size: [Scalar; 2],
     },
     Group {
         size: [f64; 2],
@@ -220,7 +269,7 @@ pub(super) struct Stroke {
     pub miter_limit: f64,
     #[serde(default)]
     pub dash: Vec<Scalar>,
-    #[serde(default = "dash_offset")]
+    #[serde(default = "zero")]
     pub dash_offset: Scalar,
 }
 
@@ -233,6 +282,6 @@ fn join() -> String {
 fn miter_limit() -> f64 {
     4.
 }
-fn dash_offset() -> Scalar {
+fn zero() -> Scalar {
     Scalar::Constant(0.)
 }

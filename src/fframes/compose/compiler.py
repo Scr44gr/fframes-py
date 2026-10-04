@@ -115,12 +115,14 @@ class Compiler:
                             size=size,
                             position=item.position,
                             opacity=item.opacity,
+                            z_index=item.z_index,
                             rotation=item.rotation,
                             scale=item.scale,
                             origin=item.origin,
                             matrix=item.matrix,
                             mask=item.mask,
                             filter=item.filter,
+                            blend_mode=item.blend_mode,
                         ),
                     )
                 )

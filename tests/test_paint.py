@@ -27,6 +27,25 @@ def pixel(data: bytes, x: int, y: int, width: int = 32) -> bytes:
     return data[index : index + 4]
 
 
+def test_sampled_colors_use_local_clock_and_preserve_alpha() -> None:
+    colors = fframes.ColorSamples(values=("#ff000080", "#00ff00ff", "#0000ff00"), fps=2)
+    scene = Video(
+        resolution=(16, 16),
+        fps=4,
+        load_system_fonts=False,
+        composition=Composition(
+            duration=3, children=(Rectangle(size=(16, 16), fill=colors).at(0.5, duration=2),)
+        ),
+    ).compile()
+    for i, expected in (
+        (8, bytes(4)),
+        (2, bytes((255, 0, 0, 128))),
+        (5, bytes((0, 255, 0, 255))),
+        (11, bytes(4)),
+    ):
+        assert scene.rgba(i)[:4] == expected
+
+
 def test_gradients_have_independent_ids_and_preserve_stop_alpha() -> None:
     scene = Video(
         resolution=(32, 16),

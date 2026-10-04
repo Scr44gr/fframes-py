@@ -4,8 +4,9 @@ from typing import Annotated, Literal, Self, TypeAlias
 
 from pydantic import Field, model_validator
 
-from fframes.models import FiniteFloat, Model, Source
-from fframes.values import Paint, Scalar
+from fframes.media import ClipSource
+from fframes.models import Model, Source
+from fframes.values import Duration, Paint, Scalar, Start
 
 Name: TypeAlias = Annotated[str, Field(pattern=r"^[A-Za-z_][A-Za-z0-9_]*$")]
 
@@ -27,14 +28,14 @@ class ColorUniform(Model):
 
 
 class VectorUniform(Model):
-    """A float2, float3 or float4 uniform."""
+    """A float2, float3 or float4 uniform with independently animated coordinates."""
 
     kind: Literal["vector"] = "vector"
     name: Name
     value: (
-        tuple[FiniteFloat, FiniteFloat]
-        | tuple[FiniteFloat, FiniteFloat, FiniteFloat]
-        | tuple[FiniteFloat, FiniteFloat, FiniteFloat, FiniteFloat]
+        tuple[Scalar, Scalar]
+        | tuple[Scalar, Scalar, Scalar]
+        | tuple[Scalar, Scalar, Scalar, Scalar]
     )
 
 
@@ -54,8 +55,15 @@ class ImageUniform(Model):
     source: Source
 
 
+class VideoUniform(ClipSource):
+    """A synchronized child shader, transparent at EOF unless loop is enabled."""
+
+    kind: Literal["video"] = "video"
+    name: Name
+
+
 Uniform: TypeAlias = Annotated[
-    FloatUniform | ColorUniform | VectorUniform | IntUniform | ImageUniform,
+    FloatUniform | ColorUniform | VectorUniform | IntUniform | ImageUniform | VideoUniform,
     Field(discriminator="kind"),
 ]
 
@@ -66,6 +74,7 @@ class Shader(Model):
     source: Annotated[str, Field(min_length=1, pattern=r"^[^\x00]+$")]
     language: Literal["sksl", "shadertoy"] = "sksl"
     uniforms: tuple[Uniform, ...] = ()
+    time_offset: Start = 0.0
 
     @model_validator(mode="after")
     def check_names(self) -> Self:
@@ -87,3 +96,5 @@ class ShaderBinding(Model):
 
     name: Name
     shader: Shader
+    start_at: Start = 0.0
+    duration: Duration | None = None

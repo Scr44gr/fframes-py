@@ -4,9 +4,10 @@
 
 ## Drawing order and coordinates
 
-`Composition.children` is ordered back to front: the last visible child is drawn
-on top. A nested composition is a group in that order; its children cannot be
-interleaved with a sibling's children. There is no separate `z_index`.
+`Composition.children` is ordered back to front. Visuals accept `z_index=0`,
+including `Tween` or `Samples`: larger values paint later, and ties preserve
+child order. Static ordering is resolved once; animated ordering runs in Rust.
+A nested composition stays together; its children cannot interleave with siblings.
 
 `Composition.size=(width, height)` defines a local canvas. Omit it to inherit the
 parent's size; the root inherits `Video.resolution`. It neither resizes child
@@ -27,7 +28,8 @@ All visuals and compositions share `position`, `opacity` (0–1), `rotation`
 (clockwise degrees), and `scale` (positive, at most 10,000). Rotation and scale
 use the item's layout center unless `origin=(x, y)` supplies a local pivot.
 For example, `origin=(0, 0)` rotates about the top-left. Group opacity applies to the composited children,
-so it differs from lowering each child's opacity separately.
+so it differs from lowering each child's opacity separately. `blend_mode` accepts
+SVG blend modes (default `normal`); `difference` works well for light overlays.
 
 For imported vector geometry, `matrix=(a, b, c, d, e, f)` applies an SVG affine
 transform after the item's position, rotation and scale. It maps `(x, y)` to
@@ -71,8 +73,8 @@ holding its initial value before then. Easing accepts `linear`, `ease_in`,
 `Spring(mass=1, stiffness=180, damping=20)`. Spring duration caps its native settling
 time; underdamped springs can overshoot, including beyond their endpoints.
 Opacity and scale validation includes this overshoot.
-Rectangle dimensions also accept tweens; other geometry and audio controls do not. For animated paint
-and frame counters, see [ColorTween and TextTemplate](graphics.md).
+See [graphics](graphics.md) for animated geometry and paint. Audio controls
+remain fixed for each track.
 
 For procedural motion, `Samples(values=(0.0, 4.0, 2.0), fps=30)` works wherever
 a numeric tween does, including shader float uniforms. Rust selects

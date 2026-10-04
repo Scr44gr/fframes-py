@@ -62,7 +62,7 @@ impl Asset {
             node.attrs[0].value = image.into();
         }
         if let Some(shader) = &self.shader {
-            node.attrs[0].value = shader.draw(frame, fps).into();
+            node.attrs[0].value = shader.draw(frame, fps, cache)?.into();
         }
         for (index, value) in &self.numbers {
             node.attrs[*index].value = value.value(time).into();
@@ -124,43 +124,52 @@ pub(super) fn length(value: f64) -> PyResult<()> {
     Ok(())
 }
 
-pub(super) fn mask(
-    mask: super::input::Mask,
+pub(super) struct Mask {
     index: usize,
+    values: [Value; 5],
     offset: [f64; 2],
-) -> PyResult<NestedNodeData<'static>> {
-    for length_value in mask.size {
-        length(length_value)?;
+}
+
+impl Mask {
+    pub fn compile(input: super::input::Mask, index: usize, offset: [f64; 2]) -> PyResult<Self> {
+        for value in &input.size {
+            value.check(f64::MIN_POSITIVE, 1e7)?;
+        }
+        input.radius.check(0., 1e7)?;
+        for value in &input.position {
+            value.check(-1e7, 1e7)?;
+        }
+        let [width, height] = input.size;
+        let [x, y] = input.position;
+        Ok(Self {
+            index,
+            values: [width, height, input.radius, x, y].map(Scalar::compile),
+            offset,
+        })
     }
-    if !mask.radius.is_finite()
-        || mask.radius < 0.
-        || mask.radius > 1e7
-        || mask
-            .position
-            .iter()
-            .any(|v| !v.is_finite() || v.abs() > 1e7)
-    {
-        return Err(PyValueError::new_err("invalid clipping mask"));
-    }
-    Ok(element(
-        EId::Defs,
-        vec![],
-        vec![Some(element(
-            EId::ClipPath,
-            vec![attribute(AId::Id, format!("clip-{index}"))],
+
+    pub fn node_at(&self, time: f64) -> NestedNodeData<'static> {
+        let [width, height, radius, x, y] = std::array::from_fn(|i| self.values[i].value(time));
+        element(
+            EId::Defs,
+            vec![],
             vec![Some(element(
-                EId::Rect,
-                vec![
-                    attribute(AId::Width, mask.size[0]),
-                    attribute(AId::Height, mask.size[1]),
-                    attribute(AId::Rx, mask.radius),
-                    attribute(AId::X, mask.position[0] - offset[0]),
-                    attribute(AId::Y, mask.position[1] - offset[1]),
-                ],
-                vec![],
+                EId::ClipPath,
+                vec![attribute(AId::Id, format!("clip-{}", self.index))],
+                vec![Some(element(
+                    EId::Rect,
+                    vec![
+                        attribute(AId::Width, width),
+                        attribute(AId::Height, height),
+                        attribute(AId::Rx, radius),
+                        attribute(AId::X, x - self.offset[0]),
+                        attribute(AId::Y, y - self.offset[1]),
+                    ],
+                    vec![],
+                ))],
             ))],
-        ))],
-    ))
+        )
+    }
 }
 
 pub(super) fn prepare(
@@ -214,19 +223,29 @@ pub(super) fn prepare(
             shader: input,
             size,
         } => {
-            shader = Some(crate::shader::Program::compile(input)?);
+            shader = Some(crate::shader::Program::compile(input, fps)?);
+            let mut extent = [0., 0.];
+            for (i, value) in size.into_iter().enumerate() {
+                value.check(f64::MIN_POSITIVE, 1e7)?;
+                let animated = !matches!(value, Scalar::Constant(_));
+                let value = value.compile();
+                extent[i] = value.value(0.);
+                if animated {
+                    numbers.push((i + 1, value));
+                }
+            }
             (
                 Some(element(
                     EId::Image,
                     vec![
                         attribute(AId::Href, ""),
-                        attribute(AId::Width, size[0]),
-                        attribute(AId::Height, size[1]),
+                        attribute(AId::Width, extent[0]),
+                        attribute(AId::Height, extent[1]),
                         attribute(AId::PreserveAspectRatio, "none"),
                     ],
                     vec![],
                 )),
-                size,
+                extent,
             )
         }
         Shape::Group { size } => (None, size),

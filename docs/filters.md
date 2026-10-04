@@ -9,7 +9,8 @@ does not clip children.
 `Mask(size=(width, height), radius=0, position=(0, 0))` clips to a rectangle with
 optional rounded corners. Position is relative to the local layout origin,
 including the ink origin of bounds-anchored text. The mask clips the filtered
-result; group opacity is applied after compositing.
+result; group opacity is applied after compositing. Size, position and radius
+also accept `Tween` or `Samples`.
 
 Filters are ordered graphs. Each step names a `result`; its inputs refer to earlier
 results, `SourceGraphic` or `SourceAlpha`. The last step produces the output.

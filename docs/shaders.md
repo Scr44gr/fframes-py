@@ -30,11 +30,12 @@ Shader syntax and supplied uniform types are checked at video compilation.
 
 | Uniform | Value |
 | --- | --- |
-| `FloatUniform` | Float or `Tween`. |
-| `ColorUniform` | Hex RGBA color or `ColorTween`, delivered as float4 in 0–1. |
-| `VectorUniform` | Tuple of 2, 3 or 4 floats. |
+| `FloatUniform` | Float, `Tween` or `Samples`. |
+| `ColorUniform` | Hex RGBA, `ColorTween` or `ColorSamples`, delivered as float4 in 0–1. |
+| `VectorUniform` | Tuple of 2–4 floats, tweens or sample sequences. |
 | `IntUniform` | Signed 32-bit integer. |
 | `ImageUniform` | `source` pointing to a local raster file; binds `uniform shader`. |
+| `VideoUniform` | Local video `source`, optional `offset` and `loop`; binds `uniform shader`. |
 
 Each uniform has a unique `name` matching its declaration. The renderer supplies
 `iResolution` (float3, element size), `iTime` (float seconds), `iTimeDelta` (float,
@@ -43,9 +44,14 @@ zero; missing image children are transparent, following upstream behavior.
 
 In compose, `ShaderLayer` uses its first visible frame as local frame zero. Timed
 occurrences restart that clock. Its coordinates begin at the element's top-left,
-and `size` controls `iResolution`. Position, opacity, transforms, masks and filters
-work as for other graphics. Numeric and color uniforms animate in Rust. Image
+and animated `size` controls `iResolution`. Position, opacity, transforms, masks and filters
+work as for other graphics. `Shader.time_offset=0` advances its entire local clock,
+including built-ins, animated uniforms and video children; it rounds down to the
+output frame grid. Numeric and color uniforms animate in Rust. Image
 uniforms load once and share their owned pixels throughout the compiled video.
+Video uniforms share the clip decoder cache and follow the shader's local clock.
+At EOF they supply a transparent image; `loop=True` repeats from `offset`.
+Pixels stay in Rust; audio remains an explicit `Audio` or `AudioTrack`.
 
 ## SVG binding
 
@@ -65,6 +71,8 @@ native = fframes.compile_video(
 )
 ```
 
-Bindings use the video's global frame clock. The `shader:` name is a local lookup,
+Bindings accept `start_at` and `duration`; the interval is half-open and its first
+frame starts the shader clock at zero. Defaults cover the whole video.
+The `shader:` name is a local lookup,
 not a URL. Ordinary remote image references are still skipped. See the paired
 [upstream examples](examples.md) for complete SkSL and Shadertoy scenes.

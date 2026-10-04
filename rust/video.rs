@@ -21,7 +21,7 @@ pub(crate) struct SvgVideo {
     frames: Vec<String>,
     fonts: usvgr::fontdb::Database,
     backend: Backend,
-    shaders: HashMap<String, crate::shader::Program>,
+    shaders: HashMap<String, Shader>,
     media: fframes::DynamicMediaProvider<'static>,
     timeline: ResolvedRenderingTimeline<'static, AudioTimelineSamples>,
     images: HashMap<String, Arc<usvgr::PreloadedImageData>>,
@@ -35,17 +35,29 @@ struct Clip {
     end: f64,
 }
 
+struct Shader {
+    program: crate::shader::Program,
+    first: usize,
+    end: usize,
+}
+
 impl SvgVideo {
     fn tree(&self, index: usize, cache: &mut FrameCache) -> PyResult<usvgr::Tree> {
         let svg = self
             .frames
             .get(index)
             .ok_or_else(|| PyIndexError::new_err("frame index out of range"))?;
-        let mut images: HashMap<_, _> = self
-            .shaders
-            .iter()
-            .map(|(name, shader)| (name.clone(), shader.draw(index, self.fps)))
-            .collect();
+        let mut images = HashMap::new();
+        for (name, shader) in &self.shaders {
+            if index >= shader.first && index < shader.end {
+                images.insert(
+                    name.clone(),
+                    shader
+                        .program
+                        .draw(index - shader.first, self.fps, &mut cache.decoders)?,
+                );
+            }
+        }
         images.extend(
             self.images
                 .iter()
@@ -161,6 +173,9 @@ struct Config {
 struct Binding {
     name: String,
     shader: crate::shader::Input,
+    #[serde(default)]
+    start_at: f64,
+    duration: Option<f64>,
 }
 
 #[derive(Default, Deserialize)]
@@ -270,11 +285,27 @@ pub(crate) fn compile_video(
         }
         let mut programs = HashMap::new();
         for binding in shaders {
-            let name = format!("shader:{}", binding.name);
-            if programs
-                .insert(name, crate::shader::Program::compile(binding.shader)?)
-                .is_some()
+            if !binding.start_at.is_finite()
+                || binding.start_at < 0.
+                || binding.start_at > 86400.
+                || binding
+                    .duration
+                    .is_some_and(|d| !d.is_finite() || d <= 0. || d > 86400.)
             {
+                return Err(PyValueError::new_err("invalid shader binding interval"));
+            }
+            let frame_at = |time: f64| (time * config.fps as f64 - 1e-9).ceil().max(0.) as usize;
+            let program = Shader {
+                program: crate::shader::Program::compile(binding.shader, config.fps)?,
+                first: frame_at(binding.start_at),
+                end: frame_at(
+                    binding
+                        .duration
+                        .map_or(duration, |d| (binding.start_at + d).min(duration)),
+                ),
+            };
+            let name = format!("shader:{}", binding.name);
+            if programs.insert(name, program).is_some() {
                 return Err(PyValueError::new_err("duplicate shader binding"));
             }
         }

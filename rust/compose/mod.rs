@@ -7,7 +7,7 @@ mod paint;
 pub(crate) mod paths;
 mod text;
 
-use std::path::PathBuf;
+use std::{borrow::Cow, path::PathBuf};
 
 use fframes::{
     AudioTimelineSamples, Color, ResolvedRenderingTimeline,
@@ -35,11 +35,14 @@ struct Layer {
     x: Value,
     y: Value,
     opacity: Value,
+    z_index: Value,
+    animated_order: bool,
     rotation: Value,
     scale: Value,
     origin: [f64; 2],
     matrix: Option<[Value; 6]>,
-    mask: Option<NestedNodeData<'static>>,
+    mask: Option<graphics::Mask>,
+    blend_mode: input::BlendMode,
     filter: Option<NestedNodeData<'static>>,
     asset: Asset,
     children: Vec<usize>,
@@ -55,6 +58,7 @@ pub(crate) struct SceneVideo {
     fps: usize,
     layers: Vec<Layer>,
     roots: Vec<usize>,
+    animated_roots: bool,
     fonts: usvgr::fontdb::Database,
     media: fframes::DynamicMediaProvider<'static>,
     timeline: ResolvedRenderingTimeline<'static, AudioTimelineSamples>,
@@ -115,6 +119,7 @@ impl SceneVideo {
                 return Err(PyValueError::new_err("shaders require a Skia backend"));
             }
             graphic.opacity.check(0., 1.)?;
+            graphic.z_index.check(-f64::MAX, f64::MAX)?;
             graphic.rotation.check(-1e7, 1e7)?;
             graphic.scale.check(f64::MIN_POSITIVE, 1e4)?;
             let asset = graphics::prepare(
@@ -127,7 +132,7 @@ impl SceneVideo {
             )?;
             let mask = graphic
                 .mask
-                .map(|mask| graphics::mask(mask, index, asset.offset))
+                .map(|mask| graphics::Mask::compile(mask, index, asset.offset))
                 .transpose()?;
             let filter = graphic
                 .filter
@@ -153,17 +158,40 @@ impl SceneVideo {
                 x: x.compile(),
                 y: y.compile(),
                 opacity: graphic.opacity.compile(),
+                z_index: graphic.z_index.compile(),
+                animated_order: false,
                 rotation: graphic.rotation.compile(),
                 scale: graphic.scale.compile(),
                 origin,
                 matrix: crate::values::matrix(graphic.matrix)?,
                 mask,
+                blend_mode: graphic.blend_mode,
                 filter,
                 asset,
                 children: Vec::new(),
                 depth,
             });
         }
+        let order = |indices: &mut [usize], layers: &[Layer]| {
+            let animated = indices
+                .iter()
+                .any(|i| !matches!(layers[*i].z_index, Value::Constant(_)));
+            if !animated {
+                indices.sort_by(|a, b| {
+                    layers[*a]
+                        .z_index
+                        .value(0.)
+                        .total_cmp(&layers[*b].z_index.value(0.))
+                });
+            }
+            animated
+        };
+        for i in 0..layers.len() {
+            let mut children = std::mem::take(&mut layers[i].children);
+            layers[i].animated_order = order(&mut children, &layers);
+            layers[i].children = children;
+        }
+        let animated_roots = order(&mut roots, &layers);
         let Soundtrack { media, map } = audio::prepare(plan.sounds, duration)?;
         Ok(Self {
             backend: plan.backend,
@@ -172,6 +200,7 @@ impl SceneVideo {
             fps: plan.fps,
             layers,
             roots,
+            animated_roots,
             fonts,
             media,
             timeline: ResolvedRenderingTimeline {
@@ -231,18 +260,15 @@ impl SceneVideo {
                     .node_at(time, frame - layer.first, self.fps, cache)?,
             ]
         } else {
-            layer
-                .children
-                .iter()
-                .map(|index| self.node(*index, frame, cache))
-                .collect::<PyResult<Vec<_>>>()?
+            self.nodes(&layer.children, layer.animated_order, frame, cache)?
         };
         let mut attributes = vec![
             attribute(AId::Transform, transform),
             attribute(AId::Opacity, opacity),
+            attribute(AId::MixBlendMode, layer.blend_mode.as_svg()),
         ];
         if let Some(mask) = &layer.mask {
-            children.push(Some(graphics::borrow_node(mask)));
+            children.push(Some(mask.node_at(time)));
             attributes.push(attribute(AId::ClipPath, format!("url(#clip-{index})")));
         }
         if let Some(filter) = &layer.filter {
@@ -252,6 +278,29 @@ impl SceneVideo {
         Ok(Some(element(EId::G, attributes, children)))
     }
 
+    fn nodes(
+        &self,
+        indices: &[usize],
+        animated: bool,
+        frame: usize,
+        cache: &mut crate::clips::Decoders,
+    ) -> PyResult<Vec<Option<NestedNodeData<'_>>>> {
+        let mut indices = Cow::Borrowed(indices);
+        if animated {
+            let time = frame as f64 / self.fps as f64;
+            indices.to_mut().sort_by(|a, b| {
+                let (a, b) = (&self.layers[*a], &self.layers[*b]);
+                a.z_index
+                    .value(time - a.start)
+                    .total_cmp(&b.z_index.value(time - b.start))
+            });
+        }
+        indices
+            .iter()
+            .map(|index| self.node(*index, frame, cache))
+            .collect()
+    }
+
     fn tree(&self, index: usize, cache: &mut FrameCache) -> PyResult<usvgr::Tree> {
         if index >= self.timeline.duration_in_frames {
             return Err(PyIndexError::new_err("frame index out of range"));
@@ -259,10 +308,7 @@ impl SceneVideo {
         let doc = document(
             self.width,
             self.height,
-            self.roots
-                .iter()
-                .map(|root| self.node(*root, index, &mut cache.decoders))
-                .collect::<PyResult<Vec<_>>>()?,
+            self.nodes(&self.roots, self.animated_roots, index, &mut cache.decoders)?,
         );
         usvgr::Tree::from_nested_svgtree_with_cache(
             &doc,

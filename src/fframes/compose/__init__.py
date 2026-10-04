@@ -31,7 +31,7 @@ from fframes.models import CubicBezier, Spring
 from fframes.spectrum import AudioData, Spectrum
 from fframes.subtitles import Cue, CueSettings, Subtitles
 from fframes.text import Font, TextLayout
-from fframes.values import Samples
+from fframes.values import ColorSamples, Samples
 
 __all__ = [
     "Audio",
@@ -41,6 +41,7 @@ __all__ = [
     "Clip",
     "Close",
     "ColorMatrix",
+    "ColorSamples",
     "ColorTween",
     "CompiledVideo",
     "Component",

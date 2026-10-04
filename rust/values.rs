@@ -146,6 +146,10 @@ impl Value {
 #[serde(untagged)]
 pub(crate) enum Paint {
     Constant(String),
+    Samples {
+        values: Vec<String>,
+        fps: usize,
+    },
     Tween {
         from_value: String,
         to_value: String,
@@ -156,15 +160,33 @@ pub(crate) enum Paint {
     },
 }
 
-pub(crate) struct ColorValue {
-    from: fframes::Color,
-    to: fframes::Color,
-    progress: Value,
+pub(crate) enum ColorValue {
+    Interpolate {
+        from: fframes::Color,
+        to: fframes::Color,
+        progress: Value,
+    },
+    Samples {
+        values: Vec<fframes::Color>,
+        fps: usize,
+    },
 }
 
 impl ColorValue {
     pub fn compile(paint: Paint) -> PyResult<Self> {
         let (from, to, progress) = match paint {
+            Paint::Samples { values, fps } => {
+                if values.is_empty() || fps == 0 || fps > i32::MAX as usize {
+                    return Err(PyValueError::new_err("invalid color samples"));
+                }
+                return Ok(Self::Samples {
+                    values: values
+                        .iter()
+                        .map(|value| crate::color::parse(value))
+                        .collect::<PyResult<_>>()?,
+                    fps,
+                });
+            }
             Paint::Constant(value) => {
                 let color = crate::color::parse(&value)?;
                 (color, color, Value::Constant(0.))
@@ -191,11 +213,18 @@ impl ColorValue {
                 )
             }
         };
-        Ok(Self { from, to, progress })
+        Ok(Self::Interpolate { from, to, progress })
     }
 
     pub fn value(&self, time: f64) -> fframes::Color {
-        self.from
-            .apply_progress(&self.to, self.progress.value(time) as f32)
+        match self {
+            Self::Interpolate { from, to, progress } => {
+                from.apply_progress(to, progress.value(time) as f32)
+            }
+            Self::Samples { values, fps } => {
+                let index = (time.max(0.) * *fps as f64 + 1e-9).floor() as usize;
+                values[index.min(values.len() - 1)]
+            }
+        }
     }
 }
