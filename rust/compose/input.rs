@@ -99,6 +99,10 @@ pub(super) struct TextRun {
     pub font_size: Option<f64>,
     pub font_weight: Option<u16>,
     pub fill: Option<String>,
+    #[serde(default)]
+    pub dx: f64,
+    #[serde(default)]
+    pub dy: f64,
 }
 
 #[derive(Default, Deserialize)]
@@ -134,7 +138,7 @@ pub(super) enum Shape {
         stroke: Option<Stroke>,
     },
     Circle {
-        radius: f64,
+        radius: Scalar,
         fill: Option<Brush>,
         stroke: Option<Stroke>,
     },
@@ -215,7 +219,7 @@ pub(super) struct Stroke {
     #[serde(default = "miter_limit")]
     pub miter_limit: f64,
     #[serde(default)]
-    pub dash: Vec<f64>,
+    pub dash: Vec<Scalar>,
     #[serde(default = "dash_offset")]
     pub dash_offset: Scalar,
 }

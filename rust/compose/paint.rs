@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::{fmt::Write, path::PathBuf};
 
 use fframes::usvgr::svgtree::{AId, Attribute, EId, NestedNodeData, svgrtypes::Transform};
 use pyo3::{PyResult, exceptions::PyValueError};
@@ -62,16 +62,20 @@ struct Definition {
 pub(super) struct Paints {
     colors: Vec<(usize, ColorValue)>,
     definitions: Vec<Definition>,
+    dash: Option<(usize, Vec<Value>)>,
 }
 
 impl Paints {
     pub fn is_empty(&self) -> bool {
-        self.colors.is_empty() && self.definitions.is_empty()
+        self.colors.is_empty() && self.definitions.is_empty() && self.dash.is_none()
     }
 
     pub fn wrap<'a>(&'a self, mut node: NestedNodeData<'a>, time: f64) -> NestedNodeData<'a> {
         for (index, color) in &self.colors {
             node.attrs[*index].value = color.value(time).into();
+        }
+        if let Some((index, values)) = &self.dash {
+            node.attrs[*index].value = dash_text(values, time).into();
         }
         if self.definitions.is_empty() {
             return node;
@@ -111,7 +115,6 @@ impl Paints {
                 || stroke.width > 1e7
                 || !stroke.miter_limit.is_finite()
                 || stroke.miter_limit < 1.
-                || stroke.dash.iter().any(|v| !v.is_finite() || *v < 0.)
                 || !matches!(stroke.cap.as_str(), "butt" | "round" | "square")
                 || !matches!(stroke.join.as_str(), "miter" | "round" | "bevel")
             {
@@ -125,15 +128,19 @@ impl Paints {
                 attribute(AId::StrokeMiterlimit, stroke.miter_limit),
             ]);
             if !stroke.dash.is_empty() {
-                attrs.push(attribute(
-                    AId::StrokeDasharray,
-                    stroke
-                        .dash
-                        .iter()
-                        .map(f64::to_string)
-                        .collect::<Vec<_>>()
-                        .join(" "),
-                ));
+                for value in &stroke.dash {
+                    value.check(0., 1e7)?;
+                }
+                let animated = stroke
+                    .dash
+                    .iter()
+                    .any(|v| !matches!(v, Scalar::Constant(_)));
+                let values: Vec<_> = stroke.dash.into_iter().map(Scalar::compile).collect();
+                let text = dash_text(&values, 0.);
+                if animated {
+                    self.dash = Some((attrs.len(), values));
+                }
+                attrs.push(attribute(AId::StrokeDasharray, text));
                 stroke.dash_offset.check(-1e7, 1e7)?;
                 let animated = !matches!(stroke.dash_offset, Scalar::Constant(_));
                 let value = stroke.dash_offset.compile();
@@ -173,6 +180,17 @@ impl Paints {
         attrs.push(Attribute { name, value });
         Ok(())
     }
+}
+
+fn dash_text(values: &[Value], time: f64) -> String {
+    let mut text = String::with_capacity(values.len() * 16);
+    for (index, value) in values.iter().enumerate() {
+        if index != 0 {
+            text.push(' ');
+        }
+        let _ = write!(text, "{}", value.value(time));
+    }
+    text
 }
 
 fn compile(server: Server, id: &str, images: &mut Images) -> PyResult<Definition> {

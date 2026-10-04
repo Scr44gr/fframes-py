@@ -100,8 +100,15 @@ class Stroke(Model):
     cap: Literal["butt", "round", "square"] = "butt"
     join: Literal["miter", "round", "bevel"] = "miter"
     miter_limit: Annotated[float, Field(ge=1, allow_inf_nan=False)] = 4.0
-    dash: tuple[Annotated[float, Field(ge=0, allow_inf_nan=False)], ...] = ()
+    dash: tuple[Scalar, ...] = ()
     dash_offset: Scalar = 0.0
+
+    @model_validator(mode="after")
+    def check_dash(self) -> Self:
+        """Keep every animated dash length nonnegative."""
+        if any(not 0 <= n <= 1e7 for value in self.dash for n in endpoints(value)):
+            raise ValueError("dash lengths must stay between 0 and 10000000")
+        return self
 
 
 class Shape(Visual):
@@ -132,7 +139,14 @@ class Circle(Shape):
     """A circle whose local bounds start at (0, 0)."""
 
     kind: Literal["circle"] = "circle"
-    radius: Length
+    radius: Scalar
+
+    @model_validator(mode="after")
+    def check_radius(self) -> Self:
+        """Allow a zero-radius reveal while rejecting negative animated radii."""
+        if any(not 0 <= n <= 1e7 for n in endpoints(self.radius)):
+            raise ValueError("circle radius must stay between 0 and 10000000")
+        return self
 
 
 class Ellipse(Shape):
@@ -178,6 +192,8 @@ class TextRun(Model):
     font_size: Length | None = None
     font_weight: Annotated[int, Field(ge=100, le=900)] | None = None
     fill: Color | None = None
+    dx: FiniteFloat = 0.0
+    dy: FiniteFloat = 0.0
 
 
 class Text(Shape):

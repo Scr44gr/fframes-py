@@ -12,7 +12,7 @@ and position when an expanding shape must stay centered.
 | Class | Required inputs | Additional configuration |
 | --- | --- | --- |
 | `Rectangle` | `size=(width, height)` | `radius=0` for square corners. |
-| `Circle` | `radius` | Layout bounds are `(2 * radius, 2 * radius)`. |
+| `Circle` | `radius` | Accepts scalar animation, including zero for reveals. |
 | `Ellipse` | `size=(width, height)` | Inscribed in its local bounds. |
 | `Text` | `content` | `font_family="sans-serif"`, `font_size=32`, `font_weight=400`. |
 | `ShaderLayer` | `shader`, `size` | [Native shader program](shaders.md). |
@@ -29,6 +29,7 @@ For mixed colors or fonts on one baseline, pass
 `content=(TextRun(content="Hello "), TextRun(content="world", fill="#FFD43B"))`.
 Runs inherit the enclosing `Text` style; optional `font_family`, `font_size`,
 `font_weight` and `fill` override it. Shaping, spacing and anchoring stay native.
+`dx` and `dy` move the text cursor before a run; subsequent runs continue there.
 
 By default, position aligns the shaped ink bounds. Use `anchor="baseline"` to
 interpret x/y as SVG baseline coordinates. For a live counter, pass
@@ -78,6 +79,7 @@ Shapes and text default to black. `Rectangle`, `Circle`, `Ellipse`, `Text` and `
 Stroke width defaults to 1 and is centered on the geometry's boundary.
 Set `cap="round" | "square" | "butt"`, `join="round" | "bevel" | "miter"`,
 and `miter_limit=4`. `dash=(8, 4)` alternates painted and empty lengths;
+individual lengths also accept `Tween` or `Samples` and must stay nonnegative.
 `dash_offset` accepts a number, `Tween` or `Samples`. An empty dash tuple is solid.
 `rendering="crispEdges"` disables antialiasing on a shape; the default is `"auto"`.
 
@@ -107,6 +109,10 @@ transitions. `spread="pad" | "repeat" | "reflect"` controls values beyond the en
 decoded once and shared with other image components. Both paint types accept
 `matrix=(a, b, c, d, e, f)`, including `Tween` or `Samples` in any coefficient.
 Coordinates are local to the graphic, before its placement transform.
+
+An animated circle's bounds start at `(0, 0)` and expand to `(2*r, 2*r)`.
+Alignment and default origin use the initial size (at least one pixel for an
+initial radius of zero); set explicit coordinates when a reveal must stay centered.
 
 ## Paths
 

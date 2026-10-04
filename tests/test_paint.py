@@ -5,6 +5,7 @@ from pydantic import ValidationError
 
 import fframes
 from fframes.compose import (
+    Circle,
     Composition,
     LinearGradient,
     Pattern,
@@ -140,10 +141,14 @@ def test_animated_matrix_and_dash_offset_match_svg() -> None:
         Stroke(color="#ffffff", dash=(-1, 2))
 
 
-def test_text_runs_preserve_spacing_inherited_style_and_shared_anchor() -> None:
+@pytest.mark.parametrize(("dx", "dy"), [(0, 0), (3, -2)])
+def test_text_runs_preserve_spacing_inherited_style_and_shared_anchor(dx: int, dy: int) -> None:
     font = Path(__file__).parent / "assets/Tuffy.ttf"
     text = Text(
-        content=(TextRun(content="Hello "), TextRun(content="world", fill="#ff0000", font_size=20)),
+        content=(
+            TextRun(content="Hello "),
+            TextRun(content="world", fill="#ff0000", font_size=20, dx=dx, dy=dy),
+        ),
         font_family="Tuffy",
         font_size=16,
         fill="#ffffff",
@@ -163,7 +168,47 @@ def test_text_runs_preserve_spacing_inherited_style_and_shared_anchor() -> None:
         frames=(
             '<svg width="160" height="40" xml:space="preserve"><text x="80" y="28" '
             'font-family="Tuffy" font-size="16" fill="white" text-anchor="middle">'
-            '<tspan>Hello </tspan><tspan font-size="20" fill="red">world</tspan></text></svg>',
+            f'<tspan>Hello </tspan><tspan font-size="20" fill="red" dx="{dx}" dy="{dy}">'
+            "world</tspan></text></svg>",
         ),
     )
     assert scene.rgba(0) == reference.rgba(0)
+
+
+def test_zero_radius_reveal_and_animated_dash_lengths_use_the_clip_clock() -> None:
+    scene = Video(
+        resolution=(32, 16),
+        fps=2,
+        load_system_fonts=False,
+        composition=Composition(
+            duration=2,
+            children=(
+                Composition(
+                    children=(
+                        Circle(radius=Samples(values=(0, 4, 8), fps=2), fill="#ff0000"),
+                        VectorPath(
+                            size=(32, 16),
+                            segments="M0 12H32",
+                            fill=None,
+                            stroke=Stroke(
+                                color="#ffffff", width=2, dash=(Samples(values=(0, 4, 8), fps=2), 4)
+                            ),
+                        ),
+                    )
+                ).at(0.5),
+            ),
+        ),
+    )
+    reference = fframes.Video(
+        config=fframes.VideoConfig(width=32, height=16, fps=2),
+        frames=tuple(
+            f'<svg width="32" height="16"><circle cx="{r}" cy="{r}" r="{r}" fill="red"/>'
+            f'<path d="M0 12H32" stroke="white" stroke-width="2" stroke-dasharray="{r} 4"/></svg>'
+            for r in (0, 4, 8)
+        ),
+    )
+    assert not any(scene.rgba(0))
+    for index in (3, 1, 2):
+        assert scene.rgba(index) == reference.rgba(index - 1)
+    with pytest.raises(ValidationError, match="radius"):
+        Circle(radius=Samples(values=(1, -1), fps=2))

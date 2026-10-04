@@ -26,6 +26,7 @@ pub(super) struct Asset {
     numbers: Vec<(usize, Value)>,
     clip: Option<crate::clips::Source>,
     path_animation: Vec<(usize, super::paths::Command)>,
+    radius: Option<Value>,
 }
 
 impl Asset {
@@ -40,6 +41,12 @@ impl Asset {
             return Ok(None);
         };
         let mut node = borrow_node(source);
+        if let Some(radius) = &self.radius {
+            let value = radius.value(time);
+            for attr in &mut node.attrs[..3] {
+                attr.value = value.into();
+            }
+        }
         if !self.path_animation.is_empty()
             && let SvgAttributeValue::PathData(segments) = &mut node.attrs[0].value
         {
@@ -172,6 +179,7 @@ pub(super) fn prepare(
     let mut numbers = Vec::new();
     let mut clip = None;
     let mut path_animation = Vec::new();
+    let mut animated_radius = None;
     let (mut node, size) = match shape {
         Shape::Video {
             source,
@@ -254,7 +262,13 @@ pub(super) fn prepare(
             fill,
             stroke,
         } => {
-            length(radius)?;
+            radius.check(0., 1e7)?;
+            let animated = !matches!(radius, Scalar::Constant(_));
+            let value = radius.compile();
+            let radius = value.value(0.);
+            if animated {
+                animated_radius = Some(value);
+            }
             let mut attrs = vec![
                 attribute(AId::Cx, radius),
                 attribute(AId::Cy, radius),
@@ -263,7 +277,7 @@ pub(super) fn prepare(
             paints.apply(&mut attrs, fill, stroke, &mut numbers, images, index)?;
             (
                 Some(element(EId::Circle, attrs, vec![])),
-                [radius * 2., radius * 2.],
+                [if radius == 0. { 1. } else { radius * 2. }; 2],
             )
         }
         Shape::Ellipse { size, fill, stroke } => {
@@ -332,7 +346,11 @@ pub(super) fn prepare(
                         if run.content.is_empty() || run.content.contains(['\0', '\r', '\n']) {
                             return Err(PyValueError::new_err("text runs require single lines"));
                         }
-                        let mut attrs = Vec::new();
+                        if !run.dx.is_finite() || !run.dy.is_finite() {
+                            return Err(PyValueError::new_err("text offsets must be finite"));
+                        }
+                        let mut attrs =
+                            vec![attribute(AId::Dx, run.dx), attribute(AId::Dy, run.dy)];
                         if let Some(family) = run.font_family {
                             attrs.push(attribute(AId::FontFamily, family));
                         }
@@ -437,6 +455,7 @@ pub(super) fn prepare(
             && numbers.is_empty()
             && clip.is_none()
             && path_animation.is_empty()
+            && animated_radius.is_none()
     }) {
         // Include the element tag, which compute_runtime_hash expects in its seed.
         node.static_hash = Some(node.compute_runtime_hash(match node.kind {
@@ -455,6 +474,7 @@ pub(super) fn prepare(
         numbers,
         clip,
         path_animation,
+        radius: animated_radius,
     })
 }
 
