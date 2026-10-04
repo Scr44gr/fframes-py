@@ -9,6 +9,7 @@ mod compose;
 mod easing;
 mod encoder;
 mod fonts;
+mod images;
 mod render;
 mod shader;
 mod spectrum;
@@ -30,6 +31,7 @@ fn _native(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_function(wrap_pyfunction!(spectrum::decode_audio, module)?)?;
     module.add_function(wrap_pyfunction!(subtitles::parse_subtitles, module)?)?;
     module.add_function(wrap_pyfunction!(clips::video_info, module)?)?;
+    module.add_function(wrap_pyfunction!(images::image_info, module)?)?;
     module.add_function(wrap_pyfunction!(text::compile_text_layout, module)?)?;
     module.add_function(wrap_pyfunction!(animation::compile_animation, module)?)?;
     module.add_function(wrap_pyfunction!(

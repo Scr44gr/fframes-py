@@ -18,6 +18,28 @@ class ImageBinding(Model):
     source: Source
 
 
+class ExifField(Model):
+    """One displayed EXIF value; IFD identifies the primary image or a thumbnail."""
+
+    ifd: Annotated[int, Field(ge=0, le=65535)]
+    tag: str
+    value: str
+
+
+class ImageInfo(Model):
+    """Decoded pixel dimensions and available EXIF fields; missing EXIF is empty."""
+
+    width: PositiveInt
+    height: PositiveInt
+    exif: tuple[ExifField, ...] = ()
+
+
+@validate_call(config=ConfigDict(strict=True))
+def probe_image(source: Source) -> ImageInfo:
+    """Read a local image once, releasing the GIL during native decoding and EXIF parsing."""
+    return ImageInfo.model_validate_json(_native.image_info(str(source)))
+
+
 class ClipSource(Model):
     """Decode at the composition's frame rate, with a source offset and optional loop."""
 

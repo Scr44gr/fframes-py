@@ -26,6 +26,7 @@ from fframes.compose.filters import Blur, ColorMatrix, Composite, Filter, Flood,
 from fframes.compose.media import Audio, Image, VideoClip
 from fframes.compose.paint import LinearGradient, Pattern, RadialGradient, Stop
 from fframes.compose.video import CompiledVideo, RenderOptions, Video
+from fframes.media import ExifField, ImageInfo, VideoInfo, probe_image, probe_video
 from fframes.models import CubicBezier, Spring
 from fframes.spectrum import AudioData, Spectrum
 from fframes.subtitles import Cue, CueSettings, Subtitles
@@ -50,10 +51,12 @@ __all__ = [
     "Cue",
     "CueSettings",
     "Ellipse",
+    "ExifField",
     "Filter",
     "Flood",
     "Font",
     "Image",
+    "ImageInfo",
     "LineTo",
     "LinearGradient",
     "Mask",
@@ -81,4 +84,7 @@ __all__ = [
     "VectorPath",
     "Video",
     "VideoClip",
+    "VideoInfo",
+    "probe_image",
+    "probe_video",
 ]

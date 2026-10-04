@@ -4,7 +4,15 @@ import fframes._runtime  # noqa: F401  # Register DLLs before loading the extens
 from fframes._native import Animation, ColorAnimation, SvgVideo
 from fframes.animation import Timeline, compile_animation, compile_color_animation
 from fframes.audio import AudioTrack
-from fframes.media import ImageBinding, VideoBinding, VideoInfo, probe_video
+from fframes.media import (
+    ExifField,
+    ImageBinding,
+    ImageInfo,
+    VideoBinding,
+    VideoInfo,
+    probe_image,
+    probe_video,
+)
 from fframes.models import ColorKeyframe, CubicBezier, Keyframe, RenderOptions, Spring, VideoConfig
 from fframes.shaders import (
     ColorUniform,
@@ -32,9 +40,11 @@ __all__ = [
     "CubicBezier",
     "Cue",
     "CueSettings",
+    "ExifField",
     "FloatUniform",
     "Font",
     "ImageBinding",
+    "ImageInfo",
     "ImageUniform",
     "IntUniform",
     "Keyframe",
@@ -57,6 +67,7 @@ __all__ = [
     "compile_animation",
     "compile_color_animation",
     "compile_video",
+    "probe_image",
     "probe_video",
     "render",
 ]

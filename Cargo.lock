@@ -573,6 +573,7 @@ dependencies = [
  "ffmpeg-sys-fframes",
  "image",
  "itoa",
+ "kamadak-exif",
  "libc",
  "ttf-parser 0.25.1",
  "usvgr",

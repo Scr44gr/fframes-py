@@ -153,6 +153,11 @@ accept `fit="fill"` (stretch, the default), `"contain"` (preserve aspect ratio w
 transparent margins), or `"cover"` (preserve aspect ratio and crop). Both aspect
 ratio modes center the source in `size`.
 
+`probe_image(path)` returns `ImageInfo(width, height, exif)`. Each EXIF field has
+an IFD number, tag and display value with units. Missing or unreadable EXIF yields
+an empty tuple; invalid image data raises an error. This uses the native image
+decoder once, so retain the result when inspecting the same photo repeatedly.
+
 ## Video clips
 
 ```python
