@@ -288,3 +288,40 @@ def test_shader_resolution_animates_and_time_offset_applies_to_uniforms() -> Non
         assert video.rgba(i)[31 * 4 + 3] == (255 if i else 0)
     with pytest.raises(ValidationError, match="size"):
         compose.ShaderLayer(shader=program, size=(0, 16))
+
+
+def test_shader_samples_do_not_repeat_frames_after_float32_clock_rounding() -> None:
+    values = fframes.Samples(values=tuple(float(i % 2) for i in range(60)), fps=60)
+    program = fframes.Shader(
+        source="uniform float level; uniform float4 color; uniform float2 point; "
+        "half4 main(float2 p) { return half4(color.r, level, point.x, 1); }",
+        uniforms=(
+            fframes.FloatUniform(name="level", value=values),
+            fframes.VectorUniform(name="point", value=(values, 0)),
+            fframes.ColorUniform(
+                name="color",
+                value=fframes.ColorSamples(
+                    values=tuple("#ffffff" if i % 2 else "#000000" for i in range(60)), fps=60
+                ),
+            ),
+        ),
+    )
+    raw = fframes.Video(
+        config=fframes.VideoConfig(width=4, height=4, fps=60, backend="skia"),
+        frames=('<svg width="4" height="4"><image href="shader:s" width="4" height="4"/></svg>',)
+        * 60,
+        shaders=(fframes.ShaderBinding(name="s", shader=program),),
+    )
+    scene = compose.Video(
+        resolution=(4, 4),
+        fps=60,
+        backend="skia",
+        load_system_fonts=False,
+        composition=compose.Composition(
+            duration=1, children=(compose.ShaderLayer(shader=program, size=(4, 4)),)
+        ),
+    ).compile()
+    for i in (54, 57, 55, 0):
+        expected = bytes((255 * (i % 2),) * 3 + (255,)) * 16
+        assert raw.rgba(i) == expected
+        assert scene.rgba(i) == expected

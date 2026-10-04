@@ -183,7 +183,10 @@ impl Program {
         cache: &mut crate::clips::Decoders,
     ) -> PyResult<Arc<usvgr::PreloadedImageData>> {
         let frame = Frame::new(index + self.first, index + self.first, fps);
-        let time = f64::from(frame.seconds());
+        // Keep sample selection on the integer frame grid. Upstream's f32
+        // seconds can round down (for example frame 54 at 60 fps) and repeat
+        // the previous sample or decoded video frame.
+        let time = (index + self.first) as f64 / fps as f64;
         let mut uniforms = ShaderUniforms::new();
         for (name, binding) in &self.uniforms {
             uniforms = match binding {
