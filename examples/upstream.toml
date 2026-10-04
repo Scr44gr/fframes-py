@@ -3,6 +3,7 @@ revision = "055bb6b9dcbbcca6532206847d43ea8e81fa2a0b"
 
 [examples]
 intro = [
+    "intro_history",
     "intro_left_clip_mp4",
     "intro_music_wav",
     "intro_preview_capture_mp4",
@@ -616,6 +617,11 @@ sha256 = "bb7f30c625af9aca68761c81d0d82bf15360ba7c0e585e238eda4c521d7c7d90"
 [files.beta_torvalds]
 path = "examples/beta/media/torvalds.png"
 sha256 = "9a4721121bdcbd5d2eda67ec03b9eea425701a2b3acf767478372b3dc21f0752"
+
+[files.intro_history]
+path = "history/commits.txt"
+sha256 = "2a028fe9429787daf7fd23f45bb05e63eed7bc6e69ebcdeb765aff110d8edcd0"
+history = true
 
 [files.intro_left_clip_mp4]
 path = "examples/fframes-intro/dynamic_media/left_clip.mp4"

@@ -4,7 +4,7 @@
 
 Ports target [fframes at `055bb6b9`](https://github.com/dmtrKovalenko/fframes/tree/055bb6b9dcbbcca6532206847d43ea8e81fa2a0b/examples).
 Each port has an SVG version in `examples/native` and a component version in
-`examples/compose`. Shared scene constants live directly in `examples/`.
+`examples/compose`. Shared choreography lives in `examples/`; the intro uses `examples/intro/`.
 
 ## Run
 
@@ -97,14 +97,24 @@ generator preserves the source distributions, not Rust's exact seed sequence.
 Scene selection uses the real video metadata; upstream accidentally probes its
 image-only provider. The unpublished Passenger track is not offered.
 
+`intro` runs all 16 scenes at 1920×1080, 60 fps for 127.5 seconds, including
+six original shaders, chroma-keyed clips, beat-synchronized cuts and 26 audio tracks.
+Use the shader backend flags above; `--frame 2202` saves one global frame as a PNG.
+Fetching this example also requires Git: a temporary partial repository supplies
+its pinned commit history without checking out media. The resulting text is
+hash-verified and cached with the other assets.
+
+The intro preserves upstream's commands, benchmark figures and marketing claims.
+They describe the original Rust project, **not measurements or CLI features of
+this Python wrapper**. Its displayed 100,000-node headline is also preserved;
+the source wall actually draws 3,334 text nodes.
+
 ## Port status
 
-The wrapper does **not yet have full upstream feature parity**. Pending entries
-require both implementations and render validation; an unimplemented entry is
-not replaced by a simplified scene. Requirements below identify the main gaps,
-not an exhaustive engine API inventory.
+All 15 upstream examples now have both implementations. This covers their
+rendered compositions; it does not assert parity with every upstream engine API.
 
-| Upstream example | Status / remaining requirements |
+| Upstream example | Implementations |
 | --- | --- |
 | `hello-world` | Ported: [native](../examples/native/hello_world.py), [compose](../examples/compose/hello_world.py); [native scenes](../examples/native/scenes.py), [compose scenes](../examples/compose/scenes.py). |
 | `shaders` | Ported: [native](../examples/native/shaders.py), [compose](../examples/compose/shaders.py). |
@@ -120,7 +130,7 @@ not an exhaustive engine API inventory.
 | `beta` | Ported: [native](../examples/native/beta.py), [compose](../examples/compose/beta.py); seven scenes with nested examples, phone interface and original narration. |
 | `low-poly-art` | Ported: [native](../examples/native/low_poly.py), [compose](../examples/compose/low_poly.py); all four birds, including the owl's patterned title and soundtrack. |
 | `pixel-memory` | Ported: [native](../examples/native/pixel_memory.py), [compose](../examples/compose/pixel_memory.py); all six gallery algorithms, EXIF dates, heart-shaped bokeh, signature and synchronized clips. |
-| `fframes-intro` | Pending: shaders, clips, transitions and text effects; original music and effects are published. |
+| `fframes-intro` | Ported: [native](../examples/native/intro.py), [compose](../examples/compose/intro.py); all 16 scenes, six shaders, synchronized clips, depth ordering, grain and original sound mix. |
 
 Completed ports were rendered locally on Windows with the pinned fonts. Offline
 tests exercise timing and geometry using the repository's test font. Small edge

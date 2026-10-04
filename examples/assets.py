@@ -4,11 +4,13 @@ import argparse
 import hashlib
 import http.client
 import os
+import shutil
+import subprocess
 import sys
 import tomllib
 from functools import cache
 from pathlib import Path, PurePosixPath
-from tempfile import NamedTemporaryFile
+from tempfile import NamedTemporaryFile, TemporaryDirectory
 from typing import Annotated, Self
 from urllib.parse import quote
 
@@ -21,6 +23,7 @@ class File(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
     path: str
     sha256: Annotated[str, Field(pattern=r"^[0-9a-f]{64}$")]
+    history: bool = False
 
     @field_validator("path")
     @classmethod
@@ -108,6 +111,9 @@ def fetch(example: str) -> None:
         if asset.matches(destination):
             continue
         destination.parent.mkdir(parents=True, exist_ok=True)
+        if asset.history:
+            fetch_history(source, asset, destination)
+            continue
         connection = http.client.HTTPSConnection("raw.githubusercontent.com", timeout=30)
         temporary: Path | None = None
         try:
@@ -129,6 +135,61 @@ def fetch(example: str) -> None:
             connection.close()
             if temporary is not None:
                 temporary.unlink(missing_ok=True)
+
+
+def fetch_history(source: Manifest, asset: File, destination: Path) -> None:
+    """Cache the pinned intro's textual Git history without checking out any media."""
+    git = shutil.which("git")
+    if git is None:
+        raise FileNotFoundError("Git is required to fetch the intro history")
+    with TemporaryDirectory(prefix="history-", dir=destination.parent) as directory:
+        root = Path(directory)
+        commands = (
+            ("init", "--bare", directory),
+            ("-C", directory, "config", "extensions.partialClone", "origin"),
+            (
+                "-C",
+                directory,
+                "remote",
+                "add",
+                "origin",
+                f"https://github.com/{source.repository}.git",
+            ),
+            (
+                "-C",
+                directory,
+                "fetch",
+                "--filter=blob:none",
+                "--no-tags",
+                "origin",
+                source.revision,
+            ),
+            (
+                "-C",
+                directory,
+                "log",
+                "--no-color",
+                "--no-show-signature",
+                "--reverse",
+                "--format=%h|%ad|%s",
+                "--abbrev=7",
+                "--date=short",
+                source.revision,
+            ),
+        )
+        payload = b""
+        for command in commands:
+            payload = subprocess.run(  # noqa: S603 - Fixed executable and validated manifest.
+                (git, *command),
+                check=True,
+                capture_output=True,
+                timeout=180,
+            ).stdout
+        staged = root / "commits.txt"
+        staged.write_bytes(payload)
+        if not asset.matches(staged):
+            raise ValueError(f"SHA-256 mismatch for {asset.path}")
+        staged.replace(destination)
 
 
 class Arguments(argparse.Namespace):
