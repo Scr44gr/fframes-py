@@ -21,7 +21,7 @@ from fframes.compose.components import (
     TextTemplate,
     VectorPath,
 )
-from fframes.compose.filters import Blur, Composite, Filter, Flood, Merge
+from fframes.compose.filters import Blur, ColorMatrix, Composite, Filter, Flood, Merge, Offset
 from fframes.compose.media import Audio, Image, VideoClip
 from fframes.compose.video import CompiledVideo, RenderOptions, Video
 from fframes.models import CubicBezier, Spring
@@ -37,6 +37,7 @@ __all__ = [
     "Circle",
     "Clip",
     "Close",
+    "ColorMatrix",
     "ColorTween",
     "CompiledVideo",
     "Component",
@@ -55,6 +56,7 @@ __all__ = [
     "Mask",
     "Merge",
     "MoveTo",
+    "Offset",
     "Position",
     "Rectangle",
     "RenderOptions",

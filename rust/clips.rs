@@ -103,13 +103,20 @@ impl Source {
         // frame crosses workers. Conversion completes before another decode and
         // returns owned pixel storage; only that immutable image is shared by Arc.
         unsafe {
+            let index = (time * fps as f64 + 1e-9).floor() as i64;
             let decoder = match cache.0.entry(self.path.clone()) {
                 std::collections::hash_map::Entry::Occupied(entry) => entry.into_mut(),
                 std::collections::hash_map::Entry::Vacant(entry) => {
-                    entry.insert(FFmpegDecoder::new(&self.path, fps, 1).map_err(media_error)?)
+                    let mut decoder =
+                        FFmpegDecoder::new(&self.path, fps, 1).map_err(media_error)?;
+                    // Upstream only seeks large jumps after the first request.
+                    // A worker or preview can begin minutes into the source.
+                    if index > 2 * fps as i64 {
+                        decoder.seek_to_offset(index).map_err(media_error)?;
+                    }
+                    entry.insert(decoder)
                 }
             };
-            let index = (time * fps as f64 + 1e-9).floor() as i64;
             if !decoder.decode_up_to(index).map_err(media_error)? {
                 return Ok(None);
             }

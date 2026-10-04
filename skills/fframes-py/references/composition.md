@@ -14,9 +14,10 @@ Construct validated replacements; `model_copy(update=...)` does not validate.
 | Disc | `Circle(radius=r, fill=...)`; local top-left is `(0, 0)`, not the center. |
 | Label | `Text(content=..., font_size=32, font_family="sans-serif", font_weight=400)` |
 | Custom silhouette | `VectorPath(size=(w, h), segments=(MoveTo(...), ...))` |
+| Elliptical geometry | `Ellipse(size=(w, h), fill="#RRGGBB")` |
 | Raster asset | `Image(source=path, size=(w, h))`; see the media reference. |
 
-Colors require six or eight hex digits. Shapes accept `fill=None` and
+Colors require six or eight hex digits. Shapes and text accept `fill=None` and
 `Stroke(color=..., width=...)`. Text is single-line; split lines into positioned
 items. Paths start with `MoveTo(x=..., y=...)` and have at least two segments;
 use `LineTo(x=..., y=...)`, `CubicTo(control1=(x, y), control2=(x, y), end=(x, y))`

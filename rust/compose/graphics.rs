@@ -4,12 +4,12 @@ use fframes::usvgr::{
     self,
     svgtree::{
         AId, Attribute, EId, NestedNodeData, NestedNodeKind, NestedSvgDocument, StringStorage,
-        SvgAttributeValue, svgrtypes::PathSegment,
+        SvgAttributeValue,
     },
 };
 use pyo3::{PyResult, exceptions::PyValueError};
 
-use super::input::{Segment, Shape, Stroke, TextAnchor, TextContent};
+use super::input::{Shape, Stroke, TextAnchor, TextContent};
 use super::text::Template;
 use crate::color::parse as parse_color;
 use crate::render::{media_error, render_error};
@@ -25,6 +25,7 @@ pub(super) struct Asset {
     shader: Option<crate::shader::Program>,
     numbers: Vec<(usize, Value)>,
     clip: Option<crate::clips::Source>,
+    path_animation: Vec<(usize, super::paths::Command)>,
 }
 
 struct AnimatedPaint {
@@ -44,6 +45,14 @@ impl Asset {
             return Ok(None);
         };
         let mut node = borrow_node(source);
+        if !self.path_animation.is_empty()
+            && let SvgAttributeValue::PathData(segments) = &mut node.attrs[0].value
+        {
+            let segments = segments.to_mut();
+            for (index, command) in &self.path_animation {
+                segments[*index] = command.sample(time);
+            }
+        }
         if let Some(clip) = &self.clip {
             let Some(image) = clip.image(time, fps, cache)? else {
                 return Ok(None);
@@ -206,6 +215,7 @@ pub(super) fn prepare(
     let mut shader = None;
     let mut numbers = Vec::new();
     let mut clip = None;
+    let mut path_animation = Vec::new();
     let (mut node, size) = match shape {
         Shape::Video {
             source,
@@ -317,30 +327,9 @@ pub(super) fn prepare(
             fill,
             stroke,
         } => {
-            if !matches!(segments.first(), Some(Segment::Move { .. })) {
-                return Err(PyValueError::new_err("path must begin with MoveTo"));
-            }
-            let segments = segments
-                .into_iter()
-                .map(|segment| match segment {
-                    Segment::Move { x, y } => PathSegment::MoveTo { abs: true, x, y },
-                    Segment::Line { x, y } => PathSegment::LineTo { abs: true, x, y },
-                    Segment::Cubic {
-                        control1: [x1, y1],
-                        control2: [x2, y2],
-                        end: [x, y],
-                    } => PathSegment::CurveTo {
-                        abs: true,
-                        x1,
-                        y1,
-                        x2,
-                        y2,
-                        x,
-                        y,
-                    },
-                    Segment::Close => PathSegment::ClosePath { abs: true },
-                })
-                .collect::<Vec<_>>();
+            let path = super::paths::Path::compile(segments)?;
+            path_animation = path.animations;
+            let segments = path.segments;
             let mut attrs = vec![attribute(AId::D, segments)];
             paint(&mut attrs, fill, stroke, &mut colors)?;
             (Some(element(EId::Path, attrs, vec![])), size)
@@ -348,6 +337,7 @@ pub(super) fn prepare(
         Shape::Text {
             content,
             fill,
+            stroke,
             font_family,
             font_size,
             font_weight,
@@ -407,7 +397,7 @@ pub(super) fn prepare(
                 attribute(AId::DominantBaseline, baseline),
                 attribute(AId::FontStyle, font_style),
             ];
-            color(&mut attrs, AId::Fill, Some(fill), &mut colors)?;
+            paint(&mut attrs, fill, stroke, &mut colors)?;
             let node = element(EId::Text, attrs, vec![Some(text)]);
             let doc = document(1, 1, vec![Some(borrow_node(&node))]);
             let tree = usvgr::Tree::from_nested_svgtree(&doc, &usvgr::Options::default(), fonts)
@@ -459,6 +449,7 @@ pub(super) fn prepare(
             && shader.is_none()
             && numbers.is_empty()
             && clip.is_none()
+            && path_animation.is_empty()
     }) {
         // Include the element tag, which compute_runtime_hash expects in its seed.
         node.static_hash = Some(node.compute_runtime_hash(match node.kind {
@@ -476,6 +467,7 @@ pub(super) fn prepare(
         shader,
         numbers,
         clip,
+        path_animation,
     })
 }
 

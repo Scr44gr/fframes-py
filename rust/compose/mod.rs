@@ -3,6 +3,7 @@
 mod filters;
 mod graphics;
 mod input;
+pub(crate) mod paths;
 mod text;
 
 use std::path::PathBuf;

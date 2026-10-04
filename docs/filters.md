@@ -18,6 +18,8 @@ results, `SourceGraphic` or `SourceAlpha`. The last step produces the output.
 | --- | --- |
 | `Blur` | `source="SourceGraphic"`, `sigma=(x, y)` in pixels. |
 | `Flood` | `color` in hex RGBA. |
+| `Offset` | `source="SourceGraphic"`, `dx=0`, `dy=0` in local pixels. |
+| `ColorMatrix` | `source="SourceGraphic"`, `values`: four rows of five RGBA coefficients. |
 | `Composite` | `source`, `destination`, `operator`: `over`, `in`, `out`, `atop`, `xor`. |
 | `Merge` | `sources` tuple, painted in order. Repeated inputs are allowed. |
 
@@ -41,3 +43,7 @@ It defaults to `(-0.1, -0.1, 1.2, 1.2)`; expand it for large blurs or their halo
 will be clipped. Set `units="user"` for a region in local pixels instead.
 `color_space="linear"` is the SVG default; `"srgb"` selects sRGB processing.
 Results may differ slightly between CPU and Skia. Reuse a `Filter` across items.
+
+`ColorMatrix` multiplies `(r, g, b, a, 1)` by its four rows and clamps the result.
+The last column supplies offsets. For example, `(0, 0, 0, 0.5, 0)` as the alpha
+row halves opacity; `(0, 0, 0, 127, 0)` hardens partially transparent edges.

@@ -5,6 +5,7 @@ from typing import Annotated, Literal, Self, TypeAlias
 
 from pydantic import Field, model_validator
 
+from fframes import _native
 from fframes.compose.animation import Duration, Paint, Scalar, endpoints
 from fframes.compose.filters import Filter
 from fframes.models import FiniteFloat, Model, Seconds
@@ -167,12 +168,11 @@ class TextFrames(Model):
     ]
 
 
-class Text(Visual):
+class Text(Shape):
     """Single-line text positioned using its shaped visual bounds."""
 
     kind: Literal["text"] = "text"
     content: Line | TextTemplate | TextFrames
-    fill: Paint = "#000000"
     font_family: Annotated[str, Field(min_length=1)] = "sans-serif"
     font_size: Length = 32.0
     font_weight: Annotated[int, Field(ge=100, le=900)] = 400
@@ -199,25 +199,25 @@ class MoveTo(Model):
     """Start a path subcontour at an absolute coordinate."""
 
     kind: Literal["move"] = "move"
-    x: FiniteFloat
-    y: FiniteFloat
+    x: Scalar
+    y: Scalar
 
 
 class LineTo(Model):
     """Draw a straight segment to an absolute coordinate."""
 
     kind: Literal["line"] = "line"
-    x: FiniteFloat
-    y: FiniteFloat
+    x: Scalar
+    y: Scalar
 
 
 class CubicTo(Model):
     """Draw a cubic Bézier using two control points and an endpoint."""
 
     kind: Literal["cubic"] = "cubic"
-    control1: tuple[FiniteFloat, FiniteFloat]
-    control2: tuple[FiniteFloat, FiniteFloat]
-    end: tuple[FiniteFloat, FiniteFloat]
+    control1: tuple[Scalar, Scalar]
+    control2: tuple[Scalar, Scalar]
+    end: tuple[Scalar, Scalar]
 
 
 class Close(Model):
@@ -234,12 +234,14 @@ class VectorPath(Shape):
 
     kind: Literal["path"] = "path"
     size: Size
-    segments: Annotated[tuple[Segment, ...], Field(min_length=2)]
+    segments: Annotated[tuple[Segment, ...], Field(min_length=2)] | str
 
     @model_validator(mode="after")
     def check_start(self) -> Self:
         """Reject paths that have no initial current point."""
-        if not isinstance(self.segments[0], MoveTo):
+        if isinstance(self.segments, str):
+            _native.validate_path(self.segments)
+        elif not isinstance(self.segments[0], MoveTo):
             msg = "a path must begin with MoveTo"
             raise ValueError(msg)
         return self

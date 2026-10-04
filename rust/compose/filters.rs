@@ -47,6 +47,17 @@ enum Step {
         result: String,
         color: String,
     },
+    Offset {
+        result: String,
+        source: String,
+        dx: f64,
+        dy: f64,
+    },
+    Colormatrix {
+        result: String,
+        source: String,
+        values: [[f64; 5]; 4],
+    },
     Composite {
         result: String,
         source: String,
@@ -83,6 +94,53 @@ pub(super) fn compile(filter: Filter, index: usize) -> PyResult<NestedNodeData<'
     let mut steps = Vec::with_capacity(filter.steps.len());
     for step in filter.steps {
         let (tag, result, sources, mut attrs, children) = match step {
+            Step::Offset {
+                result,
+                source,
+                dx,
+                dy,
+            } => {
+                if !dx.is_finite() || !dy.is_finite() {
+                    return Err(PyValueError::new_err("filter offset must be finite"));
+                }
+                (
+                    EId::FeOffset,
+                    result,
+                    vec![source.clone()],
+                    vec![
+                        attribute(AId::In, source),
+                        attribute(AId::Dx, dx),
+                        attribute(AId::Dy, dy),
+                    ],
+                    vec![],
+                )
+            }
+            Step::Colormatrix {
+                result,
+                source,
+                values,
+            } => {
+                if values.iter().flatten().any(|v| !v.is_finite()) {
+                    return Err(PyValueError::new_err("color matrix must be finite"));
+                }
+                let values = values
+                    .iter()
+                    .flatten()
+                    .map(ToString::to_string)
+                    .collect::<Vec<_>>()
+                    .join(" ");
+                (
+                    EId::FeColorMatrix,
+                    result,
+                    vec![source.clone()],
+                    vec![
+                        attribute(AId::In, source),
+                        attribute(AId::Type, "matrix"),
+                        attribute(AId::Values, values),
+                    ],
+                    vec![],
+                )
+            }
             Step::Blur {
                 result,
                 source,

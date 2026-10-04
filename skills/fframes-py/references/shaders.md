@@ -32,10 +32,14 @@ Compose effects attach to any visual or group:
 - `Mask(size=(w, h), radius=..., position=(x, y))` clips local layout coordinates.
 - `Filter(steps=(...), region=(x, y, w, h))` describes an ordered graph. Region is
   relative to object bounds; enlarge it for blur halos.
+  Use `units="user"` for local pixels and `color_space="srgb"` when required.
 - Steps are `Blur(result=..., source=..., sigma=(x, y))`, `Flood(result=..., color=...)`,
   `Composite(result=..., source=..., destination=..., operator="in")`, and
   `Merge(result=..., sources=(...))`. Inputs are prior results or
   `SourceGraphic`/`SourceAlpha`; result names are unique. Mask clips the final filter.
+- `Offset(result=..., source=..., dx=..., dy=...)` translates an input.
+  `ColorMatrix(result=..., source=..., values=(row1, row2, row3, row4))` transforms
+  RGBA; each row has five coefficients, including the offset column.
 
 In the checkout, `docs/shaders.md` and `docs/filters.md` contain runnable patterns;
 the paired `shaders` and `neon_triangle` examples retain the upstream compositions.

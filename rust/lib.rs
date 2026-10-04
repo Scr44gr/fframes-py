@@ -38,5 +38,6 @@ fn _native(module: &Bound<'_, PyModule>) -> PyResult<()> {
     )?)?;
     module.add_function(wrap_pyfunction!(video::compile_video, module)?)?;
     module.add_function(wrap_pyfunction!(compose::compile_scene, module)?)?;
+    module.add_function(wrap_pyfunction!(compose::paths::validate_path, module)?)?;
     Ok(())
 }

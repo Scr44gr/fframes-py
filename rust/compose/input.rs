@@ -132,7 +132,8 @@ pub(super) enum Shape {
     },
     Text {
         content: TextContent,
-        fill: Paint,
+        fill: Option<Paint>,
+        stroke: Option<Stroke>,
         font_family: String,
         font_size: f64,
         font_weight: u16,
@@ -149,7 +150,7 @@ pub(super) enum Shape {
     },
     Path {
         size: [f64; 2],
-        segments: Vec<Segment>,
+        segments: super::paths::Input,
         fill: Option<Paint>,
         stroke: Option<Stroke>,
     },
@@ -194,23 +195,4 @@ fn font_style() -> String {
 pub(super) struct Stroke {
     pub color: Paint,
     pub width: f64,
-}
-
-#[derive(Deserialize)]
-#[serde(tag = "kind", rename_all = "lowercase")]
-pub(super) enum Segment {
-    Move {
-        x: f64,
-        y: f64,
-    },
-    Line {
-        x: f64,
-        y: f64,
-    },
-    Cubic {
-        control1: [f64; 2],
-        control2: [f64; 2],
-        end: [f64; 2],
-    },
-    Close,
 }

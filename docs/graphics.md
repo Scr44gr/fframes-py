@@ -13,6 +13,7 @@ and position when an expanding shape must stay centered.
 | --- | --- | --- |
 | `Rectangle` | `size=(width, height)` | `radius=0` for square corners. |
 | `Circle` | `radius` | Layout bounds are `(2 * radius, 2 * radius)`. |
+| `Ellipse` | `size=(width, height)` | Inscribed in its local bounds. |
 | `Text` | `content` | `font_family="sans-serif"`, `font_size=32`, `font_weight=400`. |
 | `ShaderLayer` | `shader`, `size` | [Native shader program](shaders.md). |
 | `Image` | `source`, `size` | Raster file stretched to the given dimensions. |
@@ -67,7 +68,7 @@ All visuals support [masks and filter graphs](filters.md).
 ## Paint
 
 Colors are `#RRGGBB` or `#RRGGBBAA`; named colors and three-digit hex are rejected.
-Shapes and text default to black. `Rectangle`, `Circle` and `VectorPath` accept
+Shapes and text default to black. `Rectangle`, `Circle`, `Ellipse`, `Text` and `VectorPath` accept
 `fill=None` for no fill and `stroke=Stroke(color=..., width=...)` for an outline.
 Stroke width defaults to 1 and is centered on the geometry's boundary.
 
@@ -82,6 +83,12 @@ Use `MoveTo` to start a contour, `LineTo` for a straight edge, `CubicTo` for a
 cubic Bézier, and `Close()` to join back to that contour's start. At least two
 segments are required, beginning with `MoveTo`. `size` controls alignment and
 transform origin; it does not normalize coordinates or clip the path.
+
+Coordinates in `MoveTo`, `LineTo` and `CubicTo` also accept `Tween` or `Samples`.
+Rust evaluates only animated commands; static geometry is retained. For imported
+artwork, `segments="M0 0h40v20z"` accepts the complete SVG path-data grammar,
+including relative commands, quadratic curves and arcs. It is validated natively
+and parsed at compilation; no XML document or Python frame callback is needed.
 
 ```python
 from fframes.compose import Close, CubicTo, LineTo, MoveTo, Stroke, VectorPath
@@ -127,6 +134,9 @@ scene = Composition(
 
 `offset` is a source timestamp; `.at()` places the clip on the parent's clock.
 Playback uses the output frame rate and becomes transparent at source EOF.
+Frame selection follows upstream: the first source timestamp at or after the
+target, holding the final frame until EOF. A slower source can therefore advance
+early when the source and output frame rates differ.
 `loop=True` repeats the interval from offset to EOF. Audio is explicit: add an
 `Audio` item with matching timing to keep sound, or omit it for a silent clip.
 Masks and transforms work like other visuals.

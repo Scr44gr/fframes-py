@@ -8,6 +8,7 @@ from fframes.models import Color, FiniteFloat, Model
 
 Name: TypeAlias = Annotated[str, Field(pattern=r"^[A-Za-z_][A-Za-z0-9_]*$")]
 Deviation: TypeAlias = Annotated[float, Field(ge=0, le=1e4, allow_inf_nan=False)]
+Row: TypeAlias = tuple[FiniteFloat, FiniteFloat, FiniteFloat, FiniteFloat, FiniteFloat]
 
 
 class Blur(Model):
@@ -25,6 +26,25 @@ class Flood(Model):
     kind: Literal["flood"] = "flood"
     result: Name
     color: Color
+
+
+class Offset(Model):
+    """Translate a filter input by local pixels."""
+
+    kind: Literal["offset"] = "offset"
+    result: Name
+    source: Name = "SourceGraphic"
+    dx: FiniteFloat = 0.0
+    dy: FiniteFloat = 0.0
+
+
+class ColorMatrix(Model):
+    """Transform RGBA using four rows of five coefficients, including a bias column."""
+
+    kind: Literal["colormatrix"] = "colormatrix"
+    result: Name
+    source: Name = "SourceGraphic"
+    values: tuple[Row, Row, Row, Row]
 
 
 class Composite(Model):
@@ -45,7 +65,9 @@ class Merge(Model):
     sources: Annotated[tuple[Name, ...], Field(min_length=1)]
 
 
-Step: TypeAlias = Annotated[Blur | Flood | Composite | Merge, Field(discriminator="kind")]
+Step: TypeAlias = Annotated[
+    Blur | Flood | Offset | ColorMatrix | Composite | Merge, Field(discriminator="kind")
+]
 
 
 class Filter(Model):
@@ -66,7 +88,7 @@ class Filter(Model):
         for step in self.steps:
             inputs: tuple[str, ...]
             match step:
-                case Blur():
+                case Blur() | Offset() | ColorMatrix():
                     inputs = (step.source,)
                 case Composite():
                     inputs = (step.source, step.destination)
