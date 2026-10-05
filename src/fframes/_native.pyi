@@ -2,6 +2,8 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import final
 
+def available_encoders() -> list[str]: ...
+
 @final
 class Animation:
     def sample(self, index: int, fps: int) -> float: ...

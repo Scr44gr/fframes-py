@@ -97,7 +97,7 @@ copy only when mutation is needed.
 
 | `RenderOptions` field | Default | Meaning |
 | --- | --- | --- |
-| `encoder` | `"mpeg4"` | Exact FFmpeg video encoder name. |
+| `encoder` | `"libopenh264"` | Exact FFmpeg video encoder name (H.264). |
 | `bitrate` | `8_000_000` | Positive integer video bitrate in bits per second. |
 | `concurrency` | CPU count, or 1 | Positive number of native rendering workers. |
 
@@ -107,11 +107,27 @@ runs in Rust with the GIL released. Both APIs share the same `RenderOptions`.
 
 Create the output's parent directory before rendering. Supported suffixes are
 lowercase `.mp4`, `.mov`, `.mkv`, `.avi` and `.webm`; codec/container compatibility
-is still required. Start with MPEG-4 in MP4. Other encoders depend on the linked
-FFmpeg build; the LGPL build does not guarantee `libx264`. An unrelated `ffmpeg`
-CLI installation does not change the codecs in the extension's native libraries.
+is still required. Use `.mp4` for H.264 video, with AAC when audio is present.
+MP4 metadata precedes media data for fast-start playback. MPEG-4 Part 2 remains
+available explicitly through `RenderOptions(encoder="mpeg4")`.
 
-Video encoding requires even width/height and uses YUV420P without alpha. Put an
+`fframes.available_encoders()` lists video encoders in the **linked** FFmpeg library.
+Hardware entries may still need a compatible device and driver. Missing encoders
+raise an error; rendering never silently substitutes a different codec. Installing
+an unrelated `ffmpeg` CLI does not change the extension's encoders.
+
+Video encoding requires even width/height and uses YUV420P without alpha.
+OpenH264 also requires at least 16 pixels on each axis. Put an
 opaque background as the first layer to choose the video's background color.
 Temporary segments are created beside the destination and cleaned up on exit;
 the existing destination is replaced only after a successful video render.
+
+Check a delivered file with an independently installed `ffprobe`:
+
+```sh
+ffprobe -v error -show_entries stream=codec_name,profile,pix_fmt,width,height -of json video.mp4
+```
+
+Expect `h264` and `yuv420p` for video, and `aac` if there is audio. This verifies
+the file, not acceptance by a particular app: apps can also limit duration,
+dimensions or file size. See [codec licensing](codecs.md) for distribution details.

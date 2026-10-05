@@ -27,6 +27,7 @@ the namespace you intend to use. `fframes._native` and `compose.compiler` are in
 | [Audio](audio.md) | Place, trim, loop and mix sound. |
 | [Analysis and subtitles](analysis.md) | Batch FFT, NumPy views and WebVTT cues. |
 | [Rendering](rendering.md) | Resolution, fonts, compilation, previews and encoder settings. |
+| [Codec licenses](codecs.md) | Third-party licenses and redistribution conditions. |
 | [Low level](lowlevel.md) | SVG rendering and scalar animation signatures. |
 | [Upstream examples](examples.md) | Paired ports, asset cache and feature parity status. |
 | [Development](development.md) | Rebuild, check and package the bindings. |

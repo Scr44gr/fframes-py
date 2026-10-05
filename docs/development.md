@@ -72,9 +72,10 @@ export LD_LIBRARY_PATH="$python_lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 ```
 
 Maturin's [repair setting](https://www.maturin.rs/config) bundles external native
-libraries, including FFmpeg DLLs on Windows. CI tests the installed wheel without
-running the native setup action in test jobs, so an accidental build-machine
-dependency fails during import or rendering.
+libraries, including FFmpeg DLLs on Windows. Test jobs install only FFmpeg CLI
+inspection tools, without setting `FFMPEG_DIR` or build-library search paths.
+`ffprobe` checks the actual output codec/pixel format and `ffmpeg` decodes the
+whole video; both executables must be on `PATH` when running pytest locally.
 
 Connect the repository in Codecov to enable the coverage badge. CI uploads the
 Linux/Python 3.14 report using [OIDC](https://github.com/codecov/codecov-action#using-oidc)

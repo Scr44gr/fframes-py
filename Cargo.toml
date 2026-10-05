@@ -7,7 +7,7 @@ publish = false
 description = "Typed Python bindings for fframes animation and video rendering"
 license = "MIT"
 include = [
-    "/rust/**", "/src/**", "/tests/**", "/examples/**", "/scripts/**", "/docs/**",
+    "/rust/**", "/src/**", "/tests/**", "/examples/**", "/scripts/**", "/docs/**", "/licenses/**",
     "/Cargo.lock", "/pyproject.toml", "/uv.lock", "/rust-toolchain.toml", "/.python-version", "/README.md", "/LICENSE",
 ]
 
@@ -25,6 +25,8 @@ subtp = "0.2.0"
 
 [target.'cfg(not(windows))'.dependencies]
 fframes = { version = "=1.2.0", features = ["build-portable"] }
+# Upstream's `h264` feature selects GPL libx264. Use OpenH264 instead.
+ffmpeg-sys-fframes = { version = "=9.0.0", features = ["build-lib-openh264"] }
 
 [target.'cfg(target_os = "macos")'.dependencies]
 fframes_skia_renderer = { version = "=1.2.0", features = ["metal"] }

@@ -1,5 +1,9 @@
 name: Native dependencies
 description: Install the native dependencies required by fframes 1.2
+inputs:
+  build:
+    description: Install build dependencies; false installs only FFmpeg inspection tools
+    default: 'true'
 runs:
   using: composite
   steps:
@@ -7,12 +11,21 @@ runs:
       shell: bash
       run: |
         sudo apt-get update
-        sudo apt-get install -y clang libclang-dev libfontconfig1-dev nasm patchelf pkg-config
+        sudo apt-get install -y ffmpeg
+        if [ '${{ inputs.build }}' = true ]; then
+          sudo apt-get install -y clang libclang-dev libfontconfig1-dev nasm patchelf pkg-config
+        fi
     - if: runner.os == 'macOS'
       shell: bash
       run: |
-        brew install llvm nasm pkg-config
-        echo "LIBCLANG_PATH=$(brew --prefix llvm)/lib" >> "$GITHUB_ENV"
+        brew install ffmpeg
+        if [ '${{ inputs.build }}' = true ]; then
+          brew install llvm nasm pkg-config
+          echo "LIBCLANG_PATH=$(brew --prefix llvm)/lib" >> "$GITHUB_ENV"
+        fi
+    - if: runner.os != 'Windows' && inputs.build == 'true'
+      shell: bash
+      run: source ./scripts/setup-openh264.sh
     - if: runner.os == 'Windows'
       shell: pwsh
-      run: ./scripts/setup-native.ps1
+      run: ./scripts/setup-native.ps1 -ProbeOnly:('${{ inputs.build }}' != 'true')

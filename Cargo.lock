@@ -600,6 +600,7 @@ dependencies = [
 name = "fframes-py"
 version = "0.1.0"
 dependencies = [
+ "ffmpeg-sys-fframes",
  "fframes",
  "fframes_skia_renderer",
  "pyo3",

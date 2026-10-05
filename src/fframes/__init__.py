@@ -1,7 +1,7 @@
 """Typed, validated Python bindings for fframes."""
 
 import fframes._runtime  # noqa: F401  # Register DLLs before loading the extension.
-from fframes._native import Animation, ColorAnimation, SvgVideo
+from fframes._native import Animation, ColorAnimation, SvgVideo, available_encoders
 from fframes.animation import Timeline, compile_animation, compile_color_animation
 from fframes.audio import AudioTrack
 from fframes.media import (
@@ -67,6 +67,7 @@ __all__ = [
     "VideoConfig",
     "VideoInfo",
     "VideoUniform",
+    "available_encoders",
     "compile_animation",
     "compile_color_animation",
     "compile_video",

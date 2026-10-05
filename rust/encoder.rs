@@ -1,7 +1,42 @@
-use std::{ffi::CString, path::Path, ptr};
+use std::{
+    ffi::{CStr, CString},
+    path::Path,
+    ptr,
+};
 
 use fframes::{EncoderInput, VideoEncoderInfo, ffmpeg_sys_fframes as ffi};
 use pyo3::{exceptions::PyRuntimeError, prelude::*};
+
+/// List video encoders registered in the linked FFmpeg library.
+///
+/// Hardware encoders may still require a compatible device and driver.
+#[pyfunction]
+pub(crate) fn available_encoders() -> Vec<String> {
+    let mut encoders = Vec::new();
+    let mut state = ptr::null_mut();
+    #[expect(
+        unsafe_code,
+        reason = "FFmpeg exposes its codec registry through C pointers"
+    )]
+    // SAFETY: the iterator state is private to this call. Descriptors and their
+    // NUL-terminated names are immutable static data owned by FFmpeg. Each pointer
+    // is checked before dereferencing; no borrowed data escapes this call.
+    unsafe {
+        loop {
+            let codec = ffi::av_codec_iterate(&mut state);
+            if codec.is_null() {
+                break;
+            }
+            if ffi::av_codec_is_encoder(codec) != 0
+                && (*codec).type_ == ffi::AVMediaType::AVMEDIA_TYPE_VIDEO
+            {
+                encoders.push(CStr::from_ptr((*codec).name).to_string_lossy().into_owned());
+            }
+        }
+    }
+    encoders.sort_unstable();
+    encoders
+}
 
 /// Check container compatibility and codec initialization before opening output files.
 pub(crate) fn check_output(path: &Path, info: &VideoEncoderInfo<'_>) -> PyResult<()> {

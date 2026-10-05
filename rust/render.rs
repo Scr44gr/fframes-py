@@ -76,6 +76,11 @@ impl<'a> Resources<'a> {
                 "video encoding requires even dimensions",
             ));
         }
+        if encoder == "libopenh264" && (self.width < 16 || self.height < 16) {
+            return Err(PyValueError::new_err(
+                "libopenh264 requires width and height of at least 16 pixels",
+            ));
+        }
         let extension = path
             .extension()
             .and_then(|value| value.to_str())
@@ -107,7 +112,8 @@ impl<'a> Resources<'a> {
         .map_err(render_error)?;
         if info.name() != encoder {
             return Err(PyRuntimeError::new_err(format!(
-                "encoder {encoder:?} is not available in this FFmpeg build"
+                "encoder {encoder:?} is not available in this FFmpeg build; \
+                 use fframes.available_encoders() to inspect the linked library"
             )));
         }
         crate::encoder::check_output(&path, &info)?;

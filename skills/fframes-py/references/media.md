@@ -57,14 +57,17 @@ Valid indices are `0 <= i < len(compiled)`. Video length rounds duration up to
 whole frames; the audio tail is silent. Convenience preview/export methods on
 the uncompiled `Video` compile again on every call.
 
-Use `fframes.compose.RenderOptions(encoder="mpeg4", bitrate=8_000_000, concurrency=4)`
+Use `fframes.compose.RenderOptions(bitrate=8_000_000, concurrency=4)`
 as an explicit example, not a mandatory worker count. Default concurrency is CPU
-count. The available codecs come from the linked FFmpeg build; do not assume
-`libx264` exists. Lowercase `.mp4` with MPEG-4 is the basic compatible output.
+count. The default is H.264 through `libopenh264`; prefer lowercase `.mp4`.
+Use `fframes.available_encoders()` to inspect the linked library; do not assume
+`libx264` exists. Missing encoders fail without a fallback.
 Other accepted containers are `.mov`, `.mkv`, `.avi`, `.webm`, subject to codec
 compatibility. An extension alone does not select a compatible video encoder.
+Verify delivered files with `ffprobe`: expect `h264`/`yuv420p`, plus `aac` for audio.
 
-Create destination parents. Encoding needs even dimensions and uses YUV420P,
+Create destination parents. Encoding needs even dimensions (at least 16 pixels
+per axis for OpenH264) and uses YUV420P,
 which loses alpha; set an opaque first layer when a background is needed. PNG/RGBA
 retain alpha. Rendering cleans temporary segments and replaces the destination
 only on success. Compile again if assets or component inputs change.

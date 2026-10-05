@@ -47,7 +47,7 @@ through Maturin's configured repair step.
 
 ```sh
 sudo apt-get update
-sudo apt-get install -y build-essential clang libclang-dev libfontconfig1-dev nasm patchelf pkg-config
+sudo apt-get install -y build-essential clang libclang-dev libfontconfig1-dev nasm patchelf pkg-config ffmpeg
 ```
 
 ### macOS
@@ -55,12 +55,21 @@ sudo apt-get install -y build-essential clang libclang-dev libfontconfig1-dev na
 Install the Xcode command-line tools (`xcode-select --install`), then:
 
 ```sh
-brew install llvm nasm pkg-config
+brew install llvm nasm pkg-config ffmpeg
 export LIBCLANG_PATH="$(brew --prefix llvm)/lib"
 ```
 
-On Linux/macOS the enabled upstream `build-portable` feature builds/downloads
-FFmpeg dependencies. The first build needs network access and can take time.
+On Linux/macOS, run this in the same Bash session before building:
+
+```bash
+source ./scripts/setup-openh264.sh
+```
+
+It installs a pinned, checksum-verified OpenH264 static library under `.native/`
+and exports `PKG_CONFIG_PATH`. Upstream's `build-portable` feature then builds or
+downloads FFmpeg with OpenH264 enabled. The first build needs network access and
+can take time. The FFmpeg CLI supplies `ffprobe` and decoding checks for tests;
+it is not the library linked into the extension.
 The CI native setup is maintained in
 [the composite action](../.github/actions/native/action.yml).
 

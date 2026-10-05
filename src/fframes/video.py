@@ -104,7 +104,7 @@ class Video(Model):
         return destination
 
     def render(self, path: OutputPath, *, options: RenderOptions | None = None) -> Path:
-        """Encode all frames; MPEG-4 is available in the default LGPL build."""
+        """Encode all frames using H.264 by default."""
         return render(self.native, path, options)
 
     def audio_samples(self) -> bytes:

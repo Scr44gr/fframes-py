@@ -29,6 +29,7 @@ fn _native(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_class::<text::TextLayout>()?;
     module.add_class::<spectrum::AudioAnalysis>()?;
     module.add_function(wrap_pyfunction!(spectrum::decode_audio, module)?)?;
+    module.add_function(wrap_pyfunction!(encoder::available_encoders, module)?)?;
     module.add_function(wrap_pyfunction!(subtitles::parse_subtitles, module)?)?;
     module.add_function(wrap_pyfunction!(clips::video_info, module)?)?;
     module.add_function(wrap_pyfunction!(images::image_info, module)?)?;

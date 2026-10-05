@@ -83,7 +83,7 @@ class VideoConfig(Model):
 class RenderOptions(Model):
     """Encoder selection and number of parallel rendering workers."""
 
-    encoder: Annotated[str, Field(pattern=r"^[a-zA-Z0-9_]+$")] = "mpeg4"
+    encoder: Annotated[str, Field(pattern=r"^[a-zA-Z0-9_]+$")] = "libopenh264"
     concurrency: PositiveInt = Field(default_factory=lambda: cpu_count() or 1)
     bitrate: PositiveInt = 8_000_000
 

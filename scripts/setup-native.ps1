@@ -1,3 +1,5 @@
+param([switch]$ProbeOnly)
+
 $ErrorActionPreference = 'Stop'
 $nativeRoot = Join-Path $PSScriptRoot '..\.native'
 $buildName = 'ffmpeg-n9.0-latest-win64-lgpl-shared-9.0'
@@ -8,11 +10,15 @@ if (-not (Test-Path -LiteralPath (Join-Path $ffmpegRoot 'include\libavcodec\avco
     Invoke-WebRequest "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/$buildName.zip" -OutFile $archive
     Expand-Archive -LiteralPath $archive -DestinationPath $nativeRoot -Force
 }
+$ffmpegBin = Join-Path (Resolve-Path -LiteralPath $ffmpegRoot).Path 'bin'
+$env:PATH = "$ffmpegBin;$env:PATH"
+if ($env:GITHUB_ENV) {
+    $ffmpegBin | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
+}
+if ($ProbeOnly) { return }
 $env:FFMPEG_DIR = (Resolve-Path -LiteralPath $ffmpegRoot).Path
 $env:LIBCLANG_PATH = 'C:\Program Files\LLVM\bin'
-$env:PATH = "$env:FFMPEG_DIR\bin;$env:PATH"
 if ($env:GITHUB_ENV) {
     "FFMPEG_DIR=$env:FFMPEG_DIR" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
     "LIBCLANG_PATH=$env:LIBCLANG_PATH" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-    "$env:FFMPEG_DIR\bin" | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
 }
