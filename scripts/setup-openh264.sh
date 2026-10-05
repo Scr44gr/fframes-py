@@ -6,7 +6,7 @@ openh264_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/.native/openh264
     archive="$openh264_root/source.tar.gz"
     source_dir="$openh264_root/openh264-2.6.0"
     prefix="$openh264_root/install"
-    if [ ! -f "$prefix/lib/libopenh264.a" ]; then
+    if [ ! -f "$source_dir/Makefile" ]; then
         mkdir -p "$openh264_root"
         curl --fail --location --retry 3 \
             https://github.com/cisco/openh264/archive/refs/tags/v2.6.0.tar.gz \
@@ -15,14 +15,15 @@ openh264_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/.native/openh264
             558544ad358283a7ab2930d69a9ceddf913f4a51ee9bf1bfb9e377322af81a69 \
             "$archive" | shasum -a 256 --check
         tar -xzf "$archive" -C "$openh264_root"
-        cpp_runtime=-lstdc++
-        if [ "$(uname -s)" = Darwin ]; then
-            cpp_runtime=-lc++
-            export MACOSX_DEPLOYMENT_TARGET="${MACOSX_DEPLOYMENT_TARGET:-11.0}"
-        fi
-        make -C "$source_dir" -j "$(getconf _NPROCESSORS_ONLN)" \
-            PREFIX="$prefix" STATIC_LDFLAGS="$cpp_runtime" install-static
     fi
+    make_options=("PREFIX=$prefix")
+    if [ "$(uname -s)" = Darwin ]; then
+        make_options+=("STATIC_LDFLAGS=-lc++")
+        export MACOSX_DEPLOYMENT_TARGET="${MACOSX_DEPLOYMENT_TARGET:-11.0}"
+    fi
+    # Keep platform dependencies from upstream; regenerate pkg-config on reuse.
+    make -C "$source_dir" -j "$(getconf _NPROCESSORS_ONLN)" \
+        "${make_options[@]}" install-static
 )
 openh264_status=$?
 if [ "$openh264_status" -ne 0 ]; then
