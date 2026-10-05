@@ -28,4 +28,4 @@ runs:
       run: source ./scripts/setup-openh264.sh
     - if: runner.os == 'Windows'
       shell: pwsh
-      run: ./scripts/setup-native.ps1 -ProbeOnly:('${{ inputs.build }}' != 'true')
+      run: ./scripts/setup-native.ps1 -ProbeOnly:('${{ inputs.build }}' -ne 'true')
