@@ -3,13 +3,20 @@
 from abc import ABC, abstractmethod
 from typing import Annotated, Literal, Self, TypeAlias
 
-from pydantic import Field, model_validator
+from pydantic import (
+    Field,
+    ModelWrapValidatorHandler,
+    ValidationError,
+    field_validator,
+    model_validator,
+)
+from pydantic_core import InitErrorDetails, PydanticCustomError
 
 from fframes import _native
 from fframes.compose.animation import Duration, Scalar, endpoints
 from fframes.compose.filters import Filter
 from fframes.compose.paint import Brush, Matrix
-from fframes.models import Color, FiniteFloat, Length, Model, Seconds, Size
+from fframes.models import Color, FiniteFloat, FontWeight, Length, Model, Seconds, Size
 from fframes.shaders import Shader
 
 
@@ -57,6 +64,52 @@ class Clip(Item):
 
 class Component(Item, ABC):
     """Subclass with typed Pydantic fields and expand once per compilation."""
+
+    @model_validator(mode="wrap")
+    @classmethod
+    def explain_placement(cls, data: object, handler: ModelWrapValidatorHandler[Self]) -> Self:
+        """Explain misplaced visual properties while preserving subclass validation."""
+        try:
+            return handler(data)
+        except ValidationError as error:
+            examples = {"position": "Position(x=24, y=24)", "scale": "0.5", "opacity": "0.5"}
+            corrected: list[InitErrorDetails] = []
+            changed = False
+            for detail in error.errors():
+                field = detail["loc"][0] if len(detail["loc"]) == 1 else None
+                kind: str | PydanticCustomError = detail["type"]
+                if (
+                    detail["type"] == "extra_forbidden"
+                    and isinstance(field, str)
+                    and field in examples
+                ):
+                    kind = PydanticCustomError(
+                        "extra_forbidden",
+                        "'{field}' belongs on a Composition wrapper: {component} is a Component "
+                        "that describes content, not a visual layer. Create the component with "
+                        "its declared inputs, then use Composition(children=(component,), "
+                        "{field}={example})",
+                        {"field": field, "component": cls.__name__, "example": examples[field]},
+                    )
+                    changed = True
+                elif "url" not in detail:
+                    # Subclasses may raise their own custom validation errors.
+                    kind = PydanticCustomError(detail["type"], detail["msg"], detail.get("ctx"))
+                corrected.append(
+                    InitErrorDetails(
+                        type=kind,
+                        loc=detail["loc"],
+                        input=detail["input"],
+                        ctx=detail.get("ctx", {}),
+                    )
+                )
+            if not changed:
+                raise
+            raise ValidationError.from_exception_data(
+                error.title,
+                corrected,
+                hide_input=cls.model_config.get("hide_input_in_errors", False),
+            ) from error
 
     @abstractmethod
     def compose(self) -> "Composition":
@@ -156,15 +209,27 @@ class Rectangle(Shape):
     size: tuple[Scalar, Scalar]
     radius: Scalar = 0.0
 
-    @model_validator(mode="after")
-    def check_size(self) -> Self:
+    @field_validator("size")
+    @classmethod
+    def check_size(cls, size: tuple[Scalar, Scalar]) -> tuple[Scalar, Scalar]:
         """Keep animated extents positive throughout the clip."""
-        if any(not 0 < bound <= 1e7 for value in self.size for bound in endpoints(value)):
-            msg = "rectangle size must stay between 0 (exclusive) and 10000000"
-            raise ValueError(msg)
-        if any(not 0 <= n <= 1e7 for n in endpoints(self.radius)):
+        for index, (name, value) in enumerate(zip(("width", "height"), size, strict=True)):
+            if any(not 0 < bound <= 1e7 for bound in endpoints(value)):
+                msg = (
+                    f"Rectangle.size[{index}] ({name}) must stay greater than 0 and at most "
+                    "10000000 throughout animation. For a reveal, keep size positive and use "
+                    "opacity=Tween(from_value=0, to_value=1, duration=1)"
+                )
+                raise ValueError(msg)
+        return size
+
+    @field_validator("radius")
+    @classmethod
+    def check_radius(cls, radius: Scalar) -> Scalar:
+        """Allow square corners and reject negative animated corner radii."""
+        if any(not 0 <= n <= 1e7 for n in endpoints(radius)):
             raise ValueError("rectangle radius must stay between 0 and 10000000")
-        return self
+        return radius
 
 
 class Circle(Shape):
@@ -229,7 +294,7 @@ class TextRun(Model):
     content: Line
     font_family: Annotated[str, Field(min_length=1)] | None = None
     font_size: Length | None = None
-    font_weight: Annotated[int, Field(ge=100, le=900)] | None = None
+    font_weight: FontWeight | None = None
     fill: Color | None = None
     dx: FiniteFloat = 0.0
     dy: FiniteFloat = 0.0
@@ -242,7 +307,7 @@ class Text(Shape):
     content: Line | TextTemplate | TextFrames | Annotated[tuple[TextRun, ...], Field(min_length=1)]
     font_family: Annotated[str, Field(min_length=1)] = "sans-serif"
     font_size: Length = 32.0
-    font_weight: Annotated[int, Field(ge=100, le=900)] = 400
+    font_weight: FontWeight = 400
     anchor: Literal["bounds", "baseline"] = "bounds"
     letter_spacing: FiniteFloat = 0.0
     text_anchor: Literal["start", "middle", "end"] = "start"
@@ -257,7 +322,12 @@ class Text(Shape):
             or isinstance(self.position.x, str)
             or isinstance(self.position.y, str)
         ):
-            msg = "text templates require anchor='baseline' and numeric positions"
+            msg = (
+                f"Text with {type(self.content).__name__} requires anchor='baseline' and numeric "
+                "positions because its changing ink bounds cannot define alignment. "
+                "Use Text(content=content, anchor='baseline', position=Position(x=24, y=48)); "
+                "add text_anchor='middle' to center text on x"
+            )
             raise ValueError(msg)
         return self
 

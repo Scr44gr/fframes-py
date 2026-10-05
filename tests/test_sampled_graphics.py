@@ -71,6 +71,4 @@ def test_samples_reject_invalid_values_and_animated_extents() -> None:
     with pytest.raises(ValidationError):
         compose.Samples(values=(float("nan"),), fps=30)
     with pytest.raises(ValidationError):
-        compose.Rectangle(size=(compose.Samples(values=(1, 0), fps=30), 4))
-    with pytest.raises(ValidationError):
         compose.Rectangle(size=(4, 4), opacity=compose.Samples(values=(0, 1.1), fps=30))

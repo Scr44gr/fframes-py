@@ -15,7 +15,12 @@ without asset downloads:
 ```sh
 uv run --no-sync python -m examples.native.motion
 uv run --no-sync python -m examples.compose.composition
+uv run --no-sync python -m examples.compose.reveals
 ```
+
+`reveals` demonstrates [animated sizes and per-frame text](graphics.md#animated-sizes)
+at 320×180, 30 fps. It uses system fonts; pass explicit fonts to its `build_video()`
+function for reproducible rendering.
 
 For upstream ports, fetch the required assets once:
 

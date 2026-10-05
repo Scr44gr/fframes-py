@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Literal
 
 import pytest
 from pydantic import ValidationError
@@ -98,12 +99,31 @@ def test_text_templates_reject_unsupported_formatting(template: str) -> None:
         compose.TextTemplate(template=template)
 
 
-def test_text_templates_require_explicit_baseline_position() -> None:
-    content = compose.TextTemplate(template="{frame}")
-    with pytest.raises(ValidationError, match="baseline"):
-        compose.Text(content=content)
-    with pytest.raises(ValidationError, match="numeric positions"):
-        compose.Text(content=content, anchor="baseline", position=compose.Position(x="center"))
+@pytest.mark.parametrize(
+    "content",
+    [compose.TextTemplate(template="{frame}"), compose.TextFrames(frames=("", "Ready"))],
+)
+@pytest.mark.parametrize(
+    ("anchor", "position"),
+    [
+        ("bounds", compose.Position()),
+        ("baseline", compose.Position(x="center")),
+        ("baseline", compose.Position(y="bottom")),
+    ],
+)
+def test_dynamic_text_explains_baseline_coordinates_and_how_to_center(
+    content: compose.TextTemplate | compose.TextFrames,
+    anchor: Literal["bounds", "baseline"],
+    position: compose.Position,
+) -> None:
+    with pytest.raises(ValidationError) as caught:
+        compose.Text(content=content, anchor=anchor, position=position)
+    message = str(caught.value)
+    assert type(content).__name__ in message
+    assert "anchor='baseline' and numeric positions" in message
+    assert "changing ink bounds" in message
+    assert "Text(content=content, anchor='baseline', position=Position(x=24, y=48))" in message
+    assert "text_anchor='middle'" in message
 
 
 def test_group_origin_matches_svg_rotation_about_local_zero() -> None:
@@ -170,8 +190,6 @@ def test_text_frames_rebase_hold_and_reuse_borrowed_lines() -> None:
         assert video.rgba(index) == reference.rgba(0)
     assert not any(video.rgba(4))
     assert not any(video.rgba(15))
-    with pytest.raises(ValidationError, match="baseline"):
-        compose.Text(content=compose.TextFrames(frames=("a",)))
 
 
 def test_mask_origin_tracks_text_ink_bounds() -> None:

@@ -26,7 +26,9 @@ scene = Video(
         duration=2,
         children=(
             tile.at(0, duration=1),
-            Composition(children=(tile,), position=Position(x=96)).at(1, duration=1),
+            Composition(
+                size=(64, 64), children=(tile,), position=Position(x=96), scale=0.8, opacity=0.9
+            ).at(1, duration=1),
         ),
     ),
 ).compile()
@@ -37,6 +39,9 @@ An instance expands once per compilation; reuse it when inputs match. Each timed
 placement restarts its local animations. Components supply content and `.at()`;
 wrap a placement in `Composition` for independent transforms, masks or opacity.
 Give that group an explicit `size` when using alignment or a center pivot.
+`Tile(position=..., scale=..., opacity=...)` is invalid: these are not built-in
+`Component` fields. The error shows which property to move to the wrapper.
+If a subclass declares such an input itself, `compose()` must implement its effect.
 
 `compose()` has no frame argument. Keep expansion deterministic and acyclic.
 Construct new instances for changed inputs; `model_copy(update=...)` bypasses

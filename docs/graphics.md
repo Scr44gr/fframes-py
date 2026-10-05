@@ -4,10 +4,7 @@
 
 Import these classes from `fframes.compose`. All visuals use the
 [shared placement and transforms](layers.md#drawing-order-and-coordinates).
-Sizes are positive pixel lengths, at most 10,000,000 per dimension.
-Rectangle dimensions also accept `Tween` or `Samples`; layout alignment and the
-default transform origin use their initial dimensions. Set an explicit origin
-and position when an expanding shape must stay centered.
+Explicit sizes are positive pixel lengths, at most 10,000,000 per dimension.
 
 | Class | Required inputs | Additional configuration |
 | --- | --- | --- |
@@ -20,8 +17,36 @@ and position when an expanding shape must stay centered.
 | `VideoClip` | `source`, `size` | Synchronized local video; `offset=0`, `loop=False`. |
 | `VectorPath` | `size`, `segments` | Absolute coordinates within its local canvas. |
 
-`Text` accepts one nonempty line, with no newline or NUL. Weight is an integer
-from 100 through 900; `letter_spacing=0` sets additional spacing in pixels; available faces determine the result. Use separate positioned
+## Animated sizes
+
+Each `Rectangle.size` dimension accepts a number, `Tween` or `Samples` and must
+stay **greater than zero**, including tween endpoints, samples and spring
+overshoot. `Tween(from_value=0, ...)` is rejected for either dimension. Start
+with a positive width and animate opacity from zero for a fully invisible start:
+
+```python
+from fframes.compose import Circle, Rectangle, Tween
+
+bar = Rectangle(
+    size=(Tween(from_value=1, to_value=240, duration=1), 16),
+    opacity=Tween(from_value=0, to_value=1, duration=1),
+)
+disc = Circle(radius=Tween(from_value=0, to_value=16, duration=1))
+```
+
+`Circle.radius` accepts zero as empty geometry and rejects negative values.
+Unlike rectangle dimensions, a circle's zero initial radius uses a one-pixel
+layout bound; its animated geometry still grows from `(0, 0)` to `(2*r, 2*r)`.
+For both shapes, alignment and the default transform pivot use the initial
+bounds. Use explicit positions and origins when an expanding shape must stay centered.
+
+## Text
+
+`Text` accepts one nonempty line, with no newline or NUL. `font_weight` is an
+integer from 100 through 900, including intermediate values such as 450;
+use `700` for bold, not `"bold"` or `"700"`. Available font faces determine the
+result. `TextRun.font_weight` and `Font.weight` use the same validation.
+`letter_spacing=0` sets additional spacing in pixels. Use separate positioned
 text items for multiple lines. Characters such as `<` and `&` need no XML escaping.
 See [font configuration](rendering.md#fonts).
 
@@ -33,8 +58,8 @@ Runs inherit the enclosing `Text` style; optional `font_family`, `font_size`,
 
 By default, position aligns the shaped ink bounds. Use `anchor="baseline"` to
 interpret x/y as SVG baseline coordinates. For a live counter, pass
-`content=TextTemplate(template="Frame {frame} / {seconds:.2f}s")`, explicit numeric
-positions and `anchor="baseline"`. Rust formats the item's local frame index and
+`content=TextTemplate(template="Frame {frame} / {seconds:.2f}s")`.
+Rust formats the item's local frame index and
 elapsed seconds during rendering. Supported fields are `{frame}` and
 `{seconds:.0f}` through `{seconds:.9f}`; double braces produce literal braces.
 
@@ -42,11 +67,31 @@ With baseline coordinates, `text_anchor="start" | "middle" | "end"` aligns the
 text horizontally; `baseline="central"` centers it vertically on y. Font style
 is `font_style="normal" | "italic" | "oblique"`, subject to available faces.
 
-For finite custom readouts, use `TextFrames(frames=("First", "Second", ...))`.
-It selects one line per local frame and holds the last line. Like templates, it
-requires numeric position and baseline anchoring. Precompute lines once; Rust
-borrows them during rendering.
-Empty frames are valid for reveals and pauses.
+For finite custom readouts, precompute one line per frame:
+
+```python
+from fframes.compose import Position, Text, TextFrames
+
+counter = Text(
+    content=TextFrames(frames=tuple(f"Frame {index}" for index in range(30))),
+    font_weight=700,
+    anchor="baseline",
+    position=Position(x=24, y=48),
+).at(0.5, duration=2)
+```
+
+At `Video(fps=30, ...)`, this clip starts at video frame 15 with `"Frame 0"`;
+frame 16 shows `"Frame 1"`, and frame 44 reaches `"Frame 29"`. The last line holds
+until the clip ends. `TextFrames` uses the video's fps, with no separate rate.
+Its nonempty tuple may contain `""` for an invisible frame; newline and NUL are
+invalid. Rust selects lines during rendering, without a Python callback.
+Both `TextFrames` and `TextTemplate` require `anchor="baseline"` and numeric
+positions (numbers, `Tween` or `Samples`). To center changing text, use a numeric
+x coordinate with `text_anchor="middle"`; `Position(x="center")` is invalid.
+
+Run [the complete example](../examples/compose/reveals.py) with
+`uv run --no-sync python -m examples.compose.reveals` from a configured checkout.
+It combines animated dimensions, a zero-radius circle and per-frame text.
 
 ## Text layout
 
@@ -112,10 +157,6 @@ transitions. `spread="pad" | "repeat" | "reflect"` controls values beyond the en
 decoded once and shared with other image components. Both paint types accept
 `matrix=(a, b, c, d, e, f)`, including `Tween` or `Samples` in any coefficient.
 Coordinates are local to the graphic, before its placement transform.
-
-An animated circle's bounds start at `(0, 0)` and expand to `(2*r, 2*r)`.
-Alignment and default origin use the initial size (at least one pixel for an
-initial radius of zero); set explicit coordinates when a reveal must stay centered.
 
 ## Paths
 

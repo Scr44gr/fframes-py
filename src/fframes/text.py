@@ -6,7 +6,7 @@ from typing import Annotated, Literal
 from pydantic import ConfigDict, Field, validate_call
 
 from fframes import _native
-from fframes.models import Model, PositiveInt, Source
+from fframes.models import FontWeight, Model, PositiveInt, Source
 
 
 class Font(Model):
@@ -14,7 +14,7 @@ class Font(Model):
 
     family: Annotated[str, Field(min_length=1)]
     size: Annotated[int, Field(gt=0, le=100000)] = 32
-    weight: Annotated[int, Field(ge=100, le=900)] = 400
+    weight: FontWeight = 400
     style: Literal["normal", "italic", "oblique"] = "normal"
 
 

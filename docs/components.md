@@ -28,9 +28,16 @@ class Badge(Component):
 
 
 badge = Badge(label="Python + Rust")
+placed = Composition(
+    size=(320, 96),
+    children=(badge,),
+    position=Position(x=64, y=48),
+    scale=0.8,
+    opacity=0.9,
+)
 scene = Composition(
     duration=5,
-    children=(badge.at(0, duration=2), badge.at(3, duration=2)),
+    children=(badge.at(0, duration=2), placed.at(3, duration=2)),
 )
 ```
 
@@ -39,9 +46,13 @@ times. Each placement has independent timing. Equal but distinct instances are
 not the same cache entry. Keep `compose()` deterministic; it describes content
 and receives no frame callback. A second compilation expands components again.
 
-For per-placement transforms, wrap the component in a `Composition` with an
-explicit `size` and the desired `position`, `scale`, `rotation` or `opacity`.
-`Component` itself has no visual transform fields. Its `.at()` method controls time.
+`Component` describes content; `Composition` supplies visual placement.
+`Badge(label="Hello", position=Position(x=64))` is invalid: put `position`,
+`scale`, `rotation` or `opacity` on the wrapper, as above. Give it a `size` for
+alignment and the transform pivot; omitted size inherits the parent's canvas.
+Errors for `position`, `scale` and `opacity` show the wrapper correction.
+`.at()` controls time. A subclass may declare its own inputs with these names,
+but must explicitly use them in `compose()`; they are never automatic transforms.
 
 Avoid recursive component expansion; cycles and nesting beyond 64 traversal
 levels are rejected. Python component classes and the private compiled plan are

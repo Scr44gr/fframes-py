@@ -19,7 +19,9 @@ Construct validated replacements; `model_copy(update=...)` does not validate.
 
 Colors require six or eight hex digits. Shapes and text accept `fill=None` and
 `Stroke(color=..., width=...)`. Text is single-line; split lines into positioned
-items. Paths start with `MoveTo(x=..., y=...)` and have at least two segments;
+items. Font weight is an integer from 100 through 900: use `font_weight=700`,
+not `"bold"` or `"700"`; available font faces determine the result.
+Paths start with `MoveTo(x=..., y=...)` and have at least two segments;
 use `LineTo(x=..., y=...)`, `CubicTo(control1=(x, y), control2=(x, y), end=(x, y))`
 and `Close()`. Coordinates are absolute within the path, not normalized to `size`.
 Imported path data can be passed directly as `segments="M0 0h20v20z"`; typed
@@ -72,7 +74,11 @@ Use `Samples(values=(...), fps=30)` for procedural scalar values prepared once.
 Rust holds each value for `1/fps` local seconds, then holds the last. This works
 for transforms, rectangle extents and shader float uniforms. It transfers owned
 values through JSON, not a shared NumPy view. Animated rectangle layout uses its
-initial size; choose explicit positions and origins when needed.
+initial size; choose explicit positions and origins when needed. Every rectangle
+dimension stays strictly positive, including tween endpoints, samples and spring
+overshoot. Use `size=(Tween(from_value=1, to_value=240, duration=1), 16)` and
+`opacity=Tween(from_value=0, to_value=1, duration=1)` for a reveal. `Circle.radius`
+can start at zero: its geometry is empty, with a one-pixel initial layout bound.
 
 `Text(anchor="baseline", position=Position(x=..., y=...))` uses SVG baseline
 coordinates instead of ink bounds. A live readout can use
@@ -80,7 +86,13 @@ coordinates instead of ink bounds. A live readout can use
 and numeric positions. Only `{frame}` and `{seconds:.0f}` through `{seconds:.9f}`
 are supported; fields use the item's local clock and are formatted in Rust.
 For finite custom readouts, `TextFrames(frames=(...))` selects precomputed lines by
-local frame and holds the last line; it has the same anchoring requirements.
+local frame at the video's fps and holds the last line; `.at()` restarts at entry
+zero. It has the same anchoring requirements. For example,
+`Text(content=TextFrames(frames=("", "Ready")), anchor="baseline",
+position=Position(x=160, y=40), text_anchor="middle", font_weight=700)` is empty
+on its first local frame and shows centered `"Ready"` from its second onward.
+Use numeric coordinates with `text_anchor="middle"` to center changing text;
+`Position(x="center")` is invalid for both `TextFrames` and `TextTemplate`.
 Empty lines are allowed in `TextFrames`. Text accepts `text_anchor="middle"`
 or `"end"`, `baseline="central"`, and `font_style="italic" | "oblique"`.
 For layout, use `TextLayout(fonts=(...))` and `Font(family=..., size=32)` from
