@@ -41,7 +41,7 @@ dev = [
 python-source = "src"
 module-name = "fframes._native"
 auditwheel = "repair"
-exclude = ["**/*.pdb"]
+exclude = ["**/*.pdb", "**/__pycache__/**"]
 
 [tool.uv]
 required-version = ">=0.12.22"
