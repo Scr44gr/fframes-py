@@ -18,6 +18,11 @@ mono input is available in both output channels.
 | `pan` | `0` | −1 left, 0 centered, +1 right. |
 | `fade_in` | `0` | Fade duration in seconds from the audible start. |
 | `fade_out` | `0` | Fade duration in seconds leading to the audible end. |
+| `fade_curve` | `"equal_power"` | Also `"linear"`, `"s_curve"` or `"exponential"`. |
+| `rate` | `1` | Speed and pitch together, from 0.05 to 20; source offset stays in source seconds. |
+| `effects` | `()` | Ordered native processing steps, applied before gain, pan, fades and ducking. |
+| `voice` | `False` | Mark this track's interval as voice for ducking. |
+| `duck` | `None` | `Ducking(...)` lowers this track during voice intervals. |
 
 For existing `assets/music.wav` and `assets/hit.wav`:
 
@@ -59,3 +64,28 @@ Use `compiled.audio_samples()` to inspect the mix: interleaved left/right float3
 little-endian, at 48 kHz. This returns raw bytes, not a WAV file. Its length covers
 the encoded video duration, including silence. Audio is mixed into `render()`
 automatically; audio codec selection currently follows the native encoder defaults.
+
+## Processing
+
+Effects are shared by `fframes.AudioTrack` and `compose.Audio`:
+
+```python
+from fframes.compose import Audio
+from fframes.effects import Compressor, Highpass, NormalizeLufs
+
+voice = Audio(
+    source="voice.wav", voice=True,
+    effects=(Highpass(hz=80), Compressor(threshold_db=-18), NormalizeLufs(lufs=-16)),
+)
+```
+
+The engine processes each audible track once at 48 kHz, after resampling for
+`rate`. Available effects are `Highpass`, `Lowpass`, `LowShelf`, `HighShelf`,
+`Peak`, `Compressor`, `NormalizeLufs` and `StereoWidth`. Frequencies are 1–23520 Hz;
+compressor attack/release use seconds. Normalization leaves silence and intervals
+shorter than 400 ms unchanged. A later `gain_db` still changes normalized level.
+
+`StereoWidth(width=0)` makes stereo mono; 1 preserves stereo. Mono input gains
+upstream's filtered, delayed side signal when width is positive. `Ducking` reacts
+to marked **intervals**, including silent voice tracks; it is not signal detection.
+Check the actual mix and listen before choosing gains or publishing an export.

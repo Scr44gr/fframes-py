@@ -30,6 +30,7 @@ pub(super) struct Layer {
 
 #[derive(Deserialize)]
 pub(super) struct Graphic {
+    pub id: Option<String>,
     pub position: Position,
     pub opacity: Scalar,
     #[serde(default = "zero")]
@@ -165,6 +166,13 @@ pub(super) enum TextAnchor {
 #[derive(Deserialize)]
 #[serde(tag = "kind", rename_all = "lowercase")]
 pub(super) enum Shape {
+    Lottie {
+        animation: crate::lottie::Input,
+        size: [u32; 2],
+    },
+    Scene3d {
+        renderer: Box<crate::three_d::Input>,
+    },
     Video {
         source: PathBuf,
         offset: f64,

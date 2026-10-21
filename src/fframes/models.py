@@ -87,6 +87,7 @@ class RenderOptions(Model):
     encoder: Annotated[str, Field(pattern=r"^[a-zA-Z0-9_]+$")] = "libopenh264"
     concurrency: PositiveInt = Field(default_factory=lambda: cpu_count() or 1)
     bitrate: PositiveInt = 8_000_000
+    color_matrix: Literal["bt601", "bt709"] = "bt601"
 
 
 class Interval(Model):

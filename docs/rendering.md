@@ -100,6 +100,7 @@ copy only when mutation is needed.
 | `encoder` | `"libopenh264"` | Exact FFmpeg video encoder name (H.264). |
 | `bitrate` | `8_000_000` | Positive integer video bitrate in bits per second. |
 | `concurrency` | CPU count, or 1 | Positive number of native rendering workers. |
+| `color_matrix` | `"bt601"` | `"bt601"` or `"bt709"`; controls YUV conversion and encoded color tags together. |
 
 Pass options as `compiled.render(path, options=RenderOptions(concurrency=4))`.
 More workers use more resources; measure before increasing the count. Encoding

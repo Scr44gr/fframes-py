@@ -23,6 +23,8 @@ pub(super) struct Asset {
     template: Option<Template>,
     text_frames: Vec<String>,
     shader: Option<crate::shader::Program>,
+    scene: Option<crate::three_d::Program>,
+    lottie: Option<crate::lottie::Program>,
     numbers: Vec<(usize, Value)>,
     clip: Option<crate::clips::Source>,
     path_animation: Vec<(usize, super::paths::Command)>,
@@ -35,7 +37,8 @@ impl Asset {
         time: f64,
         frame: usize,
         fps: usize,
-        cache: &mut crate::clips::Decoders,
+        cache: &mut crate::render::FrameCache,
+        rasterizer: &crate::backend::Rasterizer<'_>,
     ) -> PyResult<Option<NestedNodeData<'_>>> {
         let Some(source) = self.node.as_ref() else {
             return Ok(None);
@@ -56,13 +59,19 @@ impl Asset {
             }
         }
         if let Some(clip) = &self.clip {
-            let Some(image) = clip.image(time, fps, cache)? else {
+            let Some(image) = clip.image(time, fps, &mut cache.decoders)? else {
                 return Ok(None);
             };
             node.attrs[0].value = image.into();
         }
         if let Some(shader) = &self.shader {
-            node.attrs[0].value = shader.draw(frame, fps, cache)?.into();
+            node.attrs[0].value = shader.draw(frame, fps, &mut cache.decoders)?.into();
+        }
+        if let Some(scene) = &self.scene {
+            node.attrs[0].value = scene.image(time, cache, rasterizer)?.href().into();
+        }
+        if let Some(lottie) = &self.lottie {
+            node.attrs[0].value = lottie.image(time, cache, rasterizer)?.into();
         }
         for (index, value) in &self.numbers {
             node.attrs[*index].value = value.value(time).into();
@@ -185,11 +194,45 @@ pub(super) fn prepare(
     let mut template = None;
     let mut text_frames = Vec::new();
     let mut shader = None;
+    let mut scene = None;
+    let mut lottie = None;
     let mut numbers = Vec::new();
     let mut clip = None;
     let mut path_animation = Vec::new();
     let mut animated_radius = None;
     let (mut node, size) = match shape {
+        Shape::Lottie { animation, size } => {
+            lottie = Some(crate::lottie::Program::compile(animation, size)?);
+            let size = size.map(f64::from);
+            (
+                Some(element(
+                    EId::Image,
+                    vec![
+                        attribute(AId::Href, ""),
+                        attribute(AId::Width, size[0]),
+                        attribute(AId::Height, size[1]),
+                    ],
+                    vec![],
+                )),
+                size,
+            )
+        }
+        Shape::Scene3d { renderer } => {
+            let size = renderer.size.map(f64::from);
+            scene = Some(crate::three_d::Program::on_timeline(*renderer, fps)?);
+            (
+                Some(element(
+                    EId::Image,
+                    vec![
+                        attribute(AId::Href, ""),
+                        attribute(AId::Width, size[0]),
+                        attribute(AId::Height, size[1]),
+                    ],
+                    vec![],
+                )),
+                size,
+            )
+        }
         Shape::Video {
             source,
             offset,
@@ -475,6 +518,8 @@ pub(super) fn prepare(
             && template.is_none()
             && text_frames.is_empty()
             && shader.is_none()
+            && scene.is_none()
+            && lottie.is_none()
             && numbers.is_empty()
             && clip.is_none()
             && path_animation.is_empty()
@@ -497,6 +542,8 @@ pub(super) fn prepare(
         template,
         text_frames,
         shader,
+        scene,
+        lottie,
         numbers,
         clip,
         path_animation,

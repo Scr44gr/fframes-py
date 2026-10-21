@@ -13,6 +13,7 @@ from fframes.compose.compiler import Compiler, Plan
 from fframes.compose.components import Composition
 from fframes.models import Backend, Index, Model, OutputPath, PositiveInt, Source
 from fframes.models import RenderOptions as RenderOptions
+from fframes.three_d.scene import Texture, _CompositionTexture
 
 
 @dataclass(frozen=True)
@@ -20,6 +21,11 @@ class CompiledVideo:
     """Owned native assets and timing, reusable without executing components again."""
 
     _scene: _native.SceneVideo
+
+    @property
+    def native(self) -> _native.SceneVideo:
+        """Access the compiled engine session for batch inspection and previews."""
+        return self._scene
 
     def __len__(self) -> int:
         """Return the encoded frame count."""
@@ -52,7 +58,12 @@ class CompiledVideo:
         with TemporaryDirectory(prefix="fframes-py-", dir=destination.absolute().parent) as folder:
             staged = Path(folder) / destination.name
             self._scene.render(
-                staged, Path(folder), settings.encoder, settings.concurrency, settings.bitrate
+                staged,
+                Path(folder),
+                settings.encoder,
+                settings.concurrency,
+                settings.bitrate,
+                settings.color_matrix,
             )
             staged.replace(destination)
         return destination
@@ -94,12 +105,11 @@ class Video(Model):
         """Return the encoded duration after frame rounding."""
         return len(self) / self.fps
 
-    def compile(self) -> CompiledVideo:
-        """Expand components once and transfer a typed scene to Rust."""
+    def _plan(self) -> Plan:
         compiler = Compiler()
         width, height = self.resolution
         compiler.visit(self.composition, None, 0.0, self.duration, (float(width), float(height)))
-        plan = Plan(
+        return Plan(
             resolution=self.resolution,
             fps=self.fps,
             frames=len(self),
@@ -109,7 +119,19 @@ class Video(Model):
             load_system_fonts=self.load_system_fonts,
             backend=self.backend,
         )
-        return CompiledVideo(_native.compile_scene(plan.model_dump_json()))
+
+    def compile(self) -> CompiledVideo:
+        """Expand components once and transfer a typed scene to Rust."""
+        return CompiledVideo(_native.compile_scene(self._plan().model_dump_json()))
+
+    def texture(self) -> Texture:
+        """Use this video's visuals on a 3D surface; put audio in the outer composition."""
+        plan = self._plan()
+        if plan.sounds:
+            raise ValueError(
+                "a texture contains visuals only; place Audio in the outer composition"
+            )
+        return Texture(source=_CompositionTexture(plan=plan.model_dump_json()))
 
     def rgba(self, index: Index = 0) -> bytes:
         """Compile and preview one frame; use compile() to preview many."""

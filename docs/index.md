@@ -23,13 +23,18 @@ the namespace you intend to use. `fframes._native` and `compose.compiler` are in
 | [Graphics](graphics.md) | Text, shapes, paths, images and paint. |
 | [Components](components.md) | Define typed, reusable building blocks. |
 | [Shaders](shaders.md) | SkSL, Shadertoy and typed uniforms in both APIs. |
+| [3D scenes](three-d.md) | Geometry, lights, cameras and CPU/GPU rendering. |
+| [3D assets](three-d-assets.md) | glTF, rigs, morph targets and nested render textures. |
+| [Lottie](lottie.md) | Vector animation playback and supported content. |
 | [Masks and filters](filters.md) | Clip layers and build reusable filter graphs. |
 | [Audio](audio.md) | Place, trim, loop and mix sound. |
 | [Analysis and subtitles](analysis.md) | Batch FFT, NumPy views and WebVTT cues. |
 | [Rendering](rendering.md) | Resolution, fonts, compilation, previews and encoder settings. |
+| [Inspection](inspection.md) | Named layers, crops, contact sheets and continuity checks. |
 | [Codec licenses](codecs.md) | Third-party licenses and redistribution conditions. |
 | [Low level](lowlevel.md) | SVG rendering and scalar animation signatures. |
 | [Upstream examples](examples.md) | Paired ports, asset cache and feature parity status. |
+| [Upstream audit](upstream.md) | Recorded engine version, integrations and remaining upstream limits. |
 | [Development](development.md) | Rebuild, check and package the bindings. |
 | [Releases](releases.md) | Versioning, PyPI setup and publishing tested distributions. |
 

@@ -17,7 +17,8 @@ from fframes.compose.components import (
     VectorPath,
     Visual,
 )
-from fframes.compose.media import Audio, Image, VideoClip
+from fframes.compose.media import Audio, Image, LottieLayer, VideoClip
+from fframes.compose.three_d import Scene3D
 from fframes.models import Backend, Model, Size, Source
 
 
@@ -29,7 +30,17 @@ class Group(Visual):
 
 
 Graphic: TypeAlias = Annotated[
-    Group | Rectangle | Circle | Ellipse | Text | VectorPath | Image | ShaderLayer | VideoClip,
+    Group
+    | Rectangle
+    | Circle
+    | Ellipse
+    | Text
+    | VectorPath
+    | Image
+    | ShaderLayer
+    | VideoClip
+    | Scene3D
+    | LottieLayer,
     Field(discriminator="kind"),
 ]
 
@@ -112,6 +123,7 @@ class Compiler:
                         start=start,
                         end=end,
                         graphic=Group(
+                            id=item.id,
                             size=size,
                             position=item.position,
                             opacity=item.opacity,
@@ -131,7 +143,19 @@ class Compiler:
             elif isinstance(item, Audio):
                 self.sounds.append(Sound(start=start, end=end, audio=item))
             elif isinstance(
-                item, (Rectangle, Circle, Ellipse, Text, VectorPath, Image, ShaderLayer, VideoClip)
+                item,
+                (
+                    Rectangle,
+                    Circle,
+                    Ellipse,
+                    Text,
+                    VectorPath,
+                    Image,
+                    ShaderLayer,
+                    VideoClip,
+                    Scene3D,
+                    LottieLayer,
+                ),
             ):
                 self.layers.append(Layer(parent=parent, start=start, end=end, graphic=item))
             else:

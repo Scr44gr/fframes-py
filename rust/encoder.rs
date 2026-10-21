@@ -7,6 +7,16 @@ use std::{
 use fframes::{EncoderInput, VideoEncoderInfo, ffmpeg_sys_fframes as ffi};
 use pyo3::{exceptions::PyRuntimeError, prelude::*};
 
+pub(crate) fn color_matrix(value: &str) -> PyResult<fframes::YuvMatrix> {
+    match value {
+        "bt601" => Ok(fframes::YuvMatrix::Bt601),
+        "bt709" => Ok(fframes::YuvMatrix::Bt709),
+        _ => Err(pyo3::exceptions::PyValueError::new_err(
+            "color_matrix must be 'bt601' or 'bt709'",
+        )),
+    }
+}
+
 /// List video encoders registered in the linked FFmpeg library.
 ///
 /// Hardware encoders may still require a compatible device and driver.
@@ -74,6 +84,7 @@ pub(crate) fn check_output(path: &Path, info: &VideoEncoderInfo<'_>) -> PyResult
             info.name()
         )));
     };
+    let input = input.with_color_matrix(info.options.color_matrix);
     info.try_open(&input)
         .map_err(|error| PyRuntimeError::new_err(error.to_string()))?;
     Ok(input)

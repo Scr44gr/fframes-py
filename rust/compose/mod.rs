@@ -29,6 +29,7 @@ use graphics::{Asset, attribute, document, element};
 use input::Plan;
 
 struct Layer {
+    id: Option<String>,
     first: usize,
     end: usize,
     start: f64,
@@ -87,6 +88,7 @@ impl SceneVideo {
         let mut layers: Vec<Layer> = Vec::with_capacity(plan.layers.len());
         let mut roots = Vec::new();
         let mut images = graphics::Images::new();
+        let mut ids = std::collections::HashSet::new();
         for layer in plan.layers {
             if !layer.start.is_finite()
                 || !layer.end.is_finite()
@@ -113,6 +115,13 @@ impl SceneVideo {
                 ([f64::from(width), f64::from(height)], 0)
             };
             let graphic = layer.graphic;
+            if let Some(id) = &graphic.id
+                && !ids.insert(id.clone())
+            {
+                return Err(PyValueError::new_err(format!(
+                    "duplicate visual id {id:?}; use a unique id per layer"
+                )));
+            }
             if matches!(graphic.shape, input::Shape::Shader { .. })
                 && plan.backend == crate::backend::Backend::Cpu
             {
@@ -152,6 +161,7 @@ impl SceneVideo {
                 .resolve(parent_size[1], asset.size[1], false)?;
             let frame_at = |time: f64| (time * plan.fps as f64 - 1e-9).ceil().max(0.) as usize;
             layers.push(Layer {
+                id: graphic.id,
                 first: frame_at(layer.start),
                 end: frame_at(layer.end),
                 start: layer.start,
@@ -216,7 +226,8 @@ impl SceneVideo {
         &self,
         index: usize,
         frame: usize,
-        cache: &mut crate::clips::Decoders,
+        cache: &mut FrameCache,
+        rasterizer: &crate::backend::Rasterizer<'_>,
     ) -> PyResult<Option<NestedNodeData<'_>>> {
         let layer = &self.layers[index];
         if frame < layer.first || frame >= layer.end {
@@ -258,16 +269,25 @@ impl SceneVideo {
             vec![
                 layer
                     .asset
-                    .node_at(time, frame - layer.first, self.fps, cache)?,
+                    .node_at(time, frame - layer.first, self.fps, cache, rasterizer)?,
             ]
         } else {
-            self.nodes(&layer.children, layer.animated_order, frame, cache)?
+            self.nodes(
+                &layer.children,
+                layer.animated_order,
+                frame,
+                cache,
+                rasterizer,
+            )?
         };
         let mut attributes = vec![
             attribute(AId::Transform, transform),
             attribute(AId::Opacity, opacity),
             attribute(AId::MixBlendMode, layer.blend_mode.as_svg()),
         ];
+        if let Some(id) = &layer.id {
+            attributes.push(attribute(AId::Id, id.clone()));
+        }
         if let Some(mask) = &layer.mask {
             children.push(Some(mask.node_at(time)));
             attributes.push(attribute(AId::ClipPath, format!("url(#clip-{index})")));
@@ -284,7 +304,8 @@ impl SceneVideo {
         indices: &[usize],
         animated: bool,
         frame: usize,
-        cache: &mut crate::clips::Decoders,
+        cache: &mut FrameCache,
+        rasterizer: &crate::backend::Rasterizer<'_>,
     ) -> PyResult<Vec<Option<NestedNodeData<'_>>>> {
         let mut indices = Cow::Borrowed(indices);
         if animated {
@@ -299,18 +320,23 @@ impl SceneVideo {
         }
         indices
             .iter()
-            .map(|index| self.node(*index, frame, cache))
+            .map(|index| self.node(*index, frame, cache, rasterizer))
             .collect()
     }
 
-    fn tree(&self, index: usize, cache: &mut FrameCache) -> PyResult<usvgr::Tree> {
+    fn tree(
+        &self,
+        index: usize,
+        cache: &mut FrameCache,
+        rasterizer: &crate::backend::Rasterizer<'_>,
+    ) -> PyResult<usvgr::Tree> {
         if index >= self.timeline.duration_in_frames {
             return Err(PyIndexError::new_err("frame index out of range"));
         }
         let doc = document(
             self.width,
             self.height,
-            self.nodes(&self.roots, self.animated_roots, index, &mut cache.decoders)?,
+            self.nodes(&self.roots, self.animated_roots, index, cache, rasterizer)?,
         );
         usvgr::Tree::from_nested_svgtree_with_cache(
             &doc,
@@ -322,8 +348,9 @@ impl SceneVideo {
     }
 
     fn rasterize(&self, index: usize) -> PyResult<fframes::RgbaFrame> {
-        let tree = self.tree(index, &mut FrameCache::default())?;
-        crate::backend::Device::new(self.backend, self.width, self.height)?
+        let device = crate::backend::Device::new(self.backend, self.width, self.height)?;
+        let tree = self.tree(index, &mut FrameCache::default(), &device.rasterizer())?;
+        device
             .frame()
             .render_tree(&tree, Color::TRANSPARENT, self.width, self.height)
             .map_err(render_error)
@@ -339,6 +366,32 @@ impl SceneVideo {
             media: Some(&self.media),
             timeline: &self.timeline,
         }
+    }
+}
+
+impl crate::inspection::Source for SceneVideo {
+    fn size(&self) -> [u32; 2] {
+        [self.width, self.height]
+    }
+    fn fps(&self) -> usize {
+        self.fps
+    }
+    fn count(&self) -> usize {
+        self.timeline.duration_in_frames
+    }
+    fn backend(&self) -> crate::backend::Backend {
+        self.backend
+    }
+    fn fonts(&self) -> &usvgr::fontdb::Database {
+        &self.fonts
+    }
+    fn tree(
+        &self,
+        index: usize,
+        cache: &mut FrameCache,
+        rasterizer: &crate::backend::Rasterizer<'_>,
+    ) -> PyResult<usvgr::Tree> {
+        self.tree(index, cache, rasterizer)
     }
 }
 
@@ -369,6 +422,11 @@ impl SceneVideo {
         PyBytes::new(py, &bytes)
     }
 
+    #[pyo3(signature = (path, directory, encoder, concurrency, bitrate, color_matrix="bt601"))]
+    #[expect(
+        clippy::too_many_arguments,
+        reason = "Preserve positional native render compatibility"
+    )]
     fn render(
         &self,
         py: Python<'_>,
@@ -377,15 +435,19 @@ impl SceneVideo {
         encoder: &str,
         concurrency: usize,
         bitrate: i64,
+        color_matrix: &str,
     ) -> PyResult<()> {
         py.detach(|| {
             self.resources().render(
-                |index, cache| self.tree(index, cache),
+                |index, cache, rasterizer| self.tree(index, cache, rasterizer),
                 path,
                 directory,
-                encoder,
-                concurrency,
-                bitrate,
+                crate::render::Encoding {
+                    encoder,
+                    concurrency,
+                    bitrate,
+                    color_matrix: crate::encoder::color_matrix(color_matrix)?,
+                },
             )
         })
     }
@@ -394,11 +456,13 @@ impl SceneVideo {
 /// Load a validated authoring description into a reusable native session.
 #[pyfunction]
 pub(crate) fn compile_scene(py: Python<'_>, plan: String) -> PyResult<SceneVideo> {
-    py.detach(|| {
-        let plan = serde_json::from_str(&plan)
-            .map_err(|error| PyValueError::new_err(error.to_string()))?;
-        SceneVideo::compile(plan)
-    })
+    py.detach(|| from_plan(&plan))
+}
+
+pub(crate) fn from_plan(plan: &str) -> PyResult<SceneVideo> {
+    let plan =
+        serde_json::from_str(plan).map_err(|error| PyValueError::new_err(error.to_string()))?;
+    SceneVideo::compile(plan)
 }
 
 #[cfg(test)]
@@ -418,7 +482,7 @@ mod tests {
         let mut cache = FrameCache::default();
         let mut renderer = CpuFrameRenderer::new(20);
         for index in [2, 0, 1, 2] {
-            let tree = scene.tree(index, &mut cache)?;
+            let tree = scene.tree(index, &mut cache, &crate::backend::Rasterizer::cpu())?;
             let rgba = renderer
                 .render_tree(&tree, Color::TRANSPARENT, 16, 8)
                 .map_err(render_error)?;
@@ -462,7 +526,7 @@ mod tests {
         let mut cache = FrameCache::default();
         let mut renderer = CpuFrameRenderer::new(20);
         for index in [0, 1, 2, 1, 0] {
-            let tree = scene.tree(index, &mut cache)?;
+            let tree = scene.tree(index, &mut cache, &crate::backend::Rasterizer::cpu())?;
             let frame = renderer
                 .render_tree(&tree, Color::TRANSPARENT, 16, 8)
                 .map_err(render_error)?;

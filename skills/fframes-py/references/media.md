@@ -29,6 +29,12 @@ Do not use one in place of the other.
   including loops. Offsets must precede EOF; all timing values are nonnegative.
 - Audio mixes at stereo 48 kHz with native limiting/declick defaults. It is
   sample-aligned, independent of video fps. Visual opacity does not mute it.
+- `rate` resamples playback, changing pitch and duration. It is not pitch-preserving
+  time stretch. `effects` applies `fframes.effects` processors in tuple order:
+  `Highpass`, `Lowpass`, `LowShelf`, `HighShelf`, `Peak`, `Compressor`,
+  `NormalizeLufs` and `StereoWidth`.
+  Filter frequencies are 1–23520 Hz. Set fade curves explicitly when needed.
+  Mark dialogue `voice=True` and use `Ducking` on background tracks.
 
 Compilation decodes sources in full; loops materialize the audible interval.
 Budget memory accordingly. There is no audio-generation API: generate or obtain
@@ -64,6 +70,9 @@ Use `fframes.available_encoders()` to inspect the linked library; do not assume
 `libx264` exists. Missing encoders fail without a fallback.
 Other accepted containers are `.mov`, `.mkv`, `.avi`, `.webm`, subject to codec
 compatibility. An extension alone does not select a compatible video encoder.
+Direct MKV output currently has upstream frame-rate/duration metadata issues;
+prefer MP4 or remux a verified MP4. `color_matrix="bt709"` selects HD color
+conversion and metadata; the compatibility default is `"bt601"`.
 Verify delivered files with `ffprobe`: expect `h264`/`yuv420p`, plus `aac` for audio.
 
 Create destination parents. Encoding needs even dimensions (at least 16 pixels

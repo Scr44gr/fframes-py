@@ -10,6 +10,7 @@ from pydantic import BaseModel, ConfigDict
 
 import fframes
 from fframes import compose
+from fframes.models import Backend
 from tests.test_composition_audio import RATE, write_audio
 
 
@@ -26,6 +27,8 @@ class Stream(BaseModel):
     nb_read_frames: str
     duration: str
     sample_rate: str | None = None
+    color_space: str | None = None
+    color_range: str | None = None
 
 
 class Probe(BaseModel):
@@ -176,3 +179,53 @@ def test_mp4_codecs_and_decoding(
     )
     assert colors[0] == pytest.approx((255, 0, 0), abs=16)
     assert colors[1] == pytest.approx((0, 0, 255), abs=16)
+
+
+@pytest.mark.parametrize(("matrix", "expected"), [("bt601", "smpte170m"), ("bt709", "bt709")])
+@pytest.mark.parametrize("backend", ["cpu", "skia"])
+def test_color_matrix_metadata_matches_actual_yuv_conversion(
+    matrix: Literal["bt601", "bt709"],
+    expected: str,
+    backend: Backend,
+    tmp_path: Path,
+    media_tools: tuple[str, str],
+) -> None:
+    destination = tmp_path / "matrix.mp4"
+    compose.Video(
+        resolution=(64, 64),
+        fps=10,
+        backend=backend,
+        composition=compose.Composition(
+            duration=0.2, children=(compose.Rectangle(size=(64, 64), fill="#c050a0"),)
+        ),
+    ).render(destination, options=fframes.RenderOptions(color_matrix=matrix))
+    ffprobe, ffmpeg = media_tools
+    result = subprocess.run(  # noqa: S603 -- Fixed probe executable, no shell.
+        [ffprobe, "-v", "error", "-show_streams", "-count_frames", "-of", "json", str(destination)],
+        check=True,
+        capture_output=True,
+    )
+    picture = Probe.model_validate_json(result.stdout).streams[0]
+    assert picture.color_space == expected
+    assert picture.color_range == "tv"
+    assert picture.pix_fmt == "yuv420p"
+    decoded = subprocess.run(  # noqa: S603 -- Verify decoded colors, not only the metadata.
+        [
+            ffmpeg,
+            "-v",
+            "error",
+            "-i",
+            str(destination),
+            "-frames:v",
+            "1",
+            "-pix_fmt",
+            "rgb24",
+            "-f",
+            "rawvideo",
+            "pipe:1",
+        ],
+        check=True,
+        capture_output=True,
+    ).stdout
+    assert len(decoded) == 64 * 64 * 3
+    assert tuple(mean(decoded[c::3]) for c in range(3)) == pytest.approx((192, 80, 160), abs=5)

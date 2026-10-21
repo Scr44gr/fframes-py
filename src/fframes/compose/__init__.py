@@ -23,8 +23,9 @@ from fframes.compose.components import (
     VectorPath,
 )
 from fframes.compose.filters import Blur, ColorMatrix, Composite, Filter, Flood, Merge, Offset
-from fframes.compose.media import Audio, Image, VideoClip
+from fframes.compose.media import Audio, Image, LottieLayer, VideoClip
 from fframes.compose.paint import LinearGradient, Pattern, RadialGradient, Stop
+from fframes.compose.three_d import Scene3D
 from fframes.compose.video import CompiledVideo, RenderOptions, Video
 from fframes.media import ExifField, ImageInfo, VideoInfo, probe_image, probe_video
 from fframes.models import CubicBezier, Spring
@@ -60,6 +61,7 @@ __all__ = [
     "ImageInfo",
     "LineTo",
     "LinearGradient",
+    "LottieLayer",
     "Mask",
     "Merge",
     "MoveTo",
@@ -70,6 +72,7 @@ __all__ = [
     "Rectangle",
     "RenderOptions",
     "Samples",
+    "Scene3D",
     "ShaderLayer",
     "Spectrum",
     "Spring",

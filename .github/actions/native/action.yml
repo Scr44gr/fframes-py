@@ -1,5 +1,5 @@
 name: Native dependencies
-description: Install the native dependencies required by fframes 1.2
+description: Install the native dependencies required by fframes
 inputs:
   build:
     description: Install build dependencies; false installs only FFmpeg inspection tools

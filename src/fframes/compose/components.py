@@ -119,6 +119,7 @@ class Component(Item, ABC):
 class Visual(Item):
     """Placement and transforms shared by graphics and visual groups."""
 
+    id: Annotated[str, Field(pattern=r"^[A-Za-z_][A-Za-z0-9_]*$")] | None = None
     position: Position = Position()
     opacity: Scalar = 1.0
     z_index: Scalar = 0.0

@@ -9,9 +9,11 @@ from pydantic import ConfigDict, TypeAdapter, validate_call
 from fframes import _native
 from fframes._native import SvgVideo
 from fframes.audio import AudioTrack
+from fframes.lottie import LottieBinding
 from fframes.media import ImageBinding, VideoBinding
 from fframes.models import Frames, Index, Model, OutputPath, RenderOptions, VideoConfig
 from fframes.shaders import ShaderBinding
+from fframes.three_d import SceneBinding
 
 _bindings = TypeAdapter(tuple[ShaderBinding, ...])
 
@@ -22,6 +24,8 @@ class MediaBindings(Model):
     audio: tuple[AudioTrack, ...] = ()
     images: tuple[ImageBinding, ...] = ()
     clips: tuple[VideoBinding, ...] = ()
+    scenes: tuple[SceneBinding, ...] = ()
+    lotties: tuple[LottieBinding, ...] = ()
 
 
 @validate_call(config=ConfigDict(strict=True))
@@ -33,13 +37,17 @@ def compile_video(
     audio: tuple[AudioTrack, ...] = (),
     images: tuple[ImageBinding, ...] = (),
     clips: tuple[VideoBinding, ...] = (),
+    scenes: tuple[SceneBinding, ...] = (),
+    lotties: tuple[LottieBinding, ...] = (),
 ) -> SvgVideo:
     """Transfer a validated SVG sequence to an immutable native video."""
     return _native.compile_video(
         config.model_dump_json(),
         frames,
         _bindings.dump_json(shaders).decode(),
-        MediaBindings(audio=audio, images=images, clips=clips).model_dump_json(),
+        MediaBindings(
+            audio=audio, images=images, clips=clips, scenes=scenes, lotties=lotties
+        ).model_dump_json(),
     )
 
 
@@ -52,7 +60,12 @@ def render(video: SvgVideo, path: OutputPath, options: RenderOptions | None = No
     # Share the destination filesystem so the final native rename is atomic.
     with TemporaryDirectory(prefix="fframes-py-", dir=destination.absolute().parent) as directory:
         video.render(
-            destination, Path(directory), options.encoder, options.concurrency, options.bitrate
+            destination,
+            Path(directory),
+            options.encoder,
+            options.concurrency,
+            options.bitrate,
+            options.color_matrix,
         )
     return destination
 
@@ -66,6 +79,8 @@ class Video(Model):
     audio: tuple[AudioTrack, ...] = ()
     images: tuple[ImageBinding, ...] = ()
     clips: tuple[VideoBinding, ...] = ()
+    scenes: tuple[SceneBinding, ...] = ()
+    lotties: tuple[LottieBinding, ...] = ()
 
     def __len__(self) -> int:
         """Return the number of frames."""
@@ -86,6 +101,8 @@ class Video(Model):
             audio=self.audio,
             images=self.images,
             clips=self.clips,
+            scenes=self.scenes,
+            lotties=self.lotties,
         )
 
     @validate_call(config=ConfigDict(strict=True))

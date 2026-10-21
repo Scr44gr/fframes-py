@@ -5,6 +5,17 @@ output filename alone does not prove a rendered scene is correct.
 
 ## Scene delivery
 
+Use `compiled.native` (compose) or `video.native` (SVG) with:
+
+- `fframes.inspect_frames(native, (0, 15, 30))`: named element bounds and diagnostics.
+- `fframes.save_preview(native, "detail.png", frame=15, crop=(0, 0, 320, 180), labels=True)`.
+- `fframes.contact_sheet(native, "sheet.png", frames=(0, 15, 30), onion=False)`.
+- `fframes.detect_pops(native)`: abrupt local changes to review, not automatic failures.
+
+Give visuals unique `id` values. Inspection examines SVG structure, not shader
+execution or 3D interiors; inspect rendered pixels too. Crops and pop regions use
+the requested preview resolution. Pop frame numbers remain original video indices.
+
 - Compile once and inspect PNGs at the first frame, a meaningful middle frame,
   and around changed clip boundaries. Confirm ordering, alignment, text and alpha.
 - For audio changes, inspect the native mix at silence/overlap/fade boundaries

@@ -27,6 +27,19 @@ pub(crate) struct Audio {
     pub fade_in: f32,
     pub fade_out: f32,
     pub r#loop: bool,
+    #[serde(default = "normal_rate")]
+    pub rate: f32,
+    #[serde(default)]
+    pub effects: Vec<crate::effects::Effect>,
+    #[serde(default)]
+    pub fade_curve: crate::effects::FadeCurve,
+    #[serde(default)]
+    pub voice: bool,
+    pub duck: Option<crate::effects::Ducking>,
+}
+
+fn normal_rate() -> f32 {
+    1.
 }
 
 #[derive(Deserialize)]
@@ -110,6 +123,8 @@ pub(crate) fn prepare(sounds: Vec<Sound>, duration: f64) -> PyResult<Soundtrack>
             || audio.fade_in < 0.
             || !audio.fade_out.is_finite()
             || audio.fade_out < 0.
+            || !audio.rate.is_finite()
+            || !(0.05..=20.).contains(&audio.rate)
         {
             return Err(PyValueError::new_err(
                 "invalid audio interval or mix settings",
@@ -138,10 +153,11 @@ pub(crate) fn prepare(sounds: Vec<Sound>, duration: f64) -> PyResult<Soundtrack>
         let count = if audio.r#loop {
             end - start
         } else {
-            (end - start).min(remaining)
+            (end - start).min((remaining as f64 / f64::from(audio.rate)).ceil() as usize)
         };
-        let key = if offset > 0 || (audio.r#loop && count > remaining) {
-            let key = format!("{file}\0{offset}:{count}");
+        let source_count = (count as f64 * f64::from(audio.rate)).ceil() as usize;
+        let key = if offset > 0 || (audio.r#loop && source_count > remaining) {
+            let key = format!("{file}\0{offset}:{source_count}");
             if !media.audio.contains_key(&key) {
                 // Upstream has no loop source: materialize just the audible interval
                 // once, and share it across identical occurrences. Fades stay global.
@@ -151,7 +167,11 @@ pub(crate) fn prepare(sounds: Vec<Sound>, duration: f64) -> PyResult<Soundtrack>
                             .iter()
                             .copied()
                             .cycle()
-                            .take(count)
+                            .take(if audio.r#loop {
+                                source_count
+                            } else {
+                                source_count.min(remaining)
+                            })
                             .collect(),
                     )
                 };
@@ -177,6 +197,15 @@ pub(crate) fn prepare(sounds: Vec<Sound>, duration: f64) -> PyResult<Soundtrack>
                 pan: audio.pan,
                 fade_in: audio.fade_in,
                 fade_out: audio.fade_out,
+                rate: audio.rate,
+                effects: audio
+                    .effects
+                    .into_iter()
+                    .map(crate::effects::Effect::native)
+                    .collect(),
+                fade_curve: audio.fade_curve.native(),
+                voice: audio.voice,
+                duck: audio.duck.map(crate::effects::Ducking::native),
                 ..Default::default()
             },
         });
@@ -191,7 +220,7 @@ pub(crate) fn prepare(sounds: Vec<Sound>, duration: f64) -> PyResult<Soundtrack>
                 .map(|track| AudioTrack {
                     file: &track.file,
                     range: AudioTimestamp::Frame(track.start)..AudioTimestamp::Frame(track.end),
-                    mix: track.mix,
+                    mix: track.mix.clone(),
                 })
                 .collect(),
         )

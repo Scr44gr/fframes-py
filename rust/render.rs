@@ -33,6 +33,14 @@ pub(crate) struct Resources<'a> {
 pub(crate) struct FrameCache {
     pub trees: usvgr::Cache,
     pub decoders: crate::clips::Decoders,
+    pub textures: std::collections::HashMap<usize, Arc<fframes::three_d::Texture>>,
+}
+
+pub(crate) struct Encoding<'a> {
+    pub encoder: &'a str,
+    pub concurrency: usize,
+    pub bitrate: i64,
+    pub color_matrix: fframes::YuvMatrix,
 }
 
 impl<'a> Resources<'a> {
@@ -57,13 +65,18 @@ impl<'a> Resources<'a> {
 
     pub fn render(
         &self,
-        tree: impl Fn(usize, &mut FrameCache) -> PyResult<usvgr::Tree> + Sync,
+        tree: impl Fn(usize, &mut FrameCache, &crate::backend::Rasterizer<'_>) -> PyResult<usvgr::Tree>
+        + Sync,
         path: PathBuf,
         directory: PathBuf,
-        encoder: &str,
-        concurrency: usize,
-        bitrate: i64,
+        encoding: Encoding<'_>,
     ) -> PyResult<()> {
+        let Encoding {
+            encoder,
+            concurrency,
+            bitrate,
+            color_matrix,
+        } = encoding;
         if bitrate <= 0 || bitrate > i64::from(i32::MAX) {
             return Err(PyValueError::new_err("invalid bitrate"));
         }
@@ -94,6 +107,7 @@ impl<'a> Resources<'a> {
             video_encoder_options: EncoderOptions {
                 preferred_encoder: Some(encoder),
                 bitrate: Some(bitrate),
+                color_matrix,
                 ..Default::default()
             },
             audio_encoder_options: EncoderOptions {
@@ -132,13 +146,14 @@ impl<'a> Resources<'a> {
         .with_encoder_input(input);
         let failed = AtomicBool::new(false);
         let device = crate::backend::Device::new(self.backend, self.width, self.height)?;
+        let rasterizer = device.rasterizer();
         // Adapt the upstream scheduler to typed trees. Its Video trait only accepts
         // SVG strings unless a global feature changes the semantics of the raw API.
         std::thread::scope(|scope| -> PyResult<()> {
             let workers: Vec<_> = (0..scheduler.workers())
                 .map(|worker| {
-                    let (tree, writer, scheduler, failed, device) =
-                        (&tree, &writer, &scheduler, &failed, &device);
+                    let (tree, writer, scheduler, failed, device, rasterizer) =
+                        (&tree, &writer, &scheduler, &failed, &device, &rasterizer);
                     scope.spawn(move || -> PyResult<()> {
                         let result = (|| {
                             let mut cache = FrameCache::default();
@@ -150,7 +165,7 @@ impl<'a> Resources<'a> {
                                 }
                                 let frame = renderer
                                     .render_tree(
-                                        &tree(claim.frame, &mut cache)?,
+                                        &tree(claim.frame, &mut cache, rasterizer)?,
                                         Color::TRANSPARENT,
                                     )
                                     .map_err(render_error)?;

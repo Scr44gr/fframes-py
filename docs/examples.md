@@ -7,6 +7,20 @@ Each port has an SVG version in `examples/native` and a component version in
 `examples/compose`. Shared scene data and helpers live in `examples/shared/`,
 including the intro choreography in `examples/shared/intro/`.
 
+The 1.3.0 integration also has a compact nested-texture study inspired by
+`svg-in-3d`: a 3D cube appears inside a 2D display, used as a 3D monitor's texture.
+Both versions share the scene data and need no downloaded assets:
+
+```sh
+uv run --no-sync python -m examples.native.three_d
+uv run --no-sync python -m examples.compose.three_d
+```
+
+It exports three seconds at 640×360, 30 fps, plus a contact sheet. `build()` accepts
+`RenderSettings(device="gpu")` for GPU rendering on a supported host. The default
+uses CPU. See the [1.3.0 audit](upstream.md) for the distinction between new engine
+bindings and full upstream film ports.
+
 ## Run
 
 From a [configured checkout](development.md), run the standalone examples
@@ -125,7 +139,7 @@ the source wall actually draws 3,334 text nodes.
 
 ## Port status
 
-All 15 upstream examples now have both implementations. This covers their
+All 15 examples at the recorded 1.2.0 asset revision have both implementations. This covers their
 rendered compositions; it does not assert parity with every upstream engine API.
 
 | Upstream example | Implementations |
