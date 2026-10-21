@@ -73,9 +73,9 @@ from fframes import compose, three_d as d
 
 screen = compose.Video(
     resolution=(256, 256),
-    composition=compose.Composition(duration=2, children=(
-        compose.Circle(radius=80, fill="#3288ff"),
-    )),
+    composition=compose.Composition(
+        duration=2, children=(compose.Circle(radius=80, fill="#3288ff"),)
+    ),
 ).texture()
 panel = d.Mesh(geometry=d.Plane(size=(2, 2)), material=d.Material(shading="unlit", map=screen))
 ```

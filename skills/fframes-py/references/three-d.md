@@ -10,16 +10,25 @@ from fframes import Tween, compose, three_d as d
 
 renderer = d.Renderer(
     size=(640, 360),
-    scene=d.Scene(environment=d.Studio(), nodes=(
-        d.Mesh(geometry=d.Box(radius=0.08),
-               material=d.Material(color="#3288ff", metalness=0.6, roughness=0.25),
-               rotation=(0.2, Tween(from_value=0, to_value=3.14, duration=2), 0)),
-    )),
+    scene=d.Scene(
+        environment=d.Studio(),
+        nodes=(
+            d.Mesh(
+                geometry=d.Box(radius=0.08),
+                material=d.Material(color="#3288ff", metalness=0.6, roughness=0.25),
+                rotation=(0.2, Tween(from_value=0, to_value=3.14, duration=2), 0),
+            ),
+        ),
+    ),
     camera=d.Camera(orbit=d.Orbit(distance=4, elevation=15)),
 )
-video = compose.Video(resolution=(640, 360), composition=compose.Composition(
-    duration=2, children=(compose.Scene3D(renderer=renderer),),
-))
+video = compose.Video(
+    resolution=(640, 360),
+    composition=compose.Composition(
+        duration=2,
+        children=(compose.Scene3D(renderer=renderer),),
+    ),
+)
 ```
 
 ## Coordinates and motion

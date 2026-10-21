@@ -74,7 +74,8 @@ from fframes.compose import Audio
 from fframes.effects import Compressor, Highpass, NormalizeLufs
 
 voice = Audio(
-    source="voice.wav", voice=True,
+    source="voice.wav",
+    voice=True,
     effects=(Highpass(hz=80), Compressor(threshold_db=-18), NormalizeLufs(lufs=-16)),
 )
 ```

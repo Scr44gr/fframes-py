@@ -10,12 +10,16 @@ frame callbacks.
 import fframes
 from fframes import compose
 
-video = compose.Video(
-    resolution=(640, 360),
-    composition=compose.Composition(duration=2, children=(
-        compose.Rectangle(id="panel", size=(200, 120), fill="#3288ff"),
-    )),
-).compile().native
+video = (
+    compose.Video(
+        resolution=(640, 360),
+        composition=compose.Composition(
+            duration=2, children=(compose.Rectangle(id="panel", size=(200, 120), fill="#3288ff"),)
+        ),
+    )
+    .compile()
+    .native
+)
 
 reports = fframes.inspect_frames(video, (0, 15, 59))
 fframes.save_preview(video, "detail.png", frame=15, crop=(0, 0, 320, 180), labels=True)

@@ -13,12 +13,14 @@ scene = d.Renderer(
     size=(640, 360),
     scene=d.Scene(
         environment=d.Studio(),
-        nodes=(d.Mesh(
-            name="cube",
-            geometry=d.Box(radius=0.08),
-            material=d.Material(color="#3288ff", metalness=0.6, roughness=0.25),
-            rotation=(0.2, Tween(from_value=0, to_value=tau, duration=3), 0),
-        ),),
+        nodes=(
+            d.Mesh(
+                name="cube",
+                geometry=d.Box(radius=0.08),
+                material=d.Material(color="#3288ff", metalness=0.6, roughness=0.25),
+                rotation=(0.2, Tween(from_value=0, to_value=tau, duration=3), 0),
+            ),
+        ),
     ),
     camera=d.Camera(orbit=d.Orbit(distance=4, elevation=15)),
 )
@@ -36,8 +38,10 @@ import fframes
 
 video = fframes.Video(
     config=fframes.VideoConfig(width=640, height=360, fps=30),
-    frames=('<svg width="640" height="360">'
-            '<image href="scene:cube" width="640" height="360"/></svg>',) * 90,
+    frames=(
+        '<svg width="640" height="360"><image href="scene:cube" width="640" height="360"/></svg>',
+    )
+    * 90,
     scenes=(d.SceneBinding(name="cube", renderer=scene),),
 )
 ```

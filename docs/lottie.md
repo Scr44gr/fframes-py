@@ -9,9 +9,9 @@ animation = Lottie(source="animation.json", loop=True)
 print(animation.info)  # native dimensions and duration in seconds
 video = compose.Video(
     resolution=(640, 360),
-    composition=compose.Composition(duration=4, children=(
-        compose.LottieLayer(animation=animation, size=(320, 320)).at(0.5),
-    )),
+    composition=compose.Composition(
+        duration=4, children=(compose.LottieLayer(animation=animation, size=(320, 320)).at(0.5),)
+    ),
 )
 ```
 
