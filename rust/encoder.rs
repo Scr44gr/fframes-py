@@ -39,7 +39,7 @@ pub(crate) fn available_encoders() -> Vec<String> {
 }
 
 /// Check container compatibility and codec initialization before opening output files.
-pub(crate) fn check_output(path: &Path, info: &VideoEncoderInfo<'_>) -> PyResult<()> {
+pub(crate) fn check_output(path: &Path, info: &VideoEncoderInfo<'_>) -> PyResult<EncoderInput> {
     let filename = CString::new(path.to_string_lossy().as_bytes())
         .map_err(|error| PyRuntimeError::new_err(error.to_string()))?;
     #[expect(
@@ -62,8 +62,19 @@ pub(crate) fn check_output(path: &Path, info: &VideoEncoderInfo<'_>) -> PyResult
     }
     // Probe before upstream opens any segment files: failing to open a codec during
     // Encoder construction can leak its AVIOContext on error in fframes 1.2.0.
-    let input = EncoderInput::requested(info)
-        .map_err(|error| PyRuntimeError::new_err(error.to_string()))?;
+    // Hardware encoders such as QSV require semiplanar NV12 instead of planar
+    // YUV420P. Both carry 8-bit 4:2:0 pixels; do not fall back to RGB or 10-bit.
+    let input = if info.supports(ffi::AVPixelFormat::AV_PIX_FMT_YUV420P) {
+        EncoderInput::software(ffi::AVPixelFormat::AV_PIX_FMT_YUV420P)
+    } else if info.supports(ffi::AVPixelFormat::AV_PIX_FMT_NV12) {
+        EncoderInput::software(ffi::AVPixelFormat::AV_PIX_FMT_NV12)
+    } else {
+        return Err(PyRuntimeError::new_err(format!(
+            "encoder {:?} accepts neither YUV420P nor NV12; 8-bit 4:2:0 input is required",
+            info.name()
+        )));
+    };
     info.try_open(&input)
-        .map_err(|error| PyRuntimeError::new_err(error.to_string()))
+        .map_err(|error| PyRuntimeError::new_err(error.to_string()))?;
+    Ok(input)
 }

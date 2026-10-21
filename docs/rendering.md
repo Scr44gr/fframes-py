@@ -116,7 +116,9 @@ Hardware entries may still need a compatible device and driver. Missing encoders
 raise an error; rendering never silently substitutes a different codec. Installing
 an unrelated `ffmpeg` CLI does not change the extension's encoders.
 
-Video encoding requires even width/height and uses YUV420P without alpha.
+Video encoding requires even width/height and 8-bit 4:2:0 without alpha.
+The encoder receives YUV420P, or NV12 when it requires semiplanar input (for
+example, Intel Quick Sync). H.264 output still reports `yuv420p` in ffprobe.
 OpenH264 also requires at least 16 pixels on each axis. Put an
 opaque background as the first layer to choose the video's background color.
 Temporary segments are created beside the destination and cleaned up on exit;

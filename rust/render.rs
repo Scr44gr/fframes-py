@@ -9,9 +9,8 @@ use std::{
 };
 
 use fframes::{
-    AudioTimelineSamples, Color, EncoderInput, EncoderOptions, FFramesContext, FFramesMode,
-    FrameScheduler, MediaProvider, RenderOptions, ResolvedRenderingTimeline, SegmentWriter,
-    TimeBase, VideoSize,
+    AudioTimelineSamples, Color, EncoderOptions, FFramesContext, FFramesMode, FrameScheduler,
+    MediaProvider, RenderOptions, ResolvedRenderingTimeline, SegmentWriter, TimeBase, VideoSize,
     fframes_logger::{FFramesLogger, SilentLogger},
     usvgr,
 };
@@ -116,9 +115,8 @@ impl<'a> Resources<'a> {
                  use fframes.available_encoders() to inspect the linked library"
             )));
         }
-        crate::encoder::check_output(&path, &info)?;
+        let input = crate::encoder::check_output(&path, &info)?;
         let logger: Arc<dyn FFramesLogger> = Arc::new(SilentLogger);
-        let input = EncoderInput::requested(&info).map_err(render_error)?;
         let scheduler = FrameScheduler::new(
             self.timeline.duration_in_frames,
             concurrency,

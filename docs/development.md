@@ -76,6 +76,9 @@ libraries, including FFmpeg DLLs on Windows. Test jobs install only FFmpeg CLI
 inspection tools, without setting `FFMPEG_DIR` or build-library search paths.
 `ffprobe` checks the actual output codec/pixel format and `ffmpeg` decodes the
 whole video; both executables must be on `PATH` when running pytest locally.
+Set `FFRAMES_TEST_ENCODER` to an available H.264 hardware encoder (for example,
+`h264_qsv`) to also verify its output through both APIs. It requires a working
+device and driver; an explicitly selected encoder failing is a test failure.
 
 Connect the repository in Codecov to enable the coverage badge. CI uploads the
 Linux/Python 3.14 report using [OIDC](https://github.com/codecov/codecov-action#using-oidc)

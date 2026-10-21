@@ -1,6 +1,8 @@
+import os
 import shutil
 import subprocess
 from pathlib import Path
+from statistics import mean
 from typing import Literal
 
 import pytest
@@ -66,7 +68,21 @@ def test_openh264_rejects_small_images_without_replacing_output(
 
 
 @pytest.mark.parametrize("api", ["native", "compose"])
-@pytest.mark.parametrize("encoder", [None, "mpeg4"])
+@pytest.mark.parametrize(
+    "encoder",
+    [
+        None,
+        "mpeg4",
+        pytest.param(
+            os.environ.get("FFRAMES_TEST_ENCODER"),
+            marks=pytest.mark.skipif(
+                "FFRAMES_TEST_ENCODER" not in os.environ,
+                reason="Set FFRAMES_TEST_ENCODER to test an installed hardware encoder",
+            ),
+            id="hardware",
+        ),
+    ],
+)
 def test_mp4_codecs_and_decoding(
     api: str, encoder: str | None, tmp_path: Path, media_tools: tuple[str, str]
 ) -> None:
@@ -114,7 +130,7 @@ def test_mp4_codecs_and_decoding(
     streams = Probe.model_validate_json(result.stdout).streams
     assert len(streams) == 2
     picture = next(stream for stream in streams if stream.codec_type == "video")
-    assert picture.codec_name == ("h264" if encoder is None else "mpeg4")
+    assert picture.codec_name == ("mpeg4" if encoder == "mpeg4" else "h264")
     if encoder is None:
         assert picture.profile == "Constrained Baseline"
         assert picture.codec_tag_string == "avc1"
@@ -127,8 +143,36 @@ def test_mp4_codecs_and_decoding(
     assert sound.codec_tag_string == "mp4a"
     encoded = destination.read_bytes()
     assert encoded.index(b"moov") < encoded.index(b"mdat")  # MP4 fast start.
-    subprocess.run(  # noqa: S603 -- Decode the entire test output with the resolved tool.
-        [ffmpeg, "-v", "error", "-xerror", "-i", str(destination), "-f", "null", "-"],
+    decoded = subprocess.run(  # noqa: S603 -- Check color planes and ordering across segments.
+        [
+            ffmpeg,
+            "-v",
+            "error",
+            "-xerror",
+            "-i",
+            str(destination),
+            "-an",
+            "-vf",
+            r"select=eq(n\,0)+eq(n\,59),format=rgb24",
+            "-fps_mode",
+            "passthrough",
+            "-f",
+            "rawvideo",
+            "-pix_fmt",
+            "rgb24",
+            "-",
+        ],
         check=True,
         capture_output=True,
     )
+    frame_bytes = 96 * 64 * 3
+    assert len(decoded.stdout) == frame_bytes * 2
+    # Lossy encoders can shift flat colors; detect swapped or missing chroma planes.
+    colors = tuple(
+        tuple(
+            mean(decoded.stdout[start + channel : start + frame_bytes : 3]) for channel in range(3)
+        )
+        for start in (0, frame_bytes)
+    )
+    assert colors[0] == pytest.approx((255, 0, 0), abs=16)
+    assert colors[1] == pytest.approx((0, 0, 255), abs=16)
