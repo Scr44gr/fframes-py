@@ -2,6 +2,8 @@
 
 Choose checks that address the changed behavior. A successful constructor or an
 output filename alone does not prove a rendered scene is correct.
+This package has no native live-preview window or named scene/time selectors.
+Use frame indices for inspection and short frame-range exports for motion review.
 
 ## Scene delivery
 

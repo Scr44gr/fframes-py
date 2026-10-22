@@ -440,7 +440,7 @@ class Scene(Model):
 
 
 class Focus(Model):
-    """Depth of field: focus distance in meters, far-background blur in pixels at 1080p."""
+    """Depth of field: distance in world units, far-background blur in pixels at 1080p."""
 
     distance: PositiveValue | None = None
     point: Vector | None = None

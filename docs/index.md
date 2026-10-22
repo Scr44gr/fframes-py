@@ -17,7 +17,7 @@ the namespace you intend to use. `fframes._native` and `compose.compiler` are in
 
 | Topic | What it answers |
 | --- | --- |
-| [Installation](installation.md) | Native dependencies, uv setup, using a local checkout or wheel. |
+| [Installation](installation.md) | Install the package and check runtime requirements. |
 | [Compose](compose.md) | First video and the model validation rules. |
 | [Layers and timing](layers.md) | Drawing order, local coordinates, clips and tweens. |
 | [Graphics](graphics.md) | Text, shapes, paths, images and paint. |
@@ -34,7 +34,7 @@ the namespace you intend to use. `fframes._native` and `compose.compiler` are in
 | [Codec licenses](codecs.md) | Third-party licenses and redistribution conditions. |
 | [Low level](lowlevel.md) | SVG rendering and scalar animation signatures. |
 | [Upstream examples](examples.md) | Paired ports, asset cache and feature parity status. |
-| [Upstream audit](upstream.md) | Recorded engine version, integrations and remaining upstream limits. |
+| [Upstream audit](upstream.md) | Engine version, missing Python interfaces and platform verification. |
 | [Development](development.md) | Rebuild, check and package the bindings. |
 | [Releases](releases.md) | Versioning, PyPI setup and publishing tested distributions. |
 

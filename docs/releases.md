@@ -5,7 +5,7 @@
 ## Versioning
 
 The wrapper has its own API and version, independent of the engine's.
-The current engine is **fframes 1.3.0**; see the [compatibility record](upstream.md).
+See the [compatibility record](upstream.md) for the pinned engine.
 `Cargo.toml` owns both versions; Maturin reads the package version from it.
 
 Before 1.0, use patch releases for compatible fixes and minor releases for API

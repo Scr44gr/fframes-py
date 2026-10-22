@@ -40,6 +40,8 @@ Compilation decodes sources in full; loops materialize the audible interval.
 Budget memory accordingly. There is no audio-generation API: generate or obtain
 the requested sound as a file first, then compose it. Audio codec selection is
 currently native-default behavior rather than a Python option.
+Master gain/limiter configuration and LUFS/true-peak reports are not exposed;
+`NormalizeLufs` is a per-track processor, not an analysis report.
 
 ## Compile and export
 
@@ -80,3 +82,9 @@ per axis for OpenH264) and uses YUV420P,
 which loses alpha; set an opaque first layer when a background is needed. PNG/RGBA
 retain alpha. Rendering cleans temporary segments and replaces the destination
 only on success. Compile again if assets or component inputs change.
+
+For a short review export, pass `RenderOptions(frame_range=(start, end))`.
+These are original frame indices with `0 <= start < end <= len(compiled)`;
+end is exclusive. Original animation/media clocks are preserved; the output
+starts at zero with matching trimmed audio. No public progress/cancellation,
+render-time fps/scale override or arbitrary FFmpeg codec parameters are exposed.

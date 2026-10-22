@@ -41,11 +41,17 @@ reproduces upstream 1.2.0's nonstandard coefficients for existing scenes.
 from pathlib import Path
 
 from fframes import Subtitles
-from fframes.compose import Text
+from fframes.compose import Composition, Position, Text
 
 track = Subtitles.parse(Path("captions.vtt").read_text(encoding="utf-8"))
 items = tuple(
-    Text(content=cue.text).at(cue.start, duration=cue.end - cue.start)
+    Composition(
+        children=tuple(
+            Text(content=line, position=Position(y=index * 40))
+            for index, line in enumerate(cue.text.splitlines())
+            if line
+        ),
+    ).at(cue.start, duration=cue.end - cue.start)
     for cue in track.cues
     if cue.end > cue.start
 )
@@ -54,4 +60,5 @@ items = tuple(
 Cues preserve source order, overlaps, multiline text, identifiers and layout
 settings. Header, styles, notes and regions remain available as data. Parsing
 does not execute CSS or translate cue markup into styled text; supply your own
-layout and handling of overlapping cues. Use `TextLayout.wrap` for measured lines.
+layout and handling of overlapping cues. `Text` accepts one line, so split cues
+as above; use `TextLayout.wrap` when line lengths also need to fit a given width.

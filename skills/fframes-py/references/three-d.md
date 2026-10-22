@@ -55,8 +55,7 @@ Use `text_shapes(font, text)` and glyph origins for independently animated lette
 PBR needs light: start with `Studio`, then add `Light(light=DirectionalLight(...))`.
 Directional lights support `Shadow`; point/spot lights do not cast shadows.
 Hex colors are sRGB; RGB tuples are linear HDR intensities. Use `opacity` for alpha.
-Prefer explicit lighting, roughness and camera framing over adding blur to hide
-unfinished surfaces. `Bloom` needs bright highlights; `Focus(point=..., blur=...)`
+`Bloom` needs bright highlights; `Focus(point=..., blur=...)`
 can track a subject. A `Reflector` needs participating materials' `reflection`.
 
 Use `Instances` for rigid copies and `Particles` for emissive sprites. Instancing
