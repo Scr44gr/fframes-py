@@ -120,7 +120,9 @@ def test_export_overrides_deliver_requested_streams_and_preserve_time(
     for index in (0, 7, 14):
         source_frame = 12 + index * 24 / 15
         red = (int(source_frame) if api == "native" else source_frame) * 4
-        assert tuple(pictures[index, 8, 8]) == pytest.approx((red, 0, 0), abs=4)
+        assert tuple(int(channel) for channel in pictures[index, 8, 8]) == pytest.approx(
+            (red, 0, 0), abs=4
+        )
         assert pictures[index, 28, 28].min() >= 245
     audio = subprocess.run(  # noqa: S603 -- Decode actual encoded samples to verify gain and playback speed.
         [ffmpeg, "-v", "error", "-i", str(path), "-vn", "-f", "f32le", "-acodec", "pcm_f32le", "-"],
