@@ -90,3 +90,38 @@ sharpness and memory independently of the outer video resolution.
 `EnvironmentMap` accepts an HDR/image file or `EnvironmentPixels`: linear RGB
 panorama values, exactly one per texel. Upstream prefilters environment panoramas
 and reduces widths above 1024; ordinary material textures use mipmaps.
+
+## Material and topology changes
+
+`Model3D(materials=(MaterialOverride(node="Body", material=...),))` replaces a
+named imported mesh's complete material. Animated material values keep the
+scene clock. Missing, repeated or non-mesh targets fail compilation; model
+animation, skins and morphs remain active.
+
+Use `SceneFrames` when a change cannot be expressed as an animated property:
+
+```python
+from fframes import three_d as d
+
+states = d.SceneFrames(
+    fps=2,
+    frames=(
+        d.Scene(nodes=(d.Mesh(geometry=d.Box()),)),
+        d.Scene(nodes=(d.Mesh(geometry=d.Sphere()),)),
+        d.Scene(),
+    ),
+)
+renderer = d.Renderer(scene=states, size=(320, 180))
+```
+
+States may replace topology, material, hierarchy, lights or environment. They are
+compiled once, selected on their own fps, and hold the final state after EOF.
+Animation inside a state uses the renderer's original clock, not time since the
+state became active. Named-node queries use the selected state; querying a node
+absent at that time raises an error.
+
+Repeated geometry and imported models share native allocations. Full states
+still consume memory; use `Tween`, samples or animation clips for continuous
+motion. This batch API supports random-access rendering and motion blur without
+mutating public models or calling Python per frame. Bind it through `SceneBinding`
+or `compose.Scene3D` as usual.

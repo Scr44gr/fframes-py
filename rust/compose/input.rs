@@ -14,6 +14,8 @@ pub(super) struct Plan {
     pub resolution: [u32; 2],
     pub fps: usize,
     pub frames: usize,
+    #[serde(default)]
+    pub chapters: Vec<crate::timing::SceneRange>,
     pub layers: Vec<Layer>,
     pub sounds: Vec<Sound>,
     pub fonts: Vec<PathBuf>,
@@ -26,6 +28,25 @@ pub(super) struct Layer {
     pub start: f64,
     pub end: f64,
     pub graphic: Graphic,
+    pub mask_index: Option<usize>,
+    #[serde(default)]
+    pub mask_mode: MaskMode,
+    #[serde(default = "mask_region")]
+    pub mask_region: [f64; 4],
+    #[serde(default)]
+    pub mask_only: bool,
+}
+
+fn mask_region() -> [f64; 4] {
+    [-0.1, -0.1, 1.2, 1.2]
+}
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub(super) enum MaskMode {
+    #[default]
+    Alpha,
+    Luminance,
 }
 
 #[derive(Deserialize)]
@@ -174,7 +195,7 @@ pub(super) enum Shape {
         renderer: Box<crate::three_d::Input>,
     },
     Video {
-        source: PathBuf,
+        source: crate::buffers::Source,
         offset: f64,
         r#loop: bool,
         size: [f64; 2],
@@ -229,7 +250,7 @@ pub(super) enum Shape {
         stroke: Option<Stroke>,
     },
     Image {
-        source: PathBuf,
+        source: crate::buffers::Source,
         size: [f64; 2],
         #[serde(default)]
         fit: Fit,

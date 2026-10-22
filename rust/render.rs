@@ -11,8 +11,7 @@ use std::{
 use fframes::{
     AudioTimelineSamples, Color, EncoderOptions, FFramesContext, FFramesMode, FrameScheduler,
     MediaProvider, RenderOptions, ResolvedRenderingTimeline, SegmentWriter, TimeBase, VideoSize,
-    fframes_logger::{FFramesLogger, SilentLogger},
-    usvgr,
+    fframes_logger::FFramesLogger, usvgr,
 };
 use pyo3::{
     exceptions::{PyRuntimeError, PyValueError},
@@ -36,12 +35,33 @@ pub(crate) struct FrameCache {
     pub textures: std::collections::HashMap<usize, Arc<fframes::three_d::Texture>>,
 }
 
-pub(crate) struct Encoding<'a> {
-    pub encoder: &'a str,
+#[derive(serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct Encoding {
+    pub encoder: String,
     pub concurrency: usize,
     pub bitrate: i64,
-    pub color_matrix: fframes::YuvMatrix,
+    pub color_matrix: String,
     pub frame_range: Option<(usize, usize)>,
+    pub pixel_format: Option<String>,
+    pub bitrate_tolerance: i32,
+    pub qmin: i32,
+    pub qmax: i32,
+    pub qcompress: f32,
+    pub max_qdiff: i32,
+    pub gop_size: i32,
+    pub tag: Option<String>,
+    pub codec_params: Vec<(String, String)>,
+    pub audio: crate::encoder::AudioOptions,
+    pub audio_mix: crate::audio::Mix,
+    pub fps: Option<usize>,
+    pub scale: f64,
+}
+
+impl Encoding {
+    pub fn parse(json: &str) -> PyResult<Self> {
+        serde_json::from_str(json).map_err(|error| PyValueError::new_err(error.to_string()))
+    }
 }
 
 impl<'a> Resources<'a> {
@@ -66,19 +86,61 @@ impl<'a> Resources<'a> {
 
     pub fn render(
         &self,
-        tree: impl Fn(usize, &mut FrameCache, &crate::backend::Rasterizer<'_>) -> PyResult<usvgr::Tree>
+        tree: impl Fn(f64, &mut FrameCache, &crate::backend::Rasterizer<'_>) -> PyResult<usvgr::Tree>
         + Sync,
         path: PathBuf,
         directory: PathBuf,
-        encoding: Encoding<'_>,
+        encoding: &Encoding,
+        control: Option<&crate::progress::RenderControl>,
     ) -> PyResult<()> {
-        let Encoding {
-            encoder,
-            concurrency,
-            bitrate,
-            color_matrix,
-            frame_range,
-        } = encoding;
+        let progress = control.map_or_else(Arc::default, |c| Arc::clone(&c.state));
+        progress.begin()?;
+        let result = (|| {
+            progress.check()?;
+            let staged = directory
+                .join("output")
+                .with_extension(path.extension().unwrap_or_default());
+            self.render_inner(tree, staged.clone(), directory, encoding, &progress)?;
+            progress.check()?;
+            std::fs::rename(staged, path)?;
+            Ok(())
+        })();
+        progress.finish(&result);
+        result
+    }
+
+    fn render_inner(
+        &self,
+        tree: impl Fn(f64, &mut FrameCache, &crate::backend::Rasterizer<'_>) -> PyResult<usvgr::Tree>
+        + Sync,
+        path: PathBuf,
+        directory: PathBuf,
+        encoding: &Encoding,
+        progress: &Arc<crate::progress::Progress>,
+    ) -> PyResult<()> {
+        let encoder = encoding.encoder.as_str();
+        let concurrency = encoding.concurrency;
+        let bitrate = encoding.bitrate;
+        let color_matrix = crate::encoder::color_matrix(&encoding.color_matrix)?;
+        let frame_range = encoding.frame_range;
+        let fps = encoding.fps.unwrap_or(self.fps);
+        if fps == 0
+            || fps > i32::MAX as usize
+            || !encoding.scale.is_finite()
+            || !(f64::MIN_POSITIVE..=64.).contains(&encoding.scale)
+        {
+            return Err(PyValueError::new_err(
+                "fps must be positive and scale must be in (0, 64]",
+            ));
+        }
+        let width = (f64::from(self.width) * encoding.scale).round();
+        let height = (f64::from(self.height) * encoding.scale).round();
+        if width < 1. || height < 1. || width > i32::MAX as f64 || height > i32::MAX as f64 {
+            return Err(PyValueError::new_err(
+                "scaled dimensions exceed the encoder range",
+            ));
+        }
+        let (width, height) = (width as u32, height as u32);
         let (start, end) = frame_range.unwrap_or((0, self.timeline.duration_in_frames));
         if start >= end || end > self.timeline.duration_in_frames {
             return Err(PyValueError::new_err(format!(
@@ -92,12 +154,14 @@ impl<'a> Resources<'a> {
         if concurrency == 0 || encoder.is_empty() || encoder.contains('\0') {
             return Err(PyValueError::new_err("invalid encoder or concurrency"));
         }
-        if !self.width.is_multiple_of(2) || !self.height.is_multiple_of(2) {
+        if encoding.pixel_format.is_none()
+            && (!width.is_multiple_of(2) || !height.is_multiple_of(2))
+        {
             return Err(PyValueError::new_err(
                 "video encoding requires even dimensions",
             ));
         }
-        if encoder == "libopenh264" && (self.width < 16 || self.height < 16) {
+        if encoder == "libopenh264" && (width < 16 || height < 16) {
             return Err(PyValueError::new_err(
                 "libopenh264 requires width and height of at least 16 pixels",
             ));
@@ -107,7 +171,52 @@ impl<'a> Resources<'a> {
             .and_then(|value| value.to_str())
             .filter(|value| matches!(*value, "mp4" | "mov" | "mkv" | "avi" | "webm"))
             .ok_or_else(|| PyValueError::new_err("unsupported output container"))?;
-        // fframes 1.2.0 does not check every AVIO open before dereferencing its context.
+        let video_params: Vec<_> = encoding
+            .codec_params
+            .iter()
+            .map(|(k, v)| (k.as_str(), v.as_str()))
+            .collect();
+        let audio_params: Vec<_> = encoding
+            .audio
+            .codec_params
+            .iter()
+            .map(|(k, v)| (k.as_str(), v.as_str()))
+            .collect();
+        let pixel_format = encoding
+            .pixel_format
+            .as_deref()
+            .map(crate::encoder::pixel_format)
+            .transpose()?;
+        let tag = encoding
+            .tag
+            .as_ref()
+            .map(|tag| -> PyResult<isize> {
+                let bytes: [u8; 4] = tag
+                    .as_bytes()
+                    .try_into()
+                    .map_err(|_| PyValueError::new_err("tag requires four ASCII characters"))?;
+                Ok(u32::from_le_bytes(bytes) as isize)
+            })
+            .transpose()?;
+        if encoding.qmin < 0
+            || encoding.qmax < encoding.qmin
+            || encoding.gop_size < 0
+            || !(0. ..=1.).contains(&encoding.qcompress)
+        {
+            return Err(PyValueError::new_err(
+                "invalid quantizer bounds, qcompress or gop_size",
+            ));
+        }
+        crate::encoder::validate_parameters(encoder, &video_params, false, &path)?;
+        if self.timeline.audio_map.is_some() {
+            crate::encoder::validate_parameters(
+                &encoding.audio.encoder,
+                &audio_params,
+                true,
+                &path,
+            )?;
+        }
+        // Upstream opens native output handles; establish a writable staged path first.
         std::fs::OpenOptions::new()
             .write(true)
             .create_new(true)
@@ -117,19 +226,27 @@ impl<'a> Resources<'a> {
                 preferred_encoder: Some(encoder),
                 bitrate: Some(bitrate),
                 color_matrix,
+                pixel_format: pixel_format
+                    .unwrap_or(fframes::ffmpeg_sys_fframes::AVPixelFormat::AV_PIX_FMT_YUV420P),
+                bitrate_tolerance: encoding.bitrate_tolerance,
+                qmin: encoding.qmin,
+                qmax: encoding.qmax,
+                qcompress: encoding.qcompress,
+                max_qdiff: encoding.max_qdiff,
+                gop_size: encoding.gop_size,
+                tag,
+                codec_params: Some(&video_params),
                 ..Default::default()
             },
-            audio_encoder_options: EncoderOptions {
-                sample_rate: self.sample_rate,
-                ..Default::default()
-            },
+            audio_encoder_options: encoding.audio.native(&audio_params)?,
+            audio_mix: encoding.audio_mix.native()?,
             tmp_files_directory: Some(&directory),
             frame_range: Some(start..end),
             ..Default::default()
         };
         let info = fframes::VideoEncoderInfo::for_output(
             &path,
-            (self.width as i32, self.height as i32, self.fps as i32),
+            (width as i32, height as i32, fps as i32),
             &options.video_encoder_options,
         )
         .map_err(render_error)?;
@@ -139,47 +256,64 @@ impl<'a> Resources<'a> {
                  use fframes.available_encoders() to inspect the linked library"
             )));
         }
-        let input = crate::encoder::check_output(&path, &info)?;
-        let logger: Arc<dyn FFramesLogger> = Arc::new(SilentLogger);
+        let input = crate::encoder::check_output(&path, &info, pixel_format)?;
+        let logger: Arc<dyn FFramesLogger> = progress.clone();
+        let count = ((end - start) as u128 * fps as u128).div_ceil(self.fps as u128) as usize;
+        logger.init_frames_rendering(count).map_err(render_error)?;
         let scheduler = FrameScheduler::new(
-            end - start,
+            count,
             concurrency,
-            options.video_encoder_options.min_segment_frames(self.fps),
+            options.video_encoder_options.min_segment_frames(fps),
         );
         let writer = SegmentWriter::new(
             &directory,
             extension,
-            (self.width as i32, self.height as i32, self.fps as i32),
+            (width as i32, height as i32, fps as i32),
             &options,
             &logger,
         )
         .with_encoder_input(input);
         let failed = AtomicBool::new(false);
-        let device = crate::backend::Device::new(self.backend, self.width, self.height)?;
+        let device = crate::backend::Device::new(self.backend, width, height)?;
         let rasterizer = device.rasterizer();
         // Adapt the upstream scheduler to typed trees. Its Video trait only accepts
         // SVG strings unless a global feature changes the semantics of the raw API.
         std::thread::scope(|scope| -> PyResult<()> {
             let workers: Vec<_> = (0..scheduler.workers())
                 .map(|worker| {
-                    let (tree, writer, scheduler, failed, device, rasterizer) =
-                        (&tree, &writer, &scheduler, &failed, &device, &rasterizer);
+                    let (tree, writer, scheduler, failed, device, rasterizer, logger) = (
+                        &tree,
+                        &writer,
+                        &scheduler,
+                        &failed,
+                        &device,
+                        &rasterizer,
+                        &logger,
+                    );
                     scope.spawn(move || -> PyResult<()> {
                         let result = (|| {
                             let mut cache = FrameCache::default();
                             let mut renderer =
-                                device.encoder(writer.encoder_input(), self.width, self.height)?;
+                                device.encoder(writer.encoder_input(), width, height)?;
                             while let Some(claim) = scheduler.claim(worker) {
                                 if failed.load(Ordering::Relaxed) {
                                     break;
                                 }
+                                progress.check()?;
                                 let frame = renderer
                                     .render_tree(
-                                        &tree(start + claim.frame, &mut cache, rasterizer)?,
+                                        &tree(
+                                            start as f64 / self.fps as f64
+                                                + claim.frame as f64 / fps as f64,
+                                            &mut cache,
+                                            rasterizer,
+                                        )
+                                        .map_err(render_error)?,
                                         Color::TRANSPARENT,
                                     )
                                     .map_err(render_error)?;
                                 writer.submit_frame(claim, frame).map_err(render_error)?;
+                                logger.log_frame(claim.frame, worker);
                             }
                             Ok(())
                         })();
@@ -198,6 +332,8 @@ impl<'a> Resources<'a> {
             Ok(())
         })?;
         let files = writer.finish().map_err(render_error)?;
+        progress.check()?;
+        progress.muxing();
         #[expect(
             unsafe_code,
             reason = "fframes exposes native muxing only through this unsafe entry point"

@@ -3,9 +3,11 @@
 // wgpu's device graph is nested inside the Send/Sync-checked PyO3 scene types.
 #![recursion_limit = "256"]
 
+mod analysis;
 mod animation;
 mod audio;
 mod backend;
+mod buffers;
 mod clips;
 mod color;
 mod compose;
@@ -16,12 +18,14 @@ mod fonts;
 mod images;
 mod inspection;
 mod lottie;
+mod progress;
 mod render;
 mod shader;
 mod spectrum;
 mod subtitles;
 mod text;
 mod three_d;
+mod timing;
 mod values;
 mod video;
 
@@ -36,6 +40,10 @@ fn _native(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_class::<text::TextLayout>()?;
     module.add_class::<spectrum::AudioAnalysis>()?;
     module.add_class::<three_d::Renderer3D>()?;
+    module.add_class::<progress::RenderControl>()?;
+    module.add_class::<timing::TimelineIndex>()?;
+    module.add_function(wrap_pyfunction!(timing::inspect_timeline, module)?)?;
+    module.add_function(wrap_pyfunction!(analysis::analyze_audio, module)?)?;
     module.add_function(wrap_pyfunction!(three_d::compile_3d, module)?)?;
     module.add_function(wrap_pyfunction!(three_d::assets::model_info, module)?)?;
     module.add_function(wrap_pyfunction!(three_d::assets::text_shapes, module)?)?;

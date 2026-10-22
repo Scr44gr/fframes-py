@@ -3,6 +3,7 @@
 from typing import Literal
 
 from fframes.audio import AudioSettings
+from fframes.buffers import ImageBuffer
 from fframes.compose.components import Item, Visual
 from fframes.lottie import Lottie
 from fframes.media import ClipSource
@@ -20,7 +21,7 @@ class Image(MediaVisual):
     """A raster image loaded once, with explicit size and fitting."""
 
     kind: Literal["image"] = "image"
-    source: Source
+    source: Source | ImageBuffer
 
 
 class Audio(AudioSettings, Item):

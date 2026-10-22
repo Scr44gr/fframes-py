@@ -91,3 +91,13 @@ GPU limits: 16 direct lights, 2 shadow lights, 8 softboxes; auto falls back to C
 Use smaller texture/renderer sizes for previews, retaining the final placement.
 Vulkan can share nested GPU textures; Metal composition reads 3D pixels back.
 `rgba()` always copies to owned Python bytes; NumPy can view those bytes.
+
+
+`Model3D(materials=(MaterialOverride(node=..., material=...),))` replaces named
+mesh materials, including animated properties; invalid targets fail. For topology
+or hierarchy changes, pass `SceneFrames(frames=(Scene(...), ...), fps=...)` as
+`Renderer.scene`. States compile once, hold the last state and use their own fps.
+Animations inside them keep the renderer clock. Geometry/model data is shared;
+prefer animated properties for continuous motion to avoid storing full scenes.
+Named-node queries resolve against the selected state. No Python frame callbacks
+or mutation of validated inputs is needed.

@@ -1,4 +1,4 @@
-use std::{borrow::Cow, collections::HashMap, path::PathBuf, sync::Arc};
+use std::{borrow::Cow, collections::HashMap, sync::Arc};
 
 use fframes::usvgr::{
     self,
@@ -12,7 +12,7 @@ use pyo3::{PyResult, exceptions::PyValueError};
 use super::input::{Shape, TextAnchor, TextContent};
 use super::paint::Paints;
 use super::text::Template;
-use crate::render::{media_error, render_error};
+use crate::render::render_error;
 use crate::values::{Scalar, Value};
 
 pub(super) struct Asset {
@@ -92,7 +92,25 @@ impl Asset {
     }
 }
 
-pub(super) type Images = HashMap<PathBuf, Arc<usvgr::PreloadedImageData>>;
+pub(super) struct Images<'a> {
+    buffers: &'a crate::buffers::Buffers,
+    values: HashMap<String, Arc<usvgr::PreloadedImageData>>,
+}
+
+impl<'a> Images<'a> {
+    pub fn new(buffers: &'a crate::buffers::Buffers) -> Self {
+        Self {
+            buffers,
+            values: HashMap::new(),
+        }
+    }
+    pub fn into_resources(self) -> HashMap<String, Arc<usvgr::PreloadedImageData>> {
+        self.values
+            .into_values()
+            .map(|image| (image.id.clone(), image))
+            .collect()
+    }
+}
 
 pub(super) fn attribute<'a>(name: AId, value: impl Into<SvgAttributeValue<'a>>) -> Attribute<'a> {
     Attribute {
@@ -219,7 +237,11 @@ pub(super) fn prepare(
         }
         Shape::Scene3d { renderer } => {
             let size = renderer.size.map(f64::from);
-            scene = Some(crate::three_d::Program::on_timeline(*renderer, fps)?);
+            scene = Some(crate::three_d::Program::on_timeline(
+                *renderer,
+                fps,
+                images.buffers,
+            )?);
             (
                 Some(element(
                     EId::Image,
@@ -247,6 +269,7 @@ pub(super) fn prepare(
                     r#loop,
                 },
                 fps,
+                images.buffers,
             )?);
             (
                 Some(element(
@@ -266,7 +289,7 @@ pub(super) fn prepare(
             shader: input,
             size,
         } => {
-            shader = Some(crate::shader::Program::compile(input, fps)?);
+            shader = Some(crate::shader::Program::compile(input, fps, images.buffers)?);
             let mut extent = [0., 0.];
             for (i, value) in size.into_iter().enumerate() {
                 value.check(f64::MIN_POSITIVE, 1e7)?;
@@ -588,18 +611,15 @@ pub(super) fn borrow_node<'a>(node: &'a NestedNodeData<'a>) -> NestedNodeData<'a
 }
 
 pub(super) fn image(
-    source: PathBuf,
+    source: crate::buffers::Source,
     images: &mut Images,
 ) -> PyResult<Arc<usvgr::PreloadedImageData>> {
-    let source = source.canonicalize()?;
-    if let Some(image) = images.get(&source) {
+    let key = source.key()?;
+    if let Some(image) = images.values.get(&key) {
         return Ok(Arc::clone(image));
     }
-    let bytes = std::fs::read(&source)?;
-    let data =
-        fframes::media::decode_image(&source.to_string_lossy(), &bytes).map_err(media_error)?;
-    let image = Arc::new(data);
-    images.insert(source, Arc::clone(&image));
+    let image = source.image(images.buffers)?;
+    images.values.insert(key, Arc::clone(&image));
     Ok(image)
 }
 

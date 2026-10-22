@@ -18,6 +18,7 @@ use std::{
 };
 
 #[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
 pub(super) struct Input {
     nodes: Vec<Node>,
     background: Option<environment::BackgroundInput>,
@@ -26,6 +27,71 @@ pub(super) struct Input {
     reflector: Option<environment::ReflectorInput>,
     #[serde(default)]
     animations: Vec<super::animation::Input>,
+}
+
+#[derive(Deserialize)]
+#[serde(untagged)]
+pub(super) enum SequenceInput {
+    Single(Box<Input>),
+    Frames { frames: Vec<Input>, fps: usize },
+}
+
+pub(super) struct Sequence {
+    frames: Vec<Program>,
+    fps: usize,
+}
+
+impl SequenceInput {
+    pub fn compile(self, fps: usize, buffers: &crate::buffers::Buffers) -> PyResult<Sequence> {
+        let (inputs, sample_fps) = match self {
+            Self::Single(scene) => (vec![*scene], 1),
+            Self::Frames { frames, fps } => (frames, fps),
+        };
+        if inputs.is_empty() || sample_fps == 0 {
+            return Err(PyValueError::new_err(
+                "SceneFrames requires nonempty frames and positive fps",
+            ));
+        }
+        let mut geometry = HashMap::new();
+        let mut models = HashMap::new();
+        let frames = inputs
+            .into_iter()
+            .map(|input| input.compile(fps, buffers, &mut geometry, &mut models))
+            .collect::<PyResult<_>>()?;
+        Ok(Sequence {
+            frames,
+            fps: sample_fps,
+        })
+    }
+}
+
+impl Sequence {
+    pub fn get(&self, time: f64) -> &Program {
+        let index = (time.max(0.) * self.fps as f64 + 1e-9).floor() as usize;
+        &self.frames[index.min(self.frames.len() - 1)]
+    }
+    pub fn gpu_limits(&self) -> PyResult<Option<String>> {
+        for scene in &self.frames {
+            if let Some(message) = scene.gpu_limits()? {
+                return Ok(Some(message));
+            }
+        }
+        Ok(None)
+    }
+    pub fn at(
+        &self,
+        time: f64,
+        cache: &mut FrameCache,
+        rasterizer: &crate::backend::Rasterizer<'_>,
+    ) -> PyResult<d::Scene> {
+        self.get(time).at(time, cache, rasterizer)
+    }
+    pub fn pose(&self, time: f64) -> PyResult<d::Scene> {
+        self.get(time).pose(time)
+    }
+    pub fn node(&self, name: &str, time: f64) -> PyResult<NodeId> {
+        self.get(time).node(name)
+    }
 }
 
 #[derive(Deserialize)]
@@ -92,8 +158,17 @@ enum Content {
         source: PathBuf,
         animations: Vec<Playback>,
         poses: Vec<Transform>,
+        #[serde(default)]
+        materials: Vec<MaterialOverride>,
         children: Vec<Node>,
     },
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct MaterialOverride {
+    node: String,
+    material: material::Input,
 }
 
 #[derive(Deserialize)]
@@ -151,7 +226,7 @@ struct Motion {
 }
 
 enum Appearance {
-    Material(NodeId, Box<material::Program>, Vec<Value>),
+    Material(NodeId, Box<material::Program>, Option<Vec<Value>>),
     Light(NodeId, Box<light::Program>),
     Particles(NodeId, Vec<ParticleProgram>, d::Blending),
     InstanceColors(NodeId, Vec<Color>),
@@ -183,10 +258,11 @@ pub(super) struct Program {
     names: HashMap<String, NodeId>,
 }
 
-struct Builder {
+struct Builder<'a> {
+    buffers: &'a crate::buffers::Buffers,
     program: Program,
-    geometry: geometry::Cache,
-    models: HashMap<PathBuf, Arc<d::Model>>,
+    geometry: &'a mut geometry::Cache,
+    models: &'a mut HashMap<PathBuf, Arc<d::Model>>,
     skins: Vec<(NodeId, Skin)>,
     fps: usize,
 }
@@ -232,10 +308,17 @@ impl Pose {
 }
 
 impl Input {
-    pub fn compile(self, fps: usize) -> PyResult<Program> {
+    pub fn compile(
+        self,
+        fps: usize,
+        buffers: &crate::buffers::Buffers,
+        geometry: &mut geometry::Cache,
+        models: &mut HashMap<PathBuf, Arc<d::Model>>,
+    ) -> PyResult<Program> {
         let mut base = d::Scene::new();
         base.reflector = self.reflector.map(environment::ReflectorInput::compile);
         let mut builder = Builder {
+            buffers,
             program: Program {
                 base,
                 poses: Vec::new(),
@@ -255,8 +338,8 @@ impl Input {
                 fog: self.fog.map(environment::FogInput::compile).transpose()?,
                 names: HashMap::new(),
             },
-            geometry: HashMap::new(),
-            models: HashMap::new(),
+            geometry,
+            models,
             skins: Vec::new(),
             fps,
         };
@@ -328,7 +411,7 @@ impl Input {
     }
 }
 
-impl Builder {
+impl Builder<'_> {
     fn add(&mut self, input: Node, parent: Option<NodeId>) -> PyResult<()> {
         let name = input.transform.name.clone();
         let id = match parent {
@@ -356,7 +439,7 @@ impl Builder {
                 instances,
                 children,
             } => {
-                let geometry = geometry.compile(&mut self.geometry)?;
+                let geometry = geometry.compile(self.geometry)?;
                 if geometry.skin.is_some() && skin.is_none() {
                     return Err(PyValueError::new_err(
                         "geometry.skin supplies vertex weights; add Mesh(skin=Skin(...)) to bind its joints",
@@ -389,11 +472,13 @@ impl Builder {
                 }
                 self.program.appearances.push(Appearance::Material(
                     id,
-                    Box::new(material.compile(self.fps)?),
-                    morph_weights
-                        .into_iter()
-                        .map(|v| scalar(v, -1e7, 1e7))
-                        .collect::<PyResult<_>>()?,
+                    Box::new(material.compile(self.fps, self.buffers)?),
+                    Some(
+                        morph_weights
+                            .into_iter()
+                            .map(|v| scalar(v, -1e7, 1e7))
+                            .collect::<PyResult<_>>()?,
+                    ),
                 ));
                 children
             }
@@ -424,6 +509,7 @@ impl Builder {
                 source,
                 animations,
                 poses,
+                materials,
                 children,
             } => {
                 let source = source.canonicalize()?;
@@ -471,6 +557,32 @@ impl Builder {
                     self.program
                         .overrides
                         .push(pose.compile(NodeId(node.0 + offset))?);
+                }
+                let mut targets = std::collections::HashSet::new();
+                for replacement in materials {
+                    let matching: Vec<_> = model
+                        .scene
+                        .nodes()
+                        .filter(|(_, node)| node.name.as_deref() == Some(&replacement.node))
+                        .collect();
+                    if matching.len() != 1 || !targets.insert(replacement.node.clone()) {
+                        return Err(PyValueError::new_err(format!(
+                            "material override requires a unique model mesh node {:?}",
+                            replacement.node
+                        )));
+                    }
+                    let (node, data) = matching[0];
+                    if data.as_mesh().is_none() {
+                        return Err(PyValueError::new_err(format!(
+                            "material override node {:?} is not a mesh",
+                            replacement.node
+                        )));
+                    }
+                    self.program.appearances.push(Appearance::Material(
+                        NodeId(node.0 + offset),
+                        Box::new(replacement.material.compile(self.fps, self.buffers)?),
+                        None,
+                    ));
                 }
                 children
             }
@@ -597,7 +709,7 @@ impl Program {
             pose.apply(&mut scene, time);
         }
         for appearance in &self.appearances {
-            if let Appearance::Material(id, _, weights) = appearance
+            if let Appearance::Material(id, _, Some(weights)) = appearance
                 && let Some(mesh) = scene[*id].mesh_mut()
             {
                 mesh.morph_weights = weights.iter().map(|w| w.value(time) as f32).collect();

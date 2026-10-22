@@ -20,6 +20,7 @@ Rust example does not establish that an equivalent Python method exists.
 | Build 3D scenes, animate models or put video on a mesh | [3D scenes](references/three-d.md) |
 | Play a Lottie animation or use it as a texture | [Lottie](references/lottie.md) |
 | Configure images, fonts, sound and exported video | [Media and rendering](references/media.md) |
+| Supply generated PCM/pixels or query named scenes | [Buffers and timelines](references/buffers.md) |
 | Analyze audio or place captions | [Analysis](references/analysis.md) |
 | Render existing SVG or sample numeric keyframes | [Low level](references/lowlevel.md) |
 | Check correctness, performance, or reported failures | [Verification](references/verification.md) |

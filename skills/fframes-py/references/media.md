@@ -27,8 +27,9 @@ Do not use one in place of the other.
   audio stops at EOF or the parent/clip end, whichever comes first.
 - `fade_in` and `fade_out` are seconds over the whole audible interval,
   including loops. Offsets must precede EOF; all timing values are nonnegative.
-- Audio mixes at stereo 48 kHz with native limiting/declick defaults. It is
-  sample-aligned, independent of video fps. Visual opacity does not mute it.
+- Audio defaults to stereo 48 kHz with native limiting/declick. Exports and
+  analysis can select another sample rate. Timing is sample-aligned, independent
+  of video fps. Visual opacity does not mute audio.
 - `rate` resamples playback, changing pitch and duration. It is not pitch-preserving
   time stretch. `effects` applies `fframes.effects` processors in tuple order:
   `Highpass`, `Lowpass`, `LowShelf`, `HighShelf`, `Peak`, `Compressor`,
@@ -37,11 +38,12 @@ Do not use one in place of the other.
   Mark dialogue `voice=True` and use `Ducking` on background tracks.
 
 Compilation decodes sources in full; loops materialize the audible interval.
-Budget memory accordingly. There is no audio-generation API: generate or obtain
-the requested sound as a file first, then compose it. Audio codec selection is
-currently native-default behavior rather than a Python option.
-Master gain/limiter configuration and LUFS/true-peak reports are not exposed;
-`NormalizeLufs` is a per-track processor, not an analysis report.
+Budget memory accordingly. Generate or obtain sound as a file or `Pcm`, then
+compose it. Pass `AudioMixOptions` through `RenderOptions(audio_mix=...)`,
+`audio_samples(mix=...)` and `AudioAnalysisOptions(mix=...)` consistently.
+It controls `master_gain_db`, `declick` and `limiter`; `None` disables the limiter.
+`LimiterOptions(ceiling_db=-1, lookahead_ms=5, release_ms=80)` gives its defaults.
+Use `analyze_audio` from the analysis reference to measure the mixed signal.
 
 ## Compile and export
 
@@ -77,7 +79,7 @@ prefer MP4 or remux a verified MP4. `color_matrix="bt709"` selects HD color
 conversion and metadata; the compatibility default is `"bt601"`.
 Verify delivered files with `ffprobe`: expect `h264`/`yuv420p`, plus `aac` for audio.
 
-Create destination parents. Encoding needs even dimensions (at least 16 pixels
+Create destination parents. Default H.264 encoding needs even dimensions (at least 16 pixels
 per axis for OpenH264) and uses YUV420P,
 which loses alpha; set an opaque first layer when a background is needed. PNG/RGBA
 retain alpha. Rendering cleans temporary segments and replaces the destination
@@ -86,5 +88,13 @@ only on success. Compile again if assets or component inputs change.
 For a short review export, pass `RenderOptions(frame_range=(start, end))`.
 These are original frame indices with `0 <= start < end <= len(compiled)`;
 end is exclusive. Original animation/media clocks are preserved; the output
-starts at zero with matching trimmed audio. No public progress/cancellation,
-render-time fps/scale override or arbitrary FFmpeg codec parameters are exposed.
+starts at zero with matching trimmed audio. `fps`/`scale` override export settings
+without retiming the authored scene; frame count rounds up at the output fps.
+`pixel_format` requires encoder support. `codec_params` accepts unique string
+pairs; use typed fields for stream layout. `audio=AudioEncoderOptions(...)`
+selects encoder, bitrate, rate and format; unsupported settings fail explicitly.
+
+Pass a new `RenderControl()` to each export. Poll `.progress` from another thread
+for state, video/audio counters and warnings; `.cancel()` is cooperative. Active
+native operations finish before cancellation is observed, including the upstream
+mux/audio stage. No Python render callbacks are required.

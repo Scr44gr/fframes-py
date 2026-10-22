@@ -27,18 +27,19 @@ the namespace you intend to use. `fframes._native` and `compose.compiler` are in
 | [3D assets](three-d-assets.md) | glTF, rigs, morph targets and nested render textures. |
 | [Lottie](lottie.md) | Vector animation playback and supported content. |
 | [Masks and filters](filters.md) | Clip layers and build reusable filter graphs. |
+| [In-memory media](buffers.md) | PCM slices, encoded images and RGBA frame buffers. |
+| [Named timelines](timing.md) | Scene reports and frame/time selectors. |
 | [Audio](audio.md) | Place, trim, loop and mix sound. |
-| [Analysis and subtitles](analysis.md) | Batch FFT, NumPy views and WebVTT cues. |
+| [Analysis and subtitles](analysis.md) | Mix reports, FFT, NumPy views and WebVTT cues. |
 | [Rendering](rendering.md) | Resolution, fonts, compilation, previews and encoder settings. |
 | [Inspection](inspection.md) | Named layers, crops, contact sheets and continuity checks. |
 | [Codec licenses](codecs.md) | Third-party licenses and redistribution conditions. |
 | [Low level](lowlevel.md) | SVG rendering and scalar animation signatures. |
 | [Upstream examples](examples.md) | Paired ports, asset cache and feature parity status. |
-| [Upstream audit](upstream.md) | Engine version, missing Python interfaces and platform verification. |
+| [Upstream audit](upstream.md) | Engine capability map, adaptations and platform verification. |
 | [Development](development.md) | Rebuild, check and package the bindings. |
 | [Releases](releases.md) | Versioning, PyPI setup and publishing tested distributions. |
 
 Current scope: finite, in-memory scenes rendered with CPU or Skia backends.
 Both APIs support synchronized video files. HTML/CSS layout and streaming
 authoring are not exposed.
-Upstream fframes capabilities are not automatically exposed by this wrapper.

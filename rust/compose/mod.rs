@@ -43,6 +43,9 @@ struct Layer {
     origin: [f64; 2],
     matrix: Option<[Value; 6]>,
     mask: Option<graphics::Mask>,
+    mask_index: Option<usize>,
+    mask_mode: input::MaskMode,
+    mask_region: [f64; 4],
     blend_mode: input::BlendMode,
     filter: Option<NestedNodeData<'static>>,
     asset: Asset,
@@ -53,6 +56,7 @@ struct Layer {
 /// Compiled graphics and audio owned entirely by Rust.
 #[pyclass(frozen, module = "fframes._native")]
 pub(crate) struct SceneVideo {
+    chapters: Vec<crate::timing::SceneRange>,
     backend: crate::backend::Backend,
     width: u32,
     height: u32,
@@ -61,12 +65,14 @@ pub(crate) struct SceneVideo {
     roots: Vec<usize>,
     animated_roots: bool,
     fonts: usvgr::fontdb::Database,
+    images: std::collections::HashMap<String, std::sync::Arc<usvgr::PreloadedImageData>>,
     media: fframes::DynamicMediaProvider<'static>,
     timeline: ResolvedRenderingTimeline<'static, AudioTimelineSamples>,
 }
 
 impl SceneVideo {
-    fn compile(plan: Plan) -> PyResult<Self> {
+    fn compile(plan: Plan, buffers: &crate::buffers::Buffers) -> PyResult<Self> {
+        crate::timing::validate(&plan.chapters, plan.frames)?;
         let [width, height] = plan.resolution;
         if width == 0
             || height == 0
@@ -87,8 +93,42 @@ impl SceneVideo {
         let fonts = crate::fonts::load(&plan.fonts, plan.load_system_fonts)?;
         let mut layers: Vec<Layer> = Vec::with_capacity(plan.layers.len());
         let mut roots = Vec::new();
-        let mut images = graphics::Images::new();
+        let mut images = graphics::Images::new(buffers);
         let mut ids = std::collections::HashSet::new();
+        let mask_roots: std::collections::HashSet<usize> = plan
+            .layers
+            .iter()
+            .enumerate()
+            .filter_map(|(index, layer)| layer.mask_only.then_some(index))
+            .collect();
+        let mut used_masks = std::collections::HashSet::new();
+        let mut mask_owners = std::collections::HashMap::new();
+        for (index, layer) in plan.layers.iter().enumerate() {
+            if let Some(mask) = layer.mask_index
+                && (mask <= index
+                    || !mask_roots.contains(&mask)
+                    || !used_masks.insert(mask)
+                    || plan.layers[mask].parent.is_some())
+            {
+                return Err(PyValueError::new_err(
+                    "mask must reference a unique detached later layer",
+                ));
+            }
+            if layer.mask_region.iter().any(|v| !v.is_finite())
+                || layer.mask_region[2] <= 0.
+                || layer.mask_region[3] <= 0.
+            {
+                return Err(PyValueError::new_err(
+                    "mask requires a finite region with positive extents",
+                ));
+            }
+            if let Some(mask) = layer.mask_index {
+                mask_owners.insert(mask, index);
+            }
+        }
+        if used_masks != mask_roots {
+            return Err(PyValueError::new_err("unreferenced mask content"));
+        }
         for layer in plan.layers {
             if !layer.start.is_finite()
                 || !layer.end.is_finite()
@@ -111,10 +151,25 @@ impl SceneVideo {
                 parent.children.push(index);
                 (parent.asset.size, parent.depth + 1)
             } else {
-                roots.push(index);
-                ([f64::from(width), f64::from(height)], 0)
+                if !layer.mask_only {
+                    roots.push(index);
+                }
+                (
+                    mask_owners
+                        .get(&index)
+                        .map_or([f64::from(width), f64::from(height)], |owner| {
+                            layers[*owner].asset.size
+                        }),
+                    0,
+                )
             };
-            let graphic = layer.graphic;
+            let mut graphic = layer.graphic;
+            if layer.mask_only {
+                match &mut graphic.shape {
+                    input::Shape::Group { size } => *size = parent_size,
+                    _ => return Err(PyValueError::new_err("mask content requires a group root")),
+                }
+            }
             if let Some(id) = &graphic.id
                 && !ids.insert(id.clone())
             {
@@ -145,7 +200,7 @@ impl SceneVideo {
                 .transpose()?;
             let filter = graphic
                 .filter
-                .map(|filter| filters::compile(filter, index))
+                .map(|filter| filters::compile(filter, index, &mut images))
                 .transpose()?;
             let origin = graphic.origin.unwrap_or_else(|| asset.size.map(|v| v / 2.));
             if origin.iter().any(|v| !v.is_finite() || v.abs() > 1e7) {
@@ -175,6 +230,9 @@ impl SceneVideo {
                 origin,
                 matrix: crate::values::matrix(graphic.matrix)?,
                 mask,
+                mask_index: layer.mask_index,
+                mask_mode: layer.mask_mode,
+                mask_region: layer.mask_region,
                 blend_mode: graphic.blend_mode,
                 filter,
                 asset,
@@ -203,8 +261,9 @@ impl SceneVideo {
             layers[i].children = children;
         }
         let animated_roots = order(&mut roots, &layers);
-        let Soundtrack { media, map } = audio::prepare(plan.sounds, duration)?;
+        let Soundtrack { media, map } = audio::prepare(plan.sounds, duration, buffers)?;
         Ok(Self {
+            chapters: plan.chapters,
             backend: plan.backend,
             width,
             height,
@@ -213,6 +272,7 @@ impl SceneVideo {
             roots,
             animated_roots,
             fonts,
+            images: images.into_resources(),
             media,
             timeline: ResolvedRenderingTimeline {
                 audio_map: map,
@@ -225,15 +285,15 @@ impl SceneVideo {
     fn node(
         &self,
         index: usize,
-        frame: usize,
+        frame: f64,
         cache: &mut FrameCache,
         rasterizer: &crate::backend::Rasterizer<'_>,
     ) -> PyResult<Option<NestedNodeData<'_>>> {
         let layer = &self.layers[index];
-        if frame < layer.first || frame >= layer.end {
+        if frame + 1e-9 < layer.first as f64 || frame + 1e-9 >= layer.end as f64 {
             return Ok(None);
         }
-        let time = frame as f64 / self.fps as f64 - layer.start;
+        let time = frame / self.fps as f64 - layer.start;
         let opacity = layer.opacity.value(time);
         if opacity == 0. {
             return Ok(None);
@@ -266,11 +326,13 @@ impl SceneVideo {
             transform
         };
         let mut children = if layer.asset.node.is_some() {
-            vec![
-                layer
-                    .asset
-                    .node_at(time, frame - layer.first, self.fps, cache, rasterizer)?,
-            ]
+            vec![layer.asset.node_at(
+                time,
+                (frame + 1e-9).floor() as usize - layer.first,
+                self.fps,
+                cache,
+                rasterizer,
+            )?]
         } else {
             self.nodes(
                 &layer.children,
@@ -292,6 +354,47 @@ impl SceneVideo {
             children.push(Some(mask.node_at(time)));
             attributes.push(attribute(AId::ClipPath, format!("url(#clip-{index})")));
         }
+        if let Some(mask) = layer.mask_index {
+            let content = self.node(mask, frame, cache, rasterizer)?;
+            let mut attrs: Vec<_> = [AId::X, AId::Y, AId::Width, AId::Height]
+                .into_iter()
+                .zip(layer.mask_region)
+                .map(|(key, value)| attribute(key, format!("{}%", value * 100.)))
+                .collect();
+            attrs.extend([
+                attribute(AId::Id, format!("mask-{index}")),
+                attribute(AId::MaskUnits, "objectBoundingBox"),
+                attribute(AId::MaskContentUnits, "userSpaceOnUse"),
+                attribute(
+                    AId::MaskType,
+                    match layer.mask_mode {
+                        input::MaskMode::Alpha => "alpha",
+                        input::MaskMode::Luminance => "luminance",
+                    },
+                ),
+            ]);
+            let content = element(
+                EId::G,
+                vec![attribute(
+                    AId::Transform,
+                    Transform {
+                        a: 1.,
+                        b: 0.,
+                        c: 0.,
+                        d: 1.,
+                        e: -ox,
+                        f: -oy,
+                    },
+                )],
+                vec![content],
+            );
+            children.push(Some(element(
+                EId::Defs,
+                vec![],
+                vec![Some(element(EId::Mask, attrs, vec![Some(content)]))],
+            )));
+            attributes.push(attribute(AId::Mask, format!("url(#mask-{index})")));
+        }
         if let Some(filter) = &layer.filter {
             children.push(Some(graphics::borrow_node(filter)));
             attributes.push(attribute(AId::Filter, format!("url(#filter-{index})")));
@@ -303,13 +406,13 @@ impl SceneVideo {
         &self,
         indices: &[usize],
         animated: bool,
-        frame: usize,
+        frame: f64,
         cache: &mut FrameCache,
         rasterizer: &crate::backend::Rasterizer<'_>,
     ) -> PyResult<Vec<Option<NestedNodeData<'_>>>> {
         let mut indices = Cow::Borrowed(indices);
         if animated {
-            let time = frame as f64 / self.fps as f64;
+            let time = frame / self.fps as f64;
             indices.to_mut().sort_by(|a, b| {
                 let (a, b) = (&self.layers[*a], &self.layers[*b]);
                 a.z_index
@@ -333,14 +436,32 @@ impl SceneVideo {
         if index >= self.timeline.duration_in_frames {
             return Err(PyIndexError::new_err("frame index out of range"));
         }
+        self.tree_at(index as f64 / self.fps as f64, cache, rasterizer)
+    }
+
+    fn tree_at(
+        &self,
+        time: f64,
+        cache: &mut FrameCache,
+        rasterizer: &crate::backend::Rasterizer<'_>,
+    ) -> PyResult<usvgr::Tree> {
         let doc = document(
             self.width,
             self.height,
-            self.nodes(&self.roots, self.animated_roots, index, cache, rasterizer)?,
+            self.nodes(
+                &self.roots,
+                self.animated_roots,
+                time * self.fps as f64,
+                cache,
+                rasterizer,
+            )?,
         );
         usvgr::Tree::from_nested_svgtree_with_cache(
             &doc,
-            &usvgr::Options::default(),
+            &usvgr::Options {
+                image_data: Some(&self.images),
+                ..Default::default()
+            },
             &mut cache.trees,
             &self.fonts,
         )
@@ -370,6 +491,12 @@ impl SceneVideo {
 }
 
 impl crate::inspection::Source for SceneVideo {
+    fn chapters(&self) -> &[crate::timing::SceneRange] {
+        &self.chapters
+    }
+    fn resources(&self) -> Resources<'_> {
+        self.resources()
+    }
     fn size(&self) -> [u32; 2] {
         [self.width, self.height]
     }
@@ -410,46 +537,42 @@ impl SceneVideo {
         py.detach(|| self.rasterize(index)?.save_png(path).map_err(render_error))
     }
 
-    fn audio_samples<'py>(&self, py: Python<'py>) -> Bound<'py, PyBytes> {
+    #[pyo3(signature = (mix=None))]
+    fn audio_samples<'py>(
+        &self,
+        py: Python<'py>,
+        mix: Option<&str>,
+    ) -> PyResult<Bound<'py, PyBytes>> {
+        let mix = crate::audio::Mix::parse(mix)?;
         let bytes = py.detach(|| {
             audio::samples(
                 &self.media,
                 self.timeline.audio_map.as_ref(),
                 self.timeline.duration_in_frames,
                 self.fps,
+                mix,
             )
         });
-        PyBytes::new(py, &bytes)
+        Ok(PyBytes::new(py, &bytes))
     }
 
-    #[pyo3(signature = (path, directory, encoder, concurrency, bitrate, color_matrix="bt601", frame_range=None))]
-    #[expect(
-        clippy::too_many_arguments,
-        reason = "Preserve positional native render compatibility"
-    )]
+    #[pyo3(signature = (path, directory, options, control=None))]
     fn render(
         &self,
         py: Python<'_>,
         path: PathBuf,
         directory: PathBuf,
-        encoder: &str,
-        concurrency: usize,
-        bitrate: i64,
-        color_matrix: &str,
-        frame_range: Option<(usize, usize)>,
+        options: &str,
+        control: Option<&crate::progress::RenderControl>,
     ) -> PyResult<()> {
+        let encoding = crate::render::Encoding::parse(options)?;
         py.detach(|| {
             self.resources().render(
-                |index, cache, rasterizer| self.tree(index, cache, rasterizer),
+                |time, cache, rasterizer| self.tree_at(time, cache, rasterizer),
                 path,
                 directory,
-                crate::render::Encoding {
-                    encoder,
-                    concurrency,
-                    bitrate,
-                    color_matrix: crate::encoder::color_matrix(color_matrix)?,
-                    frame_range,
-                },
+                &encoding,
+                control,
             )
         })
     }
@@ -457,14 +580,20 @@ impl SceneVideo {
 
 /// Load a validated authoring description into a reusable native session.
 #[pyfunction]
-pub(crate) fn compile_scene(py: Python<'_>, plan: String) -> PyResult<SceneVideo> {
-    py.detach(|| from_plan(&plan))
+#[pyo3(signature = (plan, buffers=None))]
+pub(crate) fn compile_scene(
+    py: Python<'_>,
+    plan: String,
+    buffers: Option<crate::buffers::Buffers>,
+) -> PyResult<SceneVideo> {
+    let buffers = buffers.unwrap_or_default();
+    py.detach(|| from_plan(&plan, &buffers))
 }
 
-pub(crate) fn from_plan(plan: &str) -> PyResult<SceneVideo> {
+pub(crate) fn from_plan(plan: &str, buffers: &crate::buffers::Buffers) -> PyResult<SceneVideo> {
     let plan =
         serde_json::from_str(plan).map_err(|error| PyValueError::new_err(error.to_string()))?;
-    SceneVideo::compile(plan)
+    SceneVideo::compile(plan, buffers)
 }
 
 #[cfg(test)]
@@ -480,7 +609,7 @@ mod tests {
     fn cached_rasterization_moves_geometry_when_frames_are_requested_out_of_order() -> PyResult<()>
     {
         let plan = plan().map_err(|error| PyValueError::new_err(error.to_string()))?;
-        let scene = SceneVideo::compile(plan)?;
+        let scene = SceneVideo::compile(plan, &crate::buffers::Buffers::new())?;
         let mut cache = FrameCache::default();
         let mut renderer = CpuFrameRenderer::new(20);
         for index in [2, 0, 1, 2] {
@@ -508,7 +637,7 @@ mod tests {
     fn native_plan_rejects_parent_cycles() -> Result<(), serde_json::Error> {
         let mut plan = plan()?;
         plan.layers[0].parent = Some(0);
-        assert!(SceneVideo::compile(plan).is_err());
+        assert!(SceneVideo::compile(plan, &crate::buffers::Buffers::new()).is_err());
         Ok(())
     }
 
@@ -524,7 +653,7 @@ mod tests {
                 "matrix":[1,0,0,1,{"values":[0,-4,0],"fps":2},0]
             }"##).map_err(|error| PyValueError::new_err(error.to_string()))?);
         }
-        let scene = SceneVideo::compile(plan)?;
+        let scene = SceneVideo::compile(plan, &crate::buffers::Buffers::new())?;
         let mut cache = FrameCache::default();
         let mut renderer = CpuFrameRenderer::new(20);
         for index in [0, 1, 2, 1, 0] {

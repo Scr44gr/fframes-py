@@ -5,6 +5,37 @@
 These utilities are shared by `fframes` and `fframes.compose`. Run them while
 building a scene, before rendering frames.
 
+## Mixed audio
+
+Given a `compose.CompiledVideo` named `compiled` (or a raw `Video`):
+
+```python
+from fframes import AudioAnalysisOptions, AudioSection, analyze_audio
+
+inspection = analyze_audio(
+    compiled.native,
+    options=AudioAnalysisOptions(
+        sections=(AudioSection(name="Intro", start=0, end=1),),
+        at=(0.5,),
+        waveform_bins=200,
+    ),
+)
+```
+
+`AudioInspection.report` contains integrated LUFS, loudness range, maximum
+momentary/short-term loudness, sample/true peak, clipped sample count, silent
+ranges and section levels. Undefined silent levels are `None`.
+`waveform.left/right` contains min/max bins covering the full interval, including
+its final samples. `activity` reports active sources, source time, gain, ducking,
+voice flags, playback rate and effects at each requested `at` time. `file` is a
+path for file sources and an opaque identifier for memory sources.
+
+`frame_range` uses original end-exclusive indices. Section bounds and `at` use
+original seconds; sections are intersected with the analyzed range. Report times
+are relative to `start_seconds`. Set `sample_rate` to measure a resampled mix;
+it defaults to 48000. Analysis runs in Rust and allocates the selected mixed PCM
+interval. Use the same `mix` as the export for comparable measurements.
+
 ## Audio spectrum
 
 ```python

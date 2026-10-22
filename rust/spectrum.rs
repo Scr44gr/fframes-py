@@ -1,14 +1,12 @@
 //! Batched upstream FFT with a bounded smoothing cache and one Python output buffer.
 
-use std::{borrow::Cow, collections::VecDeque, path::PathBuf};
+use std::{borrow::Cow, collections::VecDeque};
 
 use fframes::{
     AudioData, SampleSize, VisualizeFrameInput, WindowFunction, media::PreloadedAudioData,
 };
 use pyo3::{exceptions::PyValueError, prelude::*, types::PyBytes};
 use serde::Deserialize;
-
-use crate::render::media_error;
 
 #[derive(Clone, Copy, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -193,10 +191,27 @@ impl AudioAnalysis {
 }
 
 #[pyfunction]
-pub(crate) fn decode_audio(py: Python<'_>, source: PathBuf) -> PyResult<AudioAnalysis> {
+#[pyo3(signature = (plan, buffers=None))]
+pub(crate) fn decode_audio(
+    py: Python<'_>,
+    plan: &str,
+    buffers: Option<crate::buffers::Buffers>,
+) -> PyResult<AudioAnalysis> {
+    #[derive(Deserialize)]
+    #[serde(deny_unknown_fields)]
+    struct Input {
+        source: crate::buffers::Source,
+    }
+    let input: Input =
+        serde_json::from_str(plan).map_err(|error| PyValueError::new_err(error.to_string()))?;
+    let buffers = buffers.unwrap_or_default();
     py.detach(|| {
-        let data = PreloadedAudioData::decode_raw_file(None, &source.canonicalize()?)
-            .map_err(media_error)?;
+        let mut data = input.source.audio(&buffers)?;
+        if let Some(right) = data.right.take() {
+            for (left, right) in data.samples.to_mut().iter_mut().zip(right.iter()) {
+                *left = (*left + right) * 0.5;
+            }
+        }
         if data.sample_rate == 0 || data.samples.is_empty() {
             return Err(PyValueError::new_err("audio contains no samples"));
         }

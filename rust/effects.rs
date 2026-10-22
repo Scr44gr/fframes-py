@@ -2,7 +2,7 @@
 
 use serde::Deserialize;
 
-#[derive(Deserialize)]
+#[derive(Deserialize, serde::Serialize)]
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
 pub(crate) enum Effect {
     NormalizeLufs {
@@ -67,6 +67,28 @@ impl Effect {
                 knee_db,
                 makeup_db,
             }),
+        }
+    }
+}
+
+impl From<fframes::Effect> for Effect {
+    fn from(effect: fframes::Effect) -> Self {
+        match effect {
+            fframes::Effect::NormalizeLufs { lufs } => Self::NormalizeLufs { lufs },
+            fframes::Effect::Highpass { hz, q } => Self::Highpass { hz, q },
+            fframes::Effect::Lowpass { hz, q } => Self::Lowpass { hz, q },
+            fframes::Effect::LowShelf { hz, db } => Self::LowShelf { hz, db },
+            fframes::Effect::HighShelf { hz, db } => Self::HighShelf { hz, db },
+            fframes::Effect::Peak { hz, db, q } => Self::Peak { hz, db, q },
+            fframes::Effect::Width { width } => Self::Width { width },
+            fframes::Effect::Compress(c) => Self::Compressor {
+                threshold_db: c.threshold_db,
+                ratio: c.ratio,
+                attack: c.attack,
+                release: c.release,
+                knee_db: c.knee_db,
+                makeup_db: c.makeup_db,
+            },
         }
     }
 }

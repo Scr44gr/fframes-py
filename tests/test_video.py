@@ -136,7 +136,11 @@ def test_invalid_svg_mid_render_cleans_up(tmp_path: Path) -> None:
 
 def test_native_destination_failure_does_not_crash(video: Video, tmp_path: Path) -> None:
     with pytest.raises(FileNotFoundError):
-        video.native.render(tmp_path / "missing" / "movie.mp4", tmp_path, "mpeg4", 1)
+        video.native.render(
+            tmp_path / "missing" / "movie.mp4",
+            tmp_path,
+            RenderOptions(encoder="mpeg4", concurrency=1).model_dump_json(),
+        )
 
 
 def test_successful_render_replaces_existing_file(video: Video, tmp_path: Path) -> None:
@@ -163,8 +167,13 @@ def test_native_boundary_rejects_invalid_inputs(tmp_path: Path) -> None:
     with pytest.raises(ValueError, match="dimensions"):
         _native.compile_video(VideoConfig(width=1, height=1).model_dump_json(), [])
     native = fframes.compile_video(VideoConfig(width=16, height=24), (SVG,))
+    settings = (
+        RenderOptions(encoder="mpeg4", concurrency=1)
+        .model_dump_json()
+        .replace('"concurrency":1', '"concurrency":0')
+    )
     with pytest.raises(ValueError, match="concurrency"):
-        native.render(tmp_path / "movie.mp4", tmp_path, "mpeg4", 0)
+        native.render(tmp_path / "movie.mp4", tmp_path, settings)
 
 
 def test_system_font_loading_is_optional() -> None:

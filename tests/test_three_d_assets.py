@@ -296,3 +296,38 @@ def test_xy_plane_maps_the_whole_texture_once_in_top_left_order(
     assert pixel(scene, 48, 16) == (0, 255, 0, 255)
     assert pixel(scene, 16, 48) == (0, 0, 255, 255)
     assert pixel(scene, 48, 48) == (255, 255, 0, 255)
+
+
+def test_imported_mesh_material_override_preserves_animation_and_rejects_unknown_targets(
+    model: Path,
+) -> None:
+    scene = renderer(
+        d.Scene(
+            nodes=(
+                d.Model3D(
+                    source=model,
+                    name="asset",
+                    animations=(d.Playback(name="move", loop=False),),
+                    materials=(
+                        d.MaterialOverride(
+                            node="triangle", material=d.Material(shading="unlit", color="#ff0000")
+                        ),
+                    ),
+                ),
+            )
+        )
+    )
+    assert pixel(scene.rgba()) == (255, 0, 0, 255)
+    assert scene.world_position("asset/triangle", time=0.5) == pytest.approx((0.5, 0, 0))
+    missing = renderer(
+        d.Scene(
+            nodes=(
+                d.Model3D(
+                    source=model,
+                    materials=(d.MaterialOverride(node="missing", material=d.Material()),),
+                ),
+            )
+        )
+    )
+    with pytest.raises(ValueError, match="unique model mesh"):
+        missing.rgba()

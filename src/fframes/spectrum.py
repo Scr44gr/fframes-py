@@ -6,6 +6,7 @@ from typing import Annotated, Literal, Self, TypeAlias
 from pydantic import Field, model_validator
 
 from fframes import _native
+from fframes.buffers import Buffers, Pcm
 from fframes.models import Model, PositiveInt, Source
 
 SampleSize: TypeAlias = Literal[2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]
@@ -43,12 +44,14 @@ class SpectrumSettings(Model):
 class AudioData(Model):
     """Decode a local source to mono once for repeated native spectral analysis."""
 
-    source: Source
+    source: Source | Pcm
 
     @cached_property
     def native(self) -> _native.AudioAnalysis:
         """Retain decoded samples independently of the input file's lifetime."""
-        return _native.decode_audio(str(self.source))
+        buffers = Buffers()
+        plan = self.model_dump_json(context=buffers)
+        return _native.decode_audio(plan, buffers.data)
 
     @property
     def duration(self) -> float:

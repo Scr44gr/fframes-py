@@ -1,6 +1,6 @@
 use crate::{
     backend::Backend,
-    render::{FrameCache, Resources, media_error, render_error},
+    render::{FrameCache, Resources, render_error},
 };
 use serde::Deserialize;
 use std::{collections::HashMap, path::PathBuf, sync::Arc};
@@ -28,6 +28,7 @@ pub(crate) struct SvgVideo {
     clips: Vec<Clip>,
     scenes: Vec<crate::three_d::Binding>,
     lotties: Vec<crate::lottie::Binding>,
+    chapters: Vec<crate::timing::SceneRange>,
 }
 
 struct Clip {
@@ -37,6 +38,20 @@ struct Clip {
 }
 
 impl crate::inspection::Source for SvgVideo {
+    fn chapters(&self) -> &[crate::timing::SceneRange] {
+        &self.chapters
+    }
+    fn resources(&self) -> Resources<'_> {
+        Resources {
+            backend: self.backend,
+            width: self.width,
+            height: self.height,
+            fps: self.fps,
+            sample_rate: crate::audio::SAMPLE_RATE,
+            media: Some(&self.media),
+            timeline: &self.timeline,
+        }
+    }
     fn size(&self) -> [u32; 2] {
         [self.width, self.height]
     }
@@ -149,16 +164,23 @@ impl SvgVideo {
         self.frames.len()
     }
 
-    fn audio_samples<'py>(&self, py: Python<'py>) -> Bound<'py, PyBytes> {
+    #[pyo3(signature = (mix=None))]
+    fn audio_samples<'py>(
+        &self,
+        py: Python<'py>,
+        mix: Option<&str>,
+    ) -> PyResult<Bound<'py, PyBytes>> {
+        let mix = crate::audio::Mix::parse(mix)?;
         let bytes = py.detach(|| {
             crate::audio::samples(
                 &self.media,
                 self.timeline.audio_map.as_ref(),
                 self.frames.len(),
                 self.fps,
+                mix,
             )
         });
-        PyBytes::new(py, &bytes)
+        Ok(PyBytes::new(py, &bytes))
     }
 
     /// Rasterize one frame to straight-alpha RGBA bytes.
@@ -173,25 +195,16 @@ impl SvgVideo {
     }
 
     /// Encode the selected frames and replace the destination on success.
-    #[pyo3(signature = (path, directory, encoder, concurrency, bitrate=8_000_000, color_matrix="bt601", frame_range=None))]
-    #[expect(
-        clippy::too_many_arguments,
-        reason = "Preserve positional native render compatibility"
-    )]
+    #[pyo3(signature = (path, directory, options, control=None))]
     fn render(
         &self,
         py: Python<'_>,
         path: PathBuf,
         directory: PathBuf,
-        encoder: &str,
-        concurrency: usize,
-        bitrate: i64,
-        color_matrix: &str,
-        frame_range: Option<(usize, usize)>,
+        options: &str,
+        control: Option<&crate::progress::RenderControl>,
     ) -> PyResult<()> {
-        let staged = directory
-            .join("output")
-            .with_extension(path.extension().unwrap_or_default());
+        let encoding = crate::render::Encoding::parse(options)?;
         py.detach(|| {
             Resources {
                 width: self.width,
@@ -203,21 +216,15 @@ impl SvgVideo {
                 backend: self.backend,
             }
             .render(
-                |index, cache, rasterizer| {
-                    self.tree(index, cache, rasterizer).map_err(render_error)
+                |time, cache, rasterizer| {
+                    let index = (time * self.fps as f64 + 1e-9).floor() as usize;
+                    self.tree_at(index.min(self.frames.len() - 1), time, cache, rasterizer)
                 },
-                staged.clone(),
+                path,
                 directory,
-                crate::render::Encoding {
-                    encoder,
-                    concurrency,
-                    bitrate,
-                    color_matrix: crate::encoder::color_matrix(color_matrix)?,
-                    frame_range,
-                },
-            )?;
-            std::fs::rename(staged, path)?;
-            Ok(())
+                &encoding,
+                control,
+            )
         })
     }
 }
@@ -245,6 +252,7 @@ pub(crate) struct Binding {
 #[derive(Default, Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub(crate) struct Media {
+    pub chapters: Vec<crate::timing::SceneRange>,
     pub audio: Vec<crate::audio::Input>,
     pub images: Vec<ImageBinding>,
     pub clips: Vec<VideoBinding>,
@@ -255,7 +263,7 @@ pub(crate) struct Media {
 #[derive(Deserialize)]
 pub(crate) struct ImageBinding {
     name: String,
-    source: PathBuf,
+    source: crate::buffers::Source,
 }
 
 #[derive(Deserialize)]
@@ -269,13 +277,14 @@ pub(crate) struct VideoBinding {
 
 /// Store SVG frames and owned fonts/shaders for subsequent renders.
 #[pyfunction]
-#[pyo3(signature = (config, frames, shaders="[]", media="{}"))]
+#[pyo3(signature = (config, frames, shaders="[]", media="{}", buffers=None))]
 pub(crate) fn compile_video(
     py: Python<'_>,
     config: &str,
     frames: Vec<String>,
     shaders: &str,
     media: &str,
+    buffers: Option<crate::buffers::Buffers>,
 ) -> PyResult<SvgVideo> {
     let config: Config =
         serde_json::from_str(config).map_err(|err| PyValueError::new_err(err.to_string()))?;
@@ -283,7 +292,8 @@ pub(crate) fn compile_video(
         serde_json::from_str(shaders).map_err(|err| PyValueError::new_err(err.to_string()))?;
     let media =
         serde_json::from_str(media).map_err(|err| PyValueError::new_err(err.to_string()))?;
-    py.detach(|| build(config, frames, shaders, media, None))
+    let buffers = buffers.unwrap_or_default();
+    py.detach(|| build(config, frames, shaders, media, None, &buffers))
 }
 
 pub(crate) fn build(
@@ -292,6 +302,7 @@ pub(crate) fn build(
     shaders: Vec<Binding>,
     inputs: Media,
     duration: Option<f64>,
+    buffers: &crate::buffers::Buffers,
 ) -> PyResult<SvgVideo> {
     if config.width == 0
         || config.height == 0
@@ -317,15 +328,12 @@ pub(crate) fn build(
         .into_iter()
         .flatten()
         .collect();
-    let soundtrack = crate::audio::prepare(sounds, duration)?;
+    let soundtrack = crate::audio::prepare(sounds, duration, buffers)?;
     let mut images = HashMap::new();
     for binding in inputs.images {
-        let path = binding.source.canonicalize()?;
-        let bytes = std::fs::read(&path)?;
-        let image =
-            fframes::media::decode_image(&path.to_string_lossy(), &bytes).map_err(media_error)?;
+        let image = binding.source.image(buffers)?;
         if images
-            .insert(format!("image:{}", binding.name), Arc::new(image))
+            .insert(format!("image:{}", binding.name), image)
             .is_some()
         {
             return Err(PyValueError::new_err("duplicate image binding"));
@@ -351,7 +359,7 @@ pub(crate) fn build(
         }
         clips.push(Clip {
             name: format!("video:{}", binding.name),
-            source: crate::clips::Source::open(binding.input, config.fps)?,
+            source: crate::clips::Source::open(binding.input, config.fps, buffers)?,
             span: crate::values::FrameSpan::new(binding.start_at, binding.duration, config.fps)?,
         });
     }
@@ -368,7 +376,7 @@ pub(crate) fn build(
         }
         let frame_at = |time: f64| (time * config.fps as f64 - 1e-9).ceil().max(0.) as usize;
         let program = Shader {
-            program: crate::shader::Program::compile(binding.shader, config.fps)?,
+            program: crate::shader::Program::compile(binding.shader, config.fps, buffers)?,
             first: frame_at(binding.start_at),
             end: frame_at(
                 binding
@@ -381,7 +389,9 @@ pub(crate) fn build(
             return Err(PyValueError::new_err("duplicate shader binding"));
         }
     }
+    crate::timing::validate(&inputs.chapters, frames.len())?;
     Ok(SvgVideo {
+        chapters: inputs.chapters,
         lotties: {
             let mut names = std::collections::HashSet::new();
             inputs
@@ -402,7 +412,7 @@ pub(crate) fn build(
                 .scenes
                 .into_iter()
                 .map(|input| {
-                    let binding = input.compile(config.fps)?;
+                    let binding = input.compile(config.fps, buffers)?;
                     if !names.insert(binding.name.clone()) {
                         return Err(PyValueError::new_err("duplicate scene binding"));
                     }

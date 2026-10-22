@@ -1,7 +1,7 @@
 //! Static and synchronized textures, including nested SVG/3D renders.
 
 use crate::inspection::Source as _;
-use crate::render::{FrameCache, render_error};
+use crate::render::FrameCache;
 use fframes::{
     SvgrRasterizer,
     media::ImageData,
@@ -34,11 +34,11 @@ enum Source {
         size: [u32; 2],
     },
     Image {
-        source: PathBuf,
+        source: crate::buffers::Source,
         srgb: bool,
     },
     Video {
-        source: PathBuf,
+        source: crate::buffers::Source,
         offset: f64,
         r#loop: bool,
         size: Option<[u32; 2]>,
@@ -91,10 +91,10 @@ pub(super) struct Program {
 }
 
 impl Input {
-    pub fn compile(self, fps: usize) -> PyResult<Program> {
+    pub fn compile(self, fps: usize, buffers: &crate::buffers::Buffers) -> PyResult<Program> {
         let content = match self.source {
             Source::Composition { plan } => {
-                let video = crate::compose::from_plan(&plan)?;
+                let video = crate::compose::from_plan(&plan, buffers)?;
                 let fallback = (video.backend() != crate::backend::Backend::Cpu)
                     .then(crate::backend::Rasterizer::skia);
                 Content::Composition {
@@ -103,13 +103,7 @@ impl Input {
                 }
             }
             Source::Image { source, srgb } => {
-                let bytes = std::fs::read(source)?;
-                let image = if srgb {
-                    Texture::decode(&bytes)
-                } else {
-                    Texture::decode_linear(&bytes)
-                }
-                .map_err(render_error)?;
+                let image = source.texture(srgb, buffers)?;
                 Content::Image(Arc::new(image))
             }
             Source::Pixels {
@@ -137,7 +131,9 @@ impl Input {
                         r#loop,
                     },
                     fps,
-                )?,
+                    buffers,
+                )?
+                .resize_buffers(size)?,
                 size,
                 fps,
             },
@@ -179,6 +175,7 @@ impl Input {
                         shaders,
                         media,
                         Some(86400.),
+                        buffers,
                     )?),
                 }
             }
@@ -186,9 +183,9 @@ impl Input {
                 program: Box::new(crate::lottie::Program::compile(animation, size)?),
                 size,
             },
-            Source::Scene { renderer } => {
-                Content::Scene(Box::new(super::Program::on_timeline(*renderer, fps)?))
-            }
+            Source::Scene { renderer } => Content::Scene(Box::new(super::Program::on_timeline(
+                *renderer, fps, buffers,
+            )?)),
         };
         Ok(Program {
             content,

@@ -4,9 +4,18 @@ from functools import cached_property
 from math import pi
 from typing import Annotated, Literal, Self, TypeAlias
 
-from pydantic import ConfigDict, Field, TypeAdapter, model_validator, validate_call
+from pydantic import (
+    ConfigDict,
+    Field,
+    SerializationInfo,
+    TypeAdapter,
+    field_serializer,
+    model_validator,
+    validate_call,
+)
 
 from fframes import _native
+from fframes.buffers import Buffers, ImageBuffer, VideoFrames
 from fframes.lottie import Lottie, LottieBinding
 from fframes.media import ImageBinding, VideoBinding
 from fframes.models import Frames, Model, PositiveInt, Source
@@ -42,7 +51,7 @@ class ImageTexture(Model):
     """Decode a color image or linear data map once."""
 
     kind: Literal["image"] = "image"
-    source: Source
+    source: Source | ImageBuffer
     srgb: bool = True
 
 
@@ -50,7 +59,7 @@ class VideoTexture(Model):
     """Decode video on the scene clock, with an optional smaller texture resolution."""
 
     kind: Literal["video"] = "video"
-    source: Source
+    source: Source | VideoFrames
     offset: Start = 0.0
     loop: bool = False
     size: tuple[PositiveInt, PositiveInt] | None = None
@@ -108,6 +117,17 @@ class _CompositionTexture(Model):
 
     kind: Literal["composition"] = "composition"
     plan: str = Field(repr=False)
+    buffers: tuple[tuple[str, bytes], ...] = Field(default=(), exclude=True, repr=False)
+
+    @field_serializer("plan")
+    def transfer_buffers(self, plan: str, info: SerializationInfo[object]) -> str:
+        """Retain nested payloads in the outer compilation context."""
+        if self.buffers:
+            context = info.context
+            if not isinstance(context, Buffers):
+                raise ValueError("binary media requires video or renderer compilation")
+            context.data.update(self.buffers)
+        return plan
 
 
 TextureSource: TypeAlias = Annotated[
@@ -333,6 +353,13 @@ class Pose(Transform):
     name: str
 
 
+class MaterialOverride(Model):
+    """Replace the material of a named mesh inside an imported model."""
+
+    node: Annotated[str, Field(min_length=1)]
+    material: Material
+
+
 class Model3D(Transform):
     """glTF/GLB meshes, materials, skins and clips. External files stay within its directory."""
 
@@ -340,7 +367,16 @@ class Model3D(Transform):
     source: Source
     animations: tuple[Playback, ...] = ()
     poses: tuple[Pose, ...] = ()
+    materials: tuple[MaterialOverride, ...] = ()
     children: tuple["Node", ...] = ()
+
+    @model_validator(mode="after")
+    def check_materials(self) -> Self:
+        """Keep each target unambiguous."""
+        names = [item.node for item in self.materials]
+        if len(names) != len(set(names)):
+            raise ValueError("materials requires unique mesh node names")
+        return self
 
 
 Node: TypeAlias = Annotated[Group | Mesh | Light | Particles | Model3D, Field(discriminator="kind")]
@@ -439,6 +475,17 @@ class Scene(Model):
     reflector: Reflector | None = None
 
 
+class SceneFrames(Model):
+    """Complete scene states, selected at fps and held after the last frame.
+
+    Use for topology, hierarchy or material changes. Animations within each
+    state keep the renderer's clock. Native compilation shares repeated geometry.
+    """
+
+    frames: Annotated[tuple[Scene, ...], Field(min_length=1)]
+    fps: PositiveInt = 30
+
+
 class Focus(Model):
     """Depth of field: distance in world units, far-background blur in pixels at 1080p."""
 
@@ -515,7 +562,7 @@ class RenderSettings(Model):
 class Renderer(Model):
     """Compile a scene and camera. fps applies to standalone previews; videos supply their clock."""
 
-    scene: Scene
+    scene: Scene | SceneFrames
     camera: Camera = Camera()
     size: tuple[PositiveInt, PositiveInt] = (1280, 720)
     fps: PositiveInt = 30
@@ -523,7 +570,9 @@ class Renderer(Model):
 
     @cached_property
     def _compiled(self) -> "_native.Renderer3D":
-        return _native.compile_3d(self.model_dump_json())
+        buffers = Buffers()
+        plan = self.model_dump_json(context=buffers)
+        return _native.compile_3d(plan, buffers.data)
 
     @validate_call(config=ConfigDict(strict=True))
     def rgba(self, time: Start = 0.0) -> bytes:

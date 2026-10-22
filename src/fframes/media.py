@@ -5,6 +5,7 @@ from typing import Annotated, TypeAlias
 from pydantic import ConfigDict, Field, validate_call
 
 from fframes import _native
+from fframes.buffers import ImageBuffer, VideoFrames
 from fframes.models import Model, PositiveInt, Source
 from fframes.values import Duration, Start
 
@@ -15,7 +16,7 @@ class ImageBinding(Model):
     """Bind a local raster file to an SVG image href='image:name'."""
 
     name: Name
-    source: Source
+    source: Source | ImageBuffer
 
 
 class ExifField(Model):
@@ -43,7 +44,7 @@ def probe_image(source: Source) -> ImageInfo:
 class ClipSource(Model):
     """Decode at the composition's frame rate, with a source offset and optional loop."""
 
-    source: Source
+    source: Source | VideoFrames
     offset: Start = 0.0
     loop: bool = False
 

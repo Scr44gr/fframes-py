@@ -5,13 +5,13 @@
 For waveform frequency data and timed captions, see [Analysis and subtitles](analysis.md).
 
 Add `Audio` items to the same `Composition.children` tuple as visuals.
-Overlapping tracks mix; child order does not create audio priority. Paths identify
-local files decoded during compilation. The mixer uses stereo at 48,000 Hz;
-mono input is available in both output channels.
+Overlapping tracks mix; child order does not create audio priority. Sources are
+local files or [PCM buffers](buffers.md), decoded during compilation. Preview
+mixing uses stereo at 48,000 Hz; mono input is available in both output channels.
 
 | Field | Default | Meaning |
 | --- | --- | --- |
-| `source` | Required | Audio file path, or a media file with a decodable audio stream. |
+| `source` | Required | Audio file path, media file with audio, or `Pcm`. |
 | `offset` | `0` | Seconds skipped at the start of the source; must precede EOF. |
 | `loop` | `False` | Repeat the source portion from `offset` through EOF. |
 | `gain_db` | `0` | Gain from −120 to +24 dB; negative values reduce level. |
@@ -57,13 +57,25 @@ placement is rounded to sample positions rather than video frames. Visual opacit
 position and scale do not mute or modify audio. There is no group gain control.
 
 Sources are decoded in full. Loops materialize their audible interval once, so
-long tracks and long repetitions increase memory use. The upstream mixer applies
-its default limiting/declick behavior; leave headroom when overlapping tracks.
+long tracks and long repetitions increase memory use.
 
 Use `compiled.audio_samples()` to inspect the mix: interleaved left/right float32,
 little-endian, at 48 kHz. This returns raw bytes, not a WAV file. Its length covers
 the encoded video duration, including silence. Audio is mixed into `render()`
-automatically; audio codec selection currently follows the native encoder defaults.
+automatically; configure its encoding through [RenderOptions.audio](rendering.md#export-controls).
+
+## Master mix
+
+`AudioMixOptions(master_gain_db=0, limiter=LimiterOptions(), declick=True)`
+controls the bus after track mixing. Pass it as `RenderOptions(audio_mix=mix)`,
+`compiled.audio_samples(mix=mix)` or `AudioAnalysisOptions(mix=mix)` to keep
+exports, previews and measurements consistent.
+
+`LimiterOptions` defaults to `ceiling_db=-1`, `lookahead_ms=5`, `release_ms=80`.
+Set `limiter=None` to retain peaks above full scale; use
+`declick=False` to disable automatic boundary smoothing. These settings do not
+replace per-track fades or gain. [Mix reports](analysis.md#mixed-audio) measure
+the resulting signal.
 
 ## Processing
 
@@ -80,8 +92,9 @@ voice = Audio(
 )
 ```
 
-The engine processes each audible track once at 48 kHz, after resampling for
-`rate`. Available effects are `Highpass`, `Lowpass`, `LowShelf`, `HighShelf`,
+The engine processes each audible track once at the output sample rate, after
+resampling for playback `rate`. Available effects are `Highpass`, `Lowpass`,
+`LowShelf`, `HighShelf`,
 `Peak`, `Compressor`, `NormalizeLufs` and `StereoWidth`. Frequencies are 1–23520 Hz;
 compressor attack/release use seconds. Normalization leaves silence and intervals
 shorter than 400 ms unchanged. A later `gain_db` still changes normalized level.

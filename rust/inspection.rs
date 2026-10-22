@@ -13,6 +13,8 @@ use serde::Serialize;
 use std::path::{Path, PathBuf};
 
 pub(crate) trait Source: Sync {
+    fn chapters(&self) -> &[crate::timing::SceneRange];
+    fn resources(&self) -> crate::render::Resources<'_>;
     fn size(&self) -> [u32; 2];
     fn fps(&self) -> usize;
     fn count(&self) -> usize;
@@ -224,7 +226,7 @@ pub(crate) enum Video<'py> {
 }
 
 impl Video<'_> {
-    fn source(&self) -> &dyn Source {
+    pub fn source(&self) -> &dyn Source {
         match self {
             Self::Svg(video) => &**video,
             Self::Scene(video) => &**video,

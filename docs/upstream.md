@@ -18,36 +18,24 @@ language-specific helpers are consolidated rather than copied verbatim.
 | Capability | Python entry points | Verification |
 | --- | --- | --- |
 | SVG, scalar/color easing, text metrics | `Video`, `Timeline`, `TextLayout`; [low level](lowlevel.md) | Animation, text layout and SVG pixel tests. |
-| Composable layers, timing, graphics and effects | [Compose](compose.md), [graphics](graphics.md), [filters](filters.md) | Pixels, local clocks, nesting, masks and invalid inputs. |
+| Composable layers, graphics, SVG filter graphs and visual-content masks | [Compose](compose.md), [graphics](graphics.md), [filters](filters.md) | Pixels, local clocks, nesting and native SVG comparisons. |
 | SkSL/Shadertoy, images and synchronized clips | [Shaders](shaders.md), `ImageBinding`, `VideoBinding`, `compose.VideoClip` | Shader compilation, sampled uniforms, seeking, loops and EOF. |
-| Track mixing, ducking, eight audio processors, FFT and WebVTT | [Audio](audio.md), [analysis](analysis.md) | Samples, channel separation, frequency response, effect order and cues. |
+| Track/master mixing, limiter, de-click, ducking and eight audio processors | [Audio](audio.md) | Samples, gain/limiter levels, channel separation, effect order and export synchronization. |
+| LUFS, true peak, clipping/silence, waveform, active tracks, FFT and WebVTT | [Analysis](analysis.md) | Measured signals, silence, resampling, section bounds, source positions and cues. |
+| In-memory PCM slices, encoded images and RGBA image/video buffers | [Buffers](buffers.md) | Shared Python storage, ownership, alpha, source clocks, seeking and nested textures. |
+| Named scenes and time/range selectors | [Timeline queries](timing.md) | Nested clipping, reuse, overlapping ranges and selector errors. |
 | 3D geometry, PBR, cameras, lights, environment, shadows, fog and reflection | [`three_d`](three-d.md), `SceneBinding`, `compose.Scene3D` | Real pixels, occlusion, projection and lighting. |
-| glTF/GLB, STL, text extrusion, skins, morphs, instances and particles | [3D assets](three-d-assets.md) | Imported fixtures, deformation and random-access animation. |
+| glTF/GLB, STL, text extrusion, skins, morphs, instances, particles and scene states | [3D assets](three-d-assets.md) | Imported fixtures, material overrides, topology/hierarchy changes and random access. |
 | Nested SVG/compose/3D textures and Lottie | `SvgTexture`, `SceneTexture`, `Video.texture()`, [Lottie](lottie.md) | Nested rendering, playback clocks and texture pixels. |
 | CPU/GPU 3D, MSAA, bloom, depth of field and motion blur | `RenderSettings`, `Focus` | CPU effects; opt-in GPU comparisons. |
 | Frame diagnostics, crops, labels, sheets, onion skins and pop detection | [Inspection](inspection.md) | Both APIs, frame ordering, bounds and transitions. |
-| Encoding, BT.601/709 and frame-range export | [RenderOptions](rendering.md#encoding) | `ffprobe`, full decoding, color values, audio synchronization and failure cleanup. |
+| Codecs/parameters, pixel/sample formats, GOP/quantizers, BT.601/709 and export overrides | [RenderOptions](rendering.md#encoding) | `ffprobe`, full decoding, delivered dimensions/fps/rate, color and audio timing. |
+| Progress, native warnings and cooperative cancellation | [Export controls](rendering.md#export-controls) | Polling during GIL-free work, single-use controls and destination preservation. |
 
 The dependency also supplies the 1.3.0 decoding, scheduler, remuxing, Bézier,
 font-weight and resource-lifetime fixes. See the
 [upstream release](https://github.com/dmtrKovalenko/fframes/releases/tag/v1.3.0)
 for its change log; the wrapper does not reimplement those fixes.
-
-## Remaining wrapper gaps
-
-| Upstream surface | Current boundary |
-| --- | --- |
-| `AudioMixOptions`, `LimiterOptions` | Master gain, limiter configuration and de-click control use native defaults; only per-track controls are public. |
-| Loudness/audio reports | No Python binding for LUFS, true peak, clipping/silence reports, waveform reports or active-track inspection. FFT is available. |
-| In-memory media providers | No raw PCM source/slicing API or general image/video buffer provider. Sources use files; `PixelTexture` separately accepts owned 3D texture pixels. |
-| `AbortSignal` and rendering logger | No public cancellation signal or progress reporting API. |
-| Advanced `EncoderOptions` | No codec parameter dictionary, GOP/quantizer controls, selectable audio encoder/rate, or general output pixel/sample formats. Available video encoder names can be selected. |
-| Export overrides | No render-time fps or resolution scaling option. Set fps when authoring; compose scaling and resized PNG previews are separate operations. |
-| Named timeline queries | No `TimelineIndex`/`TimeSpec` scene selectors or automatic scene report. Compose uses explicit numeric placement; `Timeline` is scalar animation. |
-| Mutable 3D editing | Recipes expose supported animated properties, not arbitrary per-frame mutation, model material overrides or topology changes. Recompile changed descriptions. |
-| General SVG filters/masks in compose | Compose exposes the steps in its filter guide and a rounded rectangular mask; other SVG constructs require the low-level API and renderer support. |
-
-These are missing Python interfaces, not limitations of upstream's Rust API.
 
 ## Adaptations and engine limits
 
@@ -55,6 +43,9 @@ These are missing Python interfaces, not limitations of upstream's Rust API.
   and `Box(radius=...)` a rounded box. Geometry transforms and `text_shapes`
   replace redundant constructor variants. Use `PixelTexture` for precomputed
   procedural pixels; rendering never invokes Python callbacks.
+- Immutable `SceneFrames` supplies complete batched 3D states for topology or
+  hierarchy edits; continuous properties use native animation. Python does not
+  mutate live Rust scene objects or run rendering callbacks.
 - Rust GPU handles and borrowed textures are not public Python objects. Vulkan
   can share nested GPU textures internally; Metal composition reads back 3D
   pixels. This does not establish zero-copy encoding.

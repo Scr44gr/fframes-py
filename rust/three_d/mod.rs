@@ -24,7 +24,7 @@ use std::sync::Arc;
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 pub(crate) struct Input {
-    scene: scene::Input,
+    scene: scene::SequenceInput,
     camera: camera::Input,
     pub size: [u32; 2],
     fps: usize,
@@ -67,7 +67,7 @@ struct Bloom {
 }
 
 pub(crate) struct Program {
-    scene: scene::Program,
+    scene: scene::Sequence,
     camera: camera::Program,
     renderer: d::Renderer,
     motion_samples: usize,
@@ -75,12 +75,16 @@ pub(crate) struct Program {
 }
 
 impl Program {
-    pub fn on_timeline(mut input: Input, fps: usize) -> PyResult<Self> {
+    pub fn on_timeline(
+        mut input: Input,
+        fps: usize,
+        buffers: &crate::buffers::Buffers,
+    ) -> PyResult<Self> {
         // Embedded scenes inherit their output clock for clip sampling and shutter duration.
         input.fps = fps;
-        Self::compile(input)
+        Self::compile(input, buffers)
     }
-    pub fn compile(input: Input) -> PyResult<Self> {
+    pub fn compile(input: Input, buffers: &crate::buffers::Buffers) -> PyResult<Self> {
         let [width, height] = input.size;
         if width == 0
             || height == 0
@@ -114,7 +118,7 @@ impl Program {
             radius: b.radius,
             threshold: b.threshold,
         });
-        let scene = input.scene.compile(input.fps)?;
+        let scene = input.scene.compile(input.fps, buffers)?;
         if let Some(message) = scene.gpu_limits()? {
             match settings.device {
                 Device::Gpu => return Err(PyValueError::new_err(message)),
@@ -220,10 +224,10 @@ pub(crate) struct Binding {
 }
 
 impl BindingInput {
-    pub fn compile(self, fps: usize) -> PyResult<Binding> {
+    pub fn compile(self, fps: usize, buffers: &crate::buffers::Buffers) -> PyResult<Binding> {
         Ok(Binding {
             name: format!("scene:{}", self.name),
-            program: Program::on_timeline(self.renderer, fps)?,
+            program: Program::on_timeline(self.renderer, fps, buffers)?,
             span: crate::values::FrameSpan::new(self.start_at, self.duration, fps)?,
         })
     }
@@ -284,7 +288,7 @@ impl Renderer3D {
     fn world_position(&self, py: Python<'_>, name: &str, time: f64) -> PyResult<(f32, f32, f32)> {
         check_time(time)?;
         py.detach(|| {
-            let node = self.program.scene.node(name)?;
+            let node = self.program.scene.node(name, time)?;
             let scene = self.program.scene.pose(time)?;
             let v = scene.world_position(node);
             Ok((v.x, v.y, v.z))
@@ -300,7 +304,7 @@ impl Renderer3D {
     ) -> PyResult<(f32, f32, f32)> {
         check_time(time)?;
         py.detach(|| {
-            let node = self.program.scene.node(name)?;
+            let node = self.program.scene.node(name, time)?;
             let scene = self.program.scene.pose(time)?;
             let p = scene.local_to_world(node, point.into());
             Ok((p.x, p.y, p.z))
@@ -310,7 +314,7 @@ impl Renderer3D {
     fn world_matrix(&self, py: Python<'_>, name: &str, time: f64) -> PyResult<Vec<f32>> {
         check_time(time)?;
         py.detach(|| {
-            let node = self.program.scene.node(name)?;
+            let node = self.program.scene.node(name, time)?;
             Ok(self
                 .program
                 .scene
@@ -329,7 +333,7 @@ impl Renderer3D {
     ) -> PyResult<Option<([f32; 3], [f32; 3])>> {
         check_time(time)?;
         py.detach(|| {
-            let node = self.program.scene.node(name)?;
+            let node = self.program.scene.node(name, time)?;
             let bounds = self.program.scene.pose(time)?.bounds(node);
             Ok((bounds.min.is_finite() && bounds.max.is_finite())
                 .then(|| (bounds.min.to_array(), bounds.max.to_array())))
@@ -349,11 +353,17 @@ impl Renderer3D {
 }
 
 #[pyfunction]
-pub(crate) fn compile_3d(py: Python<'_>, plan: &str) -> PyResult<Renderer3D> {
+#[pyo3(signature = (plan, buffers=None))]
+pub(crate) fn compile_3d(
+    py: Python<'_>,
+    plan: &str,
+    buffers: Option<crate::buffers::Buffers>,
+) -> PyResult<Renderer3D> {
+    let buffers = buffers.unwrap_or_default();
     py.detach(|| {
         let input = serde_json::from_str(plan).map_err(render_error)?;
         Ok(Renderer3D {
-            program: Program::compile(input)?,
+            program: Program::compile(input, &buffers)?,
         })
     })
 }

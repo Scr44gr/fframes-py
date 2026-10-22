@@ -4,6 +4,7 @@ from typing import Annotated, Literal
 
 from pydantic import Field
 
+from fframes.buffers import Pcm
 from fframes.effects import Effect
 from fframes.models import Model, Seconds, Source
 from fframes.values import Duration, Start
@@ -22,7 +23,7 @@ class Ducking(Model):
 class AudioSettings(Model):
     """Decode a file once and apply mix settings to its audible interval."""
 
-    source: Source
+    source: Source | Pcm
     gain_db: Annotated[float, Field(ge=-120, le=24, allow_inf_nan=False)] = 0.0
     pan: Annotated[float, Field(ge=-1, le=1, allow_inf_nan=False)] = 0.0
     offset: Seconds = 0.0

@@ -20,3 +20,14 @@ unless the intended layout explicitly prioritizes one. Skip zero-duration cues
 when creating timed layers. Parsing retains markup, styles and regions as data;
 it does not render them. Measure line wrapping with `TextLayout` and place each
 line using `Text`. Define the visual style explicitly.
+
+## Mix reports
+
+`analyze_audio(compiled.native, options=AudioAnalysisOptions(...))` works for
+compose and raw native videos. It returns `.report` (LUFS, peaks, clipping,
+silence and named section levels), `.waveform.left/right` min/max bins and
+`.activity` at requested original seconds. Undefined silent levels are `None`.
+Use `AudioSection(name=..., start=..., end=...)` for original-time intervals.
+`frame_range` uses original indices; report times are relative to
+`.start_seconds`. Analysis allocates the selected mixed interval. Set the same
+`mix` and `sample_rate` as the export before comparing measurements.

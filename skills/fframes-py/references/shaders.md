@@ -71,3 +71,15 @@ scene = Video(
 ).compile()
 scene.save_png("shader.png", index=30)
 ```
+
+
+`LayerMask(content=..., mode="alpha" | "luminance")` accepts reusable visuals,
+including paths, text, gradients and shaders. Its content shares the target's
+local clock and canvas; it is not painted separately and cannot contain audio.
+
+Additional typed filter steps are `Blend`, `DisplacementMap`, `Morphology`,
+`Turbulence`, `ConvolveMatrix`, `ComponentTransfer`, `Lighting`, `FilterImage`
+and `Tile`. Each accepts an optional local-pixel subregion. Arithmetic `Composite`
+requires four coefficients; convolution validates kernel dimensions and divisor.
+`Lighting` uses filter light types from `fframes.compose.filters`, in pixels/degrees;
+`mode="specular"` requires an exponent. Keep references to named prior results.

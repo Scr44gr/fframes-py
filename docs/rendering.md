@@ -15,7 +15,8 @@ Import `Video` and `RenderOptions` from `fframes.compose` for these settings.
 | `fonts` | `()` | Tuple of explicit font file paths. |
 | `load_system_fonts` | `True` | Include fonts installed on the host. |
 
-Fonts, images and audio take filesystem paths; HTTP(S) source URLs are not supported.
+Fonts take filesystem paths. Media also accepts [in-memory buffers](buffers.md).
+HTTP(S) source URLs are not supported.
 
 Resolution changes the root canvas, not the dimensions of authored shapes.
 See [layers](layers.md) for local sizing and scaling.
@@ -102,6 +103,14 @@ copy only when mutation is needed.
 | `concurrency` | CPU count, or 1 | Positive number of native rendering workers. |
 | `color_matrix` | `"bt601"` | `"bt601"` or `"bt709"`; controls YUV conversion and encoded color tags together. |
 | `frame_range` | `None` | Export original indices `[start, end)`; `None` exports the whole video. |
+| `fps`, `scale` | `None`, `1` | Output frame rate and resolution multiplier; authoring clocks remain unchanged. |
+| `pixel_format` | `None` | Negotiate YUV420P/NV12, or require an explicit FFmpeg pixel format. |
+| `gop_size` | `24` | Maximum GOP size requested from the encoder; 0 requests intra frames. |
+| `qmin`, `qmax`, `qcompress`, `max_qdiff` | `15`, `60`, `0.6`, `4` | Encoder quantizer controls. |
+| `bitrate_tolerance`, `tag` | `0`, `None` | Rate tolerance and optional four-character codec tag. |
+| `codec_params` | `()` | Unique `(name, value)` string pairs passed to the codec. Invalid options fail. |
+| `audio` | `AudioEncoderOptions()` | Audio encoder, bitrate, sample rate, sample format and codec parameters. |
+| `audio_mix` | `AudioMixOptions()` | [Master gain, limiter and de-click](audio.md#master-mix). |
 
 Pass options as `compiled.render(path, options=RenderOptions(concurrency=4))`.
 More workers use more resources; measure before increasing the count. Encoding
@@ -127,11 +136,12 @@ MP4 metadata precedes media data for fast-start playback. MPEG-4 Part 2 remains
 available explicitly through `RenderOptions(encoder="mpeg4")`.
 
 `fframes.available_encoders()` lists video encoders in the **linked** FFmpeg library.
-Hardware entries may still need a compatible device and driver. Missing encoders
+Pass `"audio"` to list audio encoders. Hardware entries may still need a compatible
+device and driver. Missing encoders
 raise an error; rendering never silently substitutes a different codec. Installing
 an unrelated `ffmpeg` CLI does not change the extension's encoders.
 
-Video encoding requires even width/height and 8-bit 4:2:0 without alpha.
+Default video encoding requires even width/height and 8-bit 4:2:0 without alpha.
 The encoder receives YUV420P, or NV12 when it requires semiplanar input (for
 example, Intel Quick Sync). H.264 output still reports `yuv420p` in ffprobe.
 OpenH264 also requires at least 16 pixels on each axis. Put an
@@ -148,3 +158,39 @@ ffprobe -v error -show_entries stream=codec_name,profile,pix_fmt,width,height -o
 Expect `h264` and `yuv420p` for video, and `aac` if there is audio. This verifies
 the file, not acceptance by a particular app: apps can also limit duration,
 dimensions or file size. See [codec licensing](codecs.md) for distribution details.
+
+## Export controls
+
+```python
+from fframes import AudioEncoderOptions, RenderControl, RenderOptions
+
+options = RenderOptions(
+    fps=60,
+    scale=0.5,
+    concurrency=4,
+    audio=AudioEncoderOptions(encoder="aac", sample_rate=44100),
+)
+control = RenderControl()
+# Run this call in an application worker to poll or cancel from another thread.
+compiled.render(output / "scaled.mp4", options=options, control=control)
+```
+
+Scaling rounds output dimensions to the nearest integer and scales the rendered
+canvas. The frame count rounds up at the output fps; authored SVG/TextFrames and
+sampled values retain their source clocks. Audio covers the selected original
+interval. A fractional final video frame can extend beyond it by less than one
+output frame.
+
+`AudioEncoderOptions` defaults to AAC, 192000 bit/s, 48000 Hz and `"fltp"`.
+Sample formats are `fltp`, `flt`, `s16`, `s16p`, `s32`, `s32p`; the selected encoder
+must support the requested rate and format. Explicit video pixel formats also
+require codec support. Codec parameters cannot override stream layout; use the
+typed fields for dimensions, frame rate and audio rate. Codec-specific controls
+remain subject to FFmpeg's implementation.
+
+`control.progress` reports state, completed/total video and audio frames, and
+native warnings. `control.cancel()` requests cooperative cancellation; an active
+native operation finishes before cancellation is observed. The current upstream
+mux/audio-encoding stage checks cancellation at its boundaries. Cancelled exports
+preserve the existing destination. Use a new control for each export; no Python
+callbacks run in the rendering loop.

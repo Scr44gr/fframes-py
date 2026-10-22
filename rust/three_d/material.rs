@@ -81,7 +81,7 @@ pub(super) struct Program {
 }
 
 impl Input {
-    pub fn compile(self, fps: usize) -> PyResult<Program> {
+    pub fn compile(self, fps: usize, buffers: &crate::buffers::Buffers) -> PyResult<Program> {
         Ok(Program {
             base: Material {
                 shading: match self.shading {
@@ -116,11 +116,17 @@ impl Input {
                 scalar(self.normal_scale, 0., 1e7)?,
             ],
             maps: [
-                self.map.map(|t| t.compile(fps)).transpose()?,
-                self.emissive_map.map(|t| t.compile(fps)).transpose()?,
-                self.metal_rough_map.map(|t| t.compile(fps)).transpose()?,
-                self.normal_map.map(|t| t.compile(fps)).transpose()?,
-                self.ao_map.map(|t| t.compile(fps)).transpose()?,
+                self.map.map(|t| t.compile(fps, buffers)).transpose()?,
+                self.emissive_map
+                    .map(|t| t.compile(fps, buffers))
+                    .transpose()?,
+                self.metal_rough_map
+                    .map(|t| t.compile(fps, buffers))
+                    .transpose()?,
+                self.normal_map
+                    .map(|t| t.compile(fps, buffers))
+                    .transpose()?,
+                self.ao_map.map(|t| t.compile(fps, buffers)).transpose()?,
             ],
         })
     }
