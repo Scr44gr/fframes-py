@@ -64,6 +64,7 @@ class CompiledVideo:
                 settings.concurrency,
                 settings.bitrate,
                 settings.color_matrix,
+                settings.frame_range,
             )
             staged.replace(destination)
         return destination

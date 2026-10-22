@@ -66,6 +66,7 @@ def render(video: SvgVideo, path: OutputPath, options: RenderOptions | None = No
             options.concurrency,
             options.bitrate,
             options.color_matrix,
+            options.frame_range,
         )
     return destination
 
@@ -121,7 +122,7 @@ class Video(Model):
         return destination
 
     def render(self, path: OutputPath, *, options: RenderOptions | None = None) -> Path:
-        """Encode all frames using H.264 by default."""
+        """Encode the selected frame range, or the whole video, using H.264 by default."""
         return render(self.native, path, options)
 
     def audio_samples(self) -> bytes:

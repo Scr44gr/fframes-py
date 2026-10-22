@@ -422,7 +422,7 @@ impl SceneVideo {
         PyBytes::new(py, &bytes)
     }
 
-    #[pyo3(signature = (path, directory, encoder, concurrency, bitrate, color_matrix="bt601"))]
+    #[pyo3(signature = (path, directory, encoder, concurrency, bitrate, color_matrix="bt601", frame_range=None))]
     #[expect(
         clippy::too_many_arguments,
         reason = "Preserve positional native render compatibility"
@@ -436,6 +436,7 @@ impl SceneVideo {
         concurrency: usize,
         bitrate: i64,
         color_matrix: &str,
+        frame_range: Option<(usize, usize)>,
     ) -> PyResult<()> {
         py.detach(|| {
             self.resources().render(
@@ -447,6 +448,7 @@ impl SceneVideo {
                     concurrency,
                     bitrate,
                     color_matrix: crate::encoder::color_matrix(color_matrix)?,
+                    frame_range,
                 },
             )
         })

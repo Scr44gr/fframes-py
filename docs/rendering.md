@@ -50,7 +50,7 @@ video = Video(
     fonts=(Path("tests/assets/Tuffy.ttf"),),
     load_system_fonts=False,
     composition=Composition(
-        duration=1,
+        duration=2,
         children=(
             Text(
                 content="Hello world",
@@ -101,10 +101,24 @@ copy only when mutation is needed.
 | `bitrate` | `8_000_000` | Positive integer video bitrate in bits per second. |
 | `concurrency` | CPU count, or 1 | Positive number of native rendering workers. |
 | `color_matrix` | `"bt601"` | `"bt601"` or `"bt709"`; controls YUV conversion and encoded color tags together. |
+| `frame_range` | `None` | Export original indices `[start, end)`; `None` exports the whole video. |
 
 Pass options as `compiled.render(path, options=RenderOptions(concurrency=4))`.
 More workers use more resources; measure before increasing the count. Encoding
 runs in Rust with the GIL released. Both APIs share the same `RenderOptions`.
+
+To export seconds 0.5–1.5 of the 30 fps example above:
+
+```python
+from fframes import RenderOptions
+
+compiled.render(output / "excerpt.mp4", options=RenderOptions(frame_range=(15, 45)))
+```
+
+The interval must satisfy `0 <= start < end <= len(compiled)`; invalid bounds
+raise an error rather than being clamped. Animation and media keep their original
+timeline clocks. The exported file starts at time zero, with audio trimmed to the
+same interval. The compiled video's length and previews remain unchanged.
 
 Create the output's parent directory before rendering. Supported suffixes are
 lowercase `.mp4`, `.mov`, `.mkv`, `.avi` and `.webm`; codec/container compatibility

@@ -29,6 +29,7 @@ class SvgVideo:
         concurrency: int,
         bitrate: int = 8_000_000,
         color_matrix: str = "bt601",
+        frame_range: tuple[int, int] | None = None,
     ) -> None: ...
 
 def compile_animation(keyframes: list[tuple[float, float, float, float, str]]) -> Animation: ...
@@ -53,6 +54,7 @@ class SceneVideo:
         concurrency: int,
         bitrate: int,
         color_matrix: str = "bt601",
+        frame_range: tuple[int, int] | None = None,
     ) -> None: ...
 
 def compile_scene(plan: str) -> SceneVideo: ...

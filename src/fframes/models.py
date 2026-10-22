@@ -82,12 +82,20 @@ class VideoConfig(Model):
 
 
 class RenderOptions(Model):
-    """Encoder selection and number of parallel rendering workers."""
+    """Encoding settings and an optional half-open range of original frame indices."""
 
     encoder: Annotated[str, Field(pattern=r"^[a-zA-Z0-9_]+$")] = "libopenh264"
     concurrency: PositiveInt = Field(default_factory=lambda: cpu_count() or 1)
     bitrate: PositiveInt = 8_000_000
     color_matrix: Literal["bt601", "bt709"] = "bt601"
+    frame_range: tuple[Index, Index] | None = None
+
+    @model_validator(mode="after")
+    def check_frame_range(self) -> Self:
+        """Reject empty or reversed exports rather than silently changing their bounds."""
+        if self.frame_range is not None and self.frame_range[0] >= self.frame_range[1]:
+            raise ValueError("frame_range requires start < end; end is exclusive")
+        return self
 
 
 class Interval(Model):

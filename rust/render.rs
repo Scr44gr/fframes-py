@@ -41,6 +41,7 @@ pub(crate) struct Encoding<'a> {
     pub concurrency: usize,
     pub bitrate: i64,
     pub color_matrix: fframes::YuvMatrix,
+    pub frame_range: Option<(usize, usize)>,
 }
 
 impl<'a> Resources<'a> {
@@ -76,7 +77,15 @@ impl<'a> Resources<'a> {
             concurrency,
             bitrate,
             color_matrix,
+            frame_range,
         } = encoding;
+        let (start, end) = frame_range.unwrap_or((0, self.timeline.duration_in_frames));
+        if start >= end || end > self.timeline.duration_in_frames {
+            return Err(PyValueError::new_err(format!(
+                "frame_range must satisfy 0 <= start < end <= {}; end is exclusive",
+                self.timeline.duration_in_frames
+            )));
+        }
         if bitrate <= 0 || bitrate > i64::from(i32::MAX) {
             return Err(PyValueError::new_err("invalid bitrate"));
         }
@@ -115,6 +124,7 @@ impl<'a> Resources<'a> {
                 ..Default::default()
             },
             tmp_files_directory: Some(&directory),
+            frame_range: Some(start..end),
             ..Default::default()
         };
         let info = fframes::VideoEncoderInfo::for_output(
@@ -132,7 +142,7 @@ impl<'a> Resources<'a> {
         let input = crate::encoder::check_output(&path, &info)?;
         let logger: Arc<dyn FFramesLogger> = Arc::new(SilentLogger);
         let scheduler = FrameScheduler::new(
-            self.timeline.duration_in_frames,
+            end - start,
             concurrency,
             options.video_encoder_options.min_segment_frames(self.fps),
         );
@@ -165,7 +175,7 @@ impl<'a> Resources<'a> {
                                 }
                                 let frame = renderer
                                     .render_tree(
-                                        &tree(claim.frame, &mut cache, rasterizer)?,
+                                        &tree(start + claim.frame, &mut cache, rasterizer)?,
                                         Color::TRANSPARENT,
                                     )
                                     .map_err(render_error)?;

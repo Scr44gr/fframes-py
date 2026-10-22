@@ -172,8 +172,8 @@ impl SvgVideo {
         py.detach(|| self.rasterize(index)?.save_png(path).map_err(render_error))
     }
 
-    /// Encode all frames into a temporary file and replace the destination on success.
-    #[pyo3(signature = (path, directory, encoder, concurrency, bitrate=8_000_000, color_matrix="bt601"))]
+    /// Encode the selected frames and replace the destination on success.
+    #[pyo3(signature = (path, directory, encoder, concurrency, bitrate=8_000_000, color_matrix="bt601", frame_range=None))]
     #[expect(
         clippy::too_many_arguments,
         reason = "Preserve positional native render compatibility"
@@ -187,6 +187,7 @@ impl SvgVideo {
         concurrency: usize,
         bitrate: i64,
         color_matrix: &str,
+        frame_range: Option<(usize, usize)>,
     ) -> PyResult<()> {
         let staged = directory
             .join("output")
@@ -212,6 +213,7 @@ impl SvgVideo {
                     concurrency,
                     bitrate,
                     color_matrix: crate::encoder::color_matrix(color_matrix)?,
+                    frame_range,
                 },
             )?;
             std::fs::rename(staged, path)?;
