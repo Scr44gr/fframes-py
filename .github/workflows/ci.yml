@@ -36,6 +36,7 @@ jobs:
           rustup show
           uv sync --locked --no-install-project
           echo "PYO3_PYTHON=$(uv python find)" >> "$GITHUB_ENV"
+          echo "PYO3_ENVIRONMENT_SIGNATURE=$(uv run --no-sync python -c 'import sys; print(sys.version.split()[0], sys.base_prefix)')" >> "$GITHUB_ENV"
       - uses: Swatinem/rust-cache@v2.9.2
       - name: Rust checks
         shell: bash
