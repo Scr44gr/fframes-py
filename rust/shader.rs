@@ -1,14 +1,11 @@
 //! Compile shader inputs once and evaluate uniforms entirely in Rust.
 
-use crate::{
-    render::media_error,
-    values::{ColorValue, Paint, Scalar, Value},
-};
+use crate::values::{ColorValue, Paint, Scalar, Value};
 use fframes::{Frame, Shader, ShaderUniformValue, ShaderUniforms, usvgr};
 use fframes_skia_renderer::skia_safe::runtime_effect::{ChildType, uniform::Type};
 use pyo3::{PyResult, exceptions::PyValueError};
 use serde::Deserialize;
-use std::{collections::HashSet, path::PathBuf, sync::Arc};
+use std::{collections::HashSet, sync::Arc};
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -41,11 +38,11 @@ pub(crate) enum Uniform {
     },
     Image {
         name: String,
-        source: PathBuf,
+        source: crate::buffers::Source,
     },
     Video {
         name: String,
-        source: PathBuf,
+        source: crate::buffers::Source,
         offset: f64,
         r#loop: bool,
     },
@@ -66,7 +63,7 @@ pub(crate) struct Program {
 }
 
 impl Program {
-    pub fn compile(input: Input, fps: usize) -> PyResult<Self> {
+    pub fn compile(input: Input, fps: usize, buffers: &crate::buffers::Buffers) -> PyResult<Self> {
         if !input.time_offset.is_finite() || !(0. ..=86400.).contains(&input.time_offset) {
             return Err(PyValueError::new_err("invalid shader time offset"));
         }
@@ -115,12 +112,10 @@ impl Program {
                     Some(Type::Int),
                 ),
                 Uniform::Image { name, source } => {
-                    let bytes = std::fs::read(&source)?;
-                    let image = fframes::media::decode_image(&source.to_string_lossy(), &bytes)
-                        .map_err(media_error)?;
+                    let image = source.image(buffers)?;
                     (
                         name,
-                        Binding::Constant(ShaderUniformValue::Image(Arc::new(image))),
+                        Binding::Constant(ShaderUniformValue::Image(image)),
                         None,
                     )
                 }
@@ -138,6 +133,7 @@ impl Program {
                             r#loop,
                         },
                         fps,
+                        buffers,
                     )?),
                     None,
                 ),

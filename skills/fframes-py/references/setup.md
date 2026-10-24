@@ -2,9 +2,9 @@
 
 The distribution is `fframes-py`; import `fframes`. Use Python 3.11–3.14 and a
 wheel matching the operating system and architecture. A wheel needs no Rust
-toolchain. Check release availability before assuming a PyPI installation works.
+toolchain.
 
-For a published release, choose one:
+Install with one of:
 
 ```sh
 uv add fframes-py

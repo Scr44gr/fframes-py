@@ -5,6 +5,39 @@ use fframes::animation::{Animatable, AnimationRuntime as NativeTween};
 use pyo3::{PyResult, exceptions::PyValueError};
 use serde::Deserialize;
 
+pub(crate) struct FrameSpan {
+    first: usize,
+    end: usize,
+    fps: usize,
+    start: f64,
+}
+
+impl FrameSpan {
+    pub fn new(start: f64, duration: Option<f64>, fps: usize) -> PyResult<Self> {
+        if !start.is_finite()
+            || !(0. ..=86400.).contains(&start)
+            || fps == 0
+            || duration.is_some_and(|d| !d.is_finite() || d <= 0. || d > 86400.)
+        {
+            return Err(PyValueError::new_err(
+                "invalid binding start_at, duration or fps",
+            ));
+        }
+        let at = |t: f64| (t * fps as f64 - 1e-9).ceil().max(0.) as usize;
+        Ok(Self {
+            first: at(start),
+            end: duration.map_or(usize::MAX, |d| at(start + d)),
+            fps,
+            start,
+        })
+    }
+
+    pub fn local_time(&self, time: f64) -> Option<f64> {
+        let frame = (time * self.fps as f64 + 1e-9).floor().max(0.) as usize;
+        (frame >= self.first && frame < self.end).then_some(time - self.start)
+    }
+}
+
 #[derive(Deserialize)]
 #[serde(untagged)]
 pub(crate) enum Scalar {

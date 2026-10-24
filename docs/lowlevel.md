@@ -42,7 +42,12 @@ Pass resources to `compile_video` or `Video`:
 ```python
 native = fframes.compile_video(
     config,
-    frames,
+    (
+        '<svg width="64" height="64">'
+        '<image href="video:interview" width="64" height="64"/>'
+        '<image href="image:logo" width="16" height="16"/></svg>',
+    )
+    * 90,
     images=(fframes.ImageBinding(name="logo", source="logo.png"),),
     clips=(fframes.VideoBinding(name="interview", source="interview.mp4", start_at=1),),
     audio=(fframes.AudioTrack(source="interview.mp4", start_at=1, gain_db=-3),),

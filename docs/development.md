@@ -2,11 +2,14 @@
 
 [Index](index.md)
 
-Follow [installation](installation.md) first. Python lives in `src/fframes/`,
+For package users, see [installation](installation.md). Python lives in `src/fframes/`,
 Rust in `rust/`, and executable usage examples in `examples/`. Read `AGENTS.md`
 for repository conventions; consumer code should use the public namespaces.
 
-## Build and check
+Prepare the [native toolchain and editable installation](building.md) before
+running these checks.
+
+## Check changes
 
 Python-only edits are visible through the editable install. After Rust changes:
 

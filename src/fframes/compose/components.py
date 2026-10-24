@@ -14,7 +14,7 @@ from pydantic_core import InitErrorDetails, PydanticCustomError
 
 from fframes import _native
 from fframes.compose.animation import Duration, Scalar, endpoints
-from fframes.compose.filters import Filter
+from fframes.compose.filters import BlendMode, Filter
 from fframes.compose.paint import Brush, Matrix
 from fframes.models import Color, FiniteFloat, FontWeight, Length, Model, Seconds, Size
 from fframes.shaders import Shader
@@ -52,6 +52,21 @@ class Item(Model):
     def at(self, start_at: float, *, duration: float | None = None) -> "Clip":
         """Place this same content in a new interval without mutating it."""
         return Clip(content=self, start_at=start_at, duration=duration)
+
+
+class LayerMask(Model):
+    """Mask with reusable visual content on the target's local canvas and clock."""
+
+    content: Item
+    mode: Literal["alpha", "luminance"] = "alpha"
+    region: tuple[FiniteFloat, FiniteFloat, FiniteFloat, FiniteFloat] = (-0.1, -0.1, 1.2, 1.2)
+
+    @model_validator(mode="after")
+    def check_region(self) -> Self:
+        """Require positive mask extents in fractions of the target bounds."""
+        if self.region[2] <= 0 or self.region[3] <= 0:
+            raise ValueError("mask region width and height must be positive")
+        return self
 
 
 class Clip(Item):
@@ -119,6 +134,7 @@ class Component(Item, ABC):
 class Visual(Item):
     """Placement and transforms shared by graphics and visual groups."""
 
+    id: Annotated[str, Field(pattern=r"^[A-Za-z_][A-Za-z0-9_]*$")] | None = None
     position: Position = Position()
     opacity: Scalar = 1.0
     z_index: Scalar = 0.0
@@ -126,26 +142,9 @@ class Visual(Item):
     scale: Scalar = 1.0
     origin: tuple[FiniteFloat, FiniteFloat] | None = None
     matrix: Matrix | None = None
-    mask: Mask | None = None
+    mask: Mask | LayerMask | None = None
     filter: Filter | None = None
-    blend_mode: Literal[
-        "normal",
-        "multiply",
-        "screen",
-        "overlay",
-        "darken",
-        "lighten",
-        "color-dodge",
-        "color-burn",
-        "hard-light",
-        "soft-light",
-        "difference",
-        "exclusion",
-        "hue",
-        "saturation",
-        "color",
-        "luminosity",
-    ] = "normal"
+    blend_mode: BlendMode = "normal"
 
     @model_validator(mode="after")
     def check_transform(self) -> Self:
@@ -171,6 +170,7 @@ class Composition(Visual):
     """
 
     children: tuple[Item, ...] = ()
+    name: Annotated[str, Field(min_length=1)] | None = None
     duration: Duration | None = None
     size: Size | None = None
 

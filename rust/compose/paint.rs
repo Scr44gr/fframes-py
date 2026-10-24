@@ -216,7 +216,7 @@ fn compile(server: Server, id: &str, images: &mut Images) -> PyResult<Definition
                     vec![Some(element(
                         EId::Image,
                         vec![
-                            attribute(AId::Href, image(source, images)?),
+                            attribute(AId::Href, image(source.into(), images)?),
                             attribute(AId::Width, size[0]),
                             attribute(AId::Height, size[1]),
                             attribute(AId::PreserveAspectRatio, "none"),

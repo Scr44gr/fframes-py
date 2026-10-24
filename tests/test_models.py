@@ -60,3 +60,9 @@ def test_video_requires_nonempty_strings(frames: tuple[object, ...]) -> None:
 def test_encoder_rejects_invalid_names(encoder: str) -> None:
     with pytest.raises(ValidationError):
         RenderOptions(encoder=encoder)
+
+
+@pytest.mark.parametrize("frame_range", [(0, 0), (8, 4), (-1, 4), (0, True), (0, 1.5)])
+def test_export_range_rejects_invalid_indices(frame_range: tuple[object, object]) -> None:
+    with pytest.raises(ValidationError, match="frame_range"):
+        RenderOptions.model_validate({"frame_range": frame_range})

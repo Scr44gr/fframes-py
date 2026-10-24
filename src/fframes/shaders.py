@@ -4,6 +4,7 @@ from typing import Annotated, Literal, Self, TypeAlias
 
 from pydantic import Field, model_validator
 
+from fframes.buffers import ImageBuffer
 from fframes.media import ClipSource
 from fframes.models import Model, Source
 from fframes.values import Duration, Paint, Scalar, Start
@@ -52,7 +53,7 @@ class ImageUniform(Model):
 
     kind: Literal["image"] = "image"
     name: Name
-    source: Source
+    source: Source | ImageBuffer
 
 
 class VideoUniform(ClipSource):

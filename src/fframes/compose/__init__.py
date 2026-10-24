@@ -1,5 +1,13 @@
 """Compose reusable graphics, local animations and audio in Python."""
 
+from fframes.analysis import (
+    AudioAnalysisOptions,
+    AudioInspection,
+    AudioReport,
+    AudioSection,
+    analyze_audio,
+)
+from fframes.buffers import ImageBuffer, Pcm, VideoFrames
 from fframes.compose.animation import ColorTween, Tween
 from fframes.compose.components import (
     Circle,
@@ -9,6 +17,7 @@ from fframes.compose.components import (
     Composition,
     CubicTo,
     Ellipse,
+    LayerMask,
     LineTo,
     Mask,
     MoveTo,
@@ -22,20 +31,50 @@ from fframes.compose.components import (
     TextTemplate,
     VectorPath,
 )
-from fframes.compose.filters import Blur, ColorMatrix, Composite, Filter, Flood, Merge, Offset
-from fframes.compose.media import Audio, Image, VideoClip
+from fframes.compose.filters import (
+    Blend,
+    Blur,
+    ColorMatrix,
+    ComponentTransfer,
+    Composite,
+    ConvolveMatrix,
+    DisplacementMap,
+    Filter,
+    FilterImage,
+    Flood,
+    GammaTransfer,
+    Lighting,
+    LinearTransfer,
+    Merge,
+    Morphology,
+    Offset,
+    TableTransfer,
+    Tile,
+    Turbulence,
+)
+from fframes.compose.media import Audio, Image, LottieLayer, VideoClip
 from fframes.compose.paint import LinearGradient, Pattern, RadialGradient, Stop
+from fframes.compose.three_d import Scene3D
 from fframes.compose.video import CompiledVideo, RenderOptions, Video
 from fframes.media import ExifField, ImageInfo, VideoInfo, probe_image, probe_video
-from fframes.models import CubicBezier, Spring
+from fframes.models import AudioEncoderOptions, AudioMixOptions, CubicBezier, LimiterOptions, Spring
+from fframes.rendering import RenderControl, RenderProgress, available_encoders
 from fframes.spectrum import AudioData, Spectrum
 from fframes.subtitles import Cue, CueSettings, Subtitles
 from fframes.text import Font, TextLayout
+from fframes.timing import SceneRange, TimelineIndex, inspect_timeline
 from fframes.values import ColorSamples, Samples
 
 __all__ = [
     "Audio",
+    "AudioAnalysisOptions",
     "AudioData",
+    "AudioEncoderOptions",
+    "AudioInspection",
+    "AudioMixOptions",
+    "AudioReport",
+    "AudioSection",
+    "Blend",
     "Blur",
     "Circle",
     "Clip",
@@ -45,47 +84,72 @@ __all__ = [
     "ColorTween",
     "CompiledVideo",
     "Component",
+    "ComponentTransfer",
     "Composite",
     "Composition",
+    "ConvolveMatrix",
     "CubicBezier",
     "CubicTo",
     "Cue",
     "CueSettings",
+    "DisplacementMap",
     "Ellipse",
     "ExifField",
     "Filter",
+    "FilterImage",
     "Flood",
     "Font",
+    "GammaTransfer",
     "Image",
+    "ImageBuffer",
     "ImageInfo",
+    "LayerMask",
+    "Lighting",
+    "LimiterOptions",
     "LineTo",
     "LinearGradient",
+    "LinearTransfer",
+    "LottieLayer",
     "Mask",
     "Merge",
+    "Morphology",
     "MoveTo",
     "Offset",
     "Pattern",
+    "Pcm",
     "Position",
     "RadialGradient",
     "Rectangle",
+    "RenderControl",
     "RenderOptions",
+    "RenderProgress",
     "Samples",
+    "Scene3D",
+    "SceneRange",
     "ShaderLayer",
     "Spectrum",
     "Spring",
     "Stop",
     "Stroke",
     "Subtitles",
+    "TableTransfer",
     "Text",
     "TextFrames",
     "TextLayout",
     "TextRun",
     "TextTemplate",
+    "Tile",
+    "TimelineIndex",
+    "Turbulence",
     "Tween",
     "VectorPath",
     "Video",
     "VideoClip",
+    "VideoFrames",
     "VideoInfo",
+    "analyze_audio",
+    "available_encoders",
+    "inspect_timeline",
     "probe_image",
     "probe_video",
 ]

@@ -81,12 +81,78 @@ class VideoConfig(Model):
     backend: Backend = "cpu"
 
 
-class RenderOptions(Model):
-    """Encoder selection and number of parallel rendering workers."""
+CodecName: TypeAlias = Annotated[str, Field(pattern=r"^[a-zA-Z0-9_]+$")]
+CodecValue: TypeAlias = Annotated[str, Field(min_length=1, pattern=r"^[^\x00]+$")]
 
-    encoder: Annotated[str, Field(pattern=r"^[a-zA-Z0-9_]+$")] = "libopenh264"
+
+class LimiterOptions(Model):
+    """Master peak limiter; times are milliseconds and ceiling is dBFS."""
+
+    ceiling_db: Annotated[float, Field(ge=-120, le=0, allow_inf_nan=False)] = -1.0
+    lookahead_ms: Annotated[float, Field(ge=0, le=1000, allow_inf_nan=False)] = 5.0
+    release_ms: Annotated[float, Field(gt=0, le=60000, allow_inf_nan=False)] = 80.0
+
+
+class AudioMixOptions(Model):
+    """Settings shared by audio previews, analysis and encoded output."""
+
+    master_gain_db: Annotated[float, Field(ge=-120, le=24, allow_inf_nan=False)] = 0.0
+    limiter: LimiterOptions | None = LimiterOptions()
+    declick: bool = True
+
+
+class CodecOptions(Model):
+    """Encoder-specific string options; unsupported options fail before rendering."""
+
+    codec_params: tuple[tuple[CodecName, CodecValue], ...] = ()
+
+    @model_validator(mode="after")
+    def check_parameters(self) -> Self:
+        """Reject duplicate parameter keys instead of relying on FFmpeg ordering."""
+        names = [name for name, _ in self.codec_params]
+        if len(names) != len(set(names)):
+            raise ValueError("codec_params keys must be unique")
+        return self
+
+
+class AudioEncoderOptions(CodecOptions):
+    """Audio codec, sample format, bitrate and output rate."""
+
+    encoder: CodecName = "aac"
+    bitrate: PositiveInt = 192_000
+    sample_rate: PositiveInt = 48_000
+    sample_format: Literal["fltp", "flt", "s16", "s16p", "s32", "s32p"] = "fltp"
+
+
+class RenderOptions(CodecOptions):
+    """Encoding settings and an optional half-open range of original frame indices."""
+
+    encoder: CodecName = "libopenh264"
     concurrency: PositiveInt = Field(default_factory=lambda: cpu_count() or 1)
     bitrate: PositiveInt = 8_000_000
+    color_matrix: Literal["bt601", "bt709"] = "bt601"
+    frame_range: tuple[Index, Index] | None = None
+    pixel_format: CodecName | None = None
+    bitrate_tolerance: Annotated[int, Field(ge=0, le=2**31 - 1)] = 0
+    qmin: Annotated[int, Field(ge=0, le=255)] = 15
+    qmax: Annotated[int, Field(ge=0, le=255)] = 60
+    qcompress: Annotated[float, Field(ge=0, le=1, allow_inf_nan=False)] = 0.6
+    max_qdiff: Annotated[int, Field(ge=0, le=255)] = 4
+    gop_size: Annotated[int, Field(ge=0, le=2**31 - 1)] = 24
+    tag: Annotated[str, Field(pattern=r"^[ -~]{4}$")] | None = None
+    audio: AudioEncoderOptions = AudioEncoderOptions()
+    audio_mix: AudioMixOptions = AudioMixOptions()
+    fps: PositiveInt | None = None
+    scale: Annotated[float, Field(gt=0, le=64, allow_inf_nan=False)] = 1.0
+
+    @model_validator(mode="after")
+    def check_frame_range(self) -> Self:
+        """Reject empty or reversed exports rather than silently changing their bounds."""
+        if self.frame_range is not None and self.frame_range[0] >= self.frame_range[1]:
+            raise ValueError("frame_range requires start < end; end is exclusive")
+        if self.qmin > self.qmax:
+            raise ValueError("qmin must be less than or equal to qmax")
+        return self
 
 
 class Interval(Model):

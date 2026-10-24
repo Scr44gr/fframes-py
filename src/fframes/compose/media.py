@@ -3,9 +3,11 @@
 from typing import Literal
 
 from fframes.audio import AudioSettings
+from fframes.buffers import ImageBuffer
 from fframes.compose.components import Item, Visual
+from fframes.lottie import Lottie
 from fframes.media import ClipSource
-from fframes.models import Size, Source
+from fframes.models import PositiveInt, Size, Source
 
 
 class MediaVisual(Visual):
@@ -19,7 +21,7 @@ class Image(MediaVisual):
     """A raster image loaded once, with explicit size and fitting."""
 
     kind: Literal["image"] = "image"
-    source: Source
+    source: Source | ImageBuffer
 
 
 class Audio(AudioSettings, Item):
@@ -34,3 +36,11 @@ class VideoClip(ClipSource, MediaVisual):
     """Play a local video on the clip's local clock; add Audio separately to mix sound."""
 
     kind: Literal["video"] = "video"
+
+
+class LottieLayer(Visual):
+    """Place a Lottie vector animation on the composition's local clock."""
+
+    kind: Literal["lottie"] = "lottie"
+    animation: Lottie
+    size: tuple[PositiveInt, PositiveInt]

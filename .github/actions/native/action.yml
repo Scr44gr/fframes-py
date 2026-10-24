@@ -1,5 +1,5 @@
 name: Native dependencies
-description: Install the native dependencies required by fframes 1.2
+description: Install the native dependencies required by fframes
 inputs:
   build:
     description: Install build dependencies; false installs only FFmpeg inspection tools
@@ -10,6 +10,11 @@ runs:
     - if: runner.os == 'Linux'
       shell: bash
       run: |
+        # Keep Ubuntu's archive fallbacks: the Azure mirror can stall package downloads.
+        # https://github.com/actions/runner-images/issues/14594
+        if [ -f /etc/apt/apt-mirrors.txt ]; then
+          sudo sed -i '/azure\.archive\.ubuntu\.com/d' /etc/apt/apt-mirrors.txt
+        fi
         sudo apt-get update
         sudo apt-get install -y ffmpeg
         if [ '${{ inputs.build }}' = true ]; then

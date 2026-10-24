@@ -3,16 +3,20 @@
 from dataclasses import dataclass
 from math import ceil, nextafter
 from pathlib import Path
-from tempfile import TemporaryDirectory
 from typing import Self
 
 from pydantic import ConfigDict, model_validator, validate_call
 
 from fframes import _native
+from fframes.buffers import Buffers
 from fframes.compose.compiler import Compiler, Plan
 from fframes.compose.components import Composition
-from fframes.models import Backend, Index, Model, OutputPath, PositiveInt, Source
+from fframes.models import AudioMixOptions, Backend, Index, Model, OutputPath, PositiveInt, Source
 from fframes.models import RenderOptions as RenderOptions
+from fframes.rendering import RenderControl
+from fframes.three_d.scene import Texture, _CompositionTexture
+from fframes.timing import SceneRange, TimelineIndex, inspect_timeline
+from fframes.video import render
 
 
 @dataclass(frozen=True)
@@ -21,9 +25,19 @@ class CompiledVideo:
 
     _scene: _native.SceneVideo
 
+    @property
+    def native(self) -> _native.SceneVideo:
+        """Access the compiled engine session for batch inspection and previews."""
+        return self._scene
+
     def __len__(self) -> int:
         """Return the encoded frame count."""
         return len(self._scene)
+
+    @property
+    def timeline(self) -> TimelineIndex:
+        """Inspect the compiled composition names and their visible frame ranges."""
+        return inspect_timeline(self._scene)
 
     @validate_call(config=ConfigDict(strict=True))
     def rgba(self, index: Index = 0) -> bytes:
@@ -40,22 +54,20 @@ class CompiledVideo:
         self._scene.save_png(index, destination)
         return destination
 
-    def audio_samples(self) -> bytes:
-        """Return the final stereo mix as interleaved float32 little-endian at 48 kHz."""
-        return self._scene.audio_samples()
-
     @validate_call(config=ConfigDict(strict=True))
-    def render(self, path: OutputPath, *, options: RenderOptions | None = None) -> Path:
+    def audio_samples(self, *, mix: AudioMixOptions | None = None) -> bytes:
+        """Return the final stereo mix as interleaved float32 little-endian at 48 kHz."""
+        return self._scene.audio_samples(mix.model_dump_json() if mix is not None else None)
+
+    def render(
+        self,
+        path: OutputPath,
+        *,
+        options: RenderOptions | None = None,
+        control: RenderControl | None = None,
+    ) -> Path:
         """Render and mix natively, replacing the destination only after success."""
-        settings = options or RenderOptions()
-        destination = Path(path)
-        with TemporaryDirectory(prefix="fframes-py-", dir=destination.absolute().parent) as folder:
-            staged = Path(folder) / destination.name
-            self._scene.render(
-                staged, Path(folder), settings.encoder, settings.concurrency, settings.bitrate
-            )
-            staged.replace(destination)
-        return destination
+        return render(self._scene, path, options, control=control)
 
 
 class Video(Model):
@@ -94,22 +106,48 @@ class Video(Model):
         """Return the encoded duration after frame rounding."""
         return len(self) / self.fps
 
-    def compile(self) -> CompiledVideo:
-        """Expand components once and transfer a typed scene to Rust."""
+    def _plan(self) -> Plan:
         compiler = Compiler()
         width, height = self.resolution
         compiler.visit(self.composition, None, 0.0, self.duration, (float(width), float(height)))
-        plan = Plan(
+        return Plan(
             resolution=self.resolution,
             fps=self.fps,
             frames=len(self),
+            chapters=tuple(
+                SceneRange(name=name, frames=(first, end))
+                for name, start, stop in compiler.chapters
+                if (first := max(0, ceil(nextafter(start * self.fps, float("-inf")))))
+                < (end := min(len(self), ceil(nextafter(stop * self.fps, float("-inf")))))
+            ),
             layers=tuple(compiler.layers),
             sounds=tuple(compiler.sounds),
             fonts=self.fonts,
             load_system_fonts=self.load_system_fonts,
             backend=self.backend,
         )
-        return CompiledVideo(_native.compile_scene(plan.model_dump_json()))
+
+    def compile(self) -> CompiledVideo:
+        """Expand components once and transfer a typed scene to Rust."""
+        buffers = Buffers()
+        plan = self._plan().model_dump_json(context=buffers)
+        return CompiledVideo(_native.compile_scene(plan, buffers.data))
+
+    def texture(self) -> Texture:
+        """Use this video's visuals on a 3D surface; put audio in the outer composition."""
+        plan = self._plan()
+        if plan.sounds:
+            raise ValueError(
+                "a texture contains visuals only; place Audio in the outer composition"
+            )
+        buffers = Buffers()
+        description = plan.model_dump_json(context=buffers)
+        return Texture(
+            source=_CompositionTexture(
+                plan=description,
+                buffers=tuple(buffers.data.items()),
+            )
+        )
 
     def rgba(self, index: Index = 0) -> bytes:
         """Compile and preview one frame; use compile() to preview many."""
@@ -119,6 +157,12 @@ class Video(Model):
         """Compile and save one frame."""
         return self.compile().save_png(path, index=index)
 
-    def render(self, path: OutputPath, *, options: RenderOptions | None = None) -> Path:
+    def render(
+        self,
+        path: OutputPath,
+        *,
+        options: RenderOptions | None = None,
+        control: RenderControl | None = None,
+    ) -> Path:
         """Compile, render and mix without Python callbacks per frame."""
-        return self.compile().render(path, options=options)
+        return self.compile().render(path, options=options, control=control)
